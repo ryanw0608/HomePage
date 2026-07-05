@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 
 import BootSequence from "@/components/BootSequence.astro";
 import EntryRow from "@/components/EntryRow.astro";
+import TokenStream from "@/components/TokenStream.astro";
 import LearningMapPreview from "@/components/LearningMapPreview.astro";
 import { profile } from "@/data/profile";
 import { courses } from "@/data/taxonomy";
@@ -54,7 +55,9 @@ const latestWriting = [
       </nav>
     </header>
 
-    <section class="rise" aria-labelledby="focus-title" style="--rise-order: 1;">
+    <TokenStream />
+
+    <section class="rise" aria-labelledby="focus-title" style="--rise-order: 2;">
       <h2 class="sr-only" id="focus-title">Research focus</h2>
       <p class="prompt-line" aria-hidden="true"><span class="prompt">$</span> <span class="cmd">cat focus.md</span></p>
       <ol class="focus-list">
@@ -69,7 +72,7 @@ const latestWriting = [
       </ol>
     </section>
 
-    <section class="rise" aria-labelledby="writing-title" style="--rise-order: 2;">
+    <section class="rise" aria-labelledby="writing-title" style="--rise-order: 3;">
       <h2 class="sr-only" id="writing-title">Latest writing</h2>
       <p class="prompt-line" aria-hidden="true">
         <span class="prompt">$</span> <span class="cmd">ls writing/ --sort=date</span>
