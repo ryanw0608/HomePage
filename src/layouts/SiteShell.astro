@@ -12,7 +12,7 @@ interface Props {
 const { title = site.title, description = site.description, lang = "en" } = Astro.props;
 const pageTitle = title === site.title ? title : `${title} | ${site.title}`;
 const base = import.meta.env.BASE_URL;
-const href = (pathname = "") => `${base}${pathname}`;
+const href = (pathname = "") => `${base}${pathname.replace(/^\/+/, "")}`;
 ---
 
 <!doctype html>
