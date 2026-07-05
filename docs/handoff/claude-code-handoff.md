@@ -1,5 +1,11 @@
 # Claude Code Handoff
 
+> **2026-07-06 update:** this document predates the user's explicit direction change. The site now uses a
+> **Terminal Luxe** visual system (dark-first, JetBrains Mono, boot sequence, `⌘K` palette, token-stream
+> hero) chosen by the user, which overrides the "avoid terminal gimmicks" guidance below. See `CLAUDE.md`
+> and `AGENTS.md` for the current quality bar. Routes, content model, deployment, accessibility, and
+> no-JS constraints below still apply.
+
 ## Executive Summary
 
 This repository is a working Astro 7 personal academic homepage for Yongzhe Wang. It has typed MDX content collections, static routes, RSS, sitemap, CI, and GitHub Pages deployment. The production site is live at:

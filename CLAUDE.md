@@ -9,22 +9,30 @@ Read this file first, then read:
 
 ## Current Mandate
 
-The project is already implemented and deployed, but the user rejected the frontend quality. Do not treat the current visual design as acceptable. Treat the existing code as a functional Astro foundation that needs a serious frontend redesign.
+On 2026-07-06 the user explicitly chose a **Terminal Luxe** visual direction (overriding the earlier
+anti-terminal guidance in older docs): dark-first, all-monospace (JetBrains Mono), boot sequence on the
+homepage, prompt-path breadcrumb, status-bar footer, `⌘K` command palette with Pagefind search, and a
+speculative-decoding token-stream hero. Quality bar is Warp/Ghostty/Linear-grade modern terminal — sharp
+and matte, no CRT/scanline/glow kitsch, no typewriter-everything, `$` prompts only where a real
+command→output metaphor holds (homepage sections, `ls` indexes, code frames, 404).
 
-Primary goal for the next Claude Code session:
+Preserve:
 
-- Preserve the stable content model, routes, MDX authoring workflow, CI, and GitHub Pages deployment.
-- Rework the visual system, homepage, index pages, and article pages until the site credibly reflects a former frontend engineer.
-- Keep the site academic, content-first, and static-first.
+- The stable content model, routes, MDX authoring workflow, CI, and GitHub Pages deployment.
+- Long-form article readability (mono 1rem/1.75, 68ch measure; KaTeX keeps its own faces).
+- Research focus data in `src/data/profile.ts` (efficient LLM inference, agentic systems, AI for
+  condensed matter physics) — user-provided, keep truthful.
 
 ## Non-Negotiables
 
 - Do not add fake Publications, Projects, CV, or research-output sections.
-- Do not turn the site into a terminal gimmick or generic command-center dashboard.
+- Do not degrade the terminal aesthetic into CRT cosplay (scanlines, glow, ASCII banners, green-on-black
+  body text, per-character typing everywhere).
 - Do not use a generic UI kit.
 - Do not break `/HomePage/` base-path deployment.
-- Do not rely on client-side JavaScript for core content.
+- Do not rely on client-side JavaScript for core content (boot/hero/palette are enhancements only).
 - Do not hide weak content behind decorative graphics.
+- Keep WCAG AA contrast and `prefers-reduced-motion` compliance (static final states, not sped-up motion).
 
 ## Current Production State
 

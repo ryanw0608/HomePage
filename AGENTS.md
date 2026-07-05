@@ -37,9 +37,18 @@ Do not add a generic UI kit. The visual system must be custom enough to support 
 
 ## Frontend Quality Bar
 
-The next frontend pass should be a redesign, not small cosmetic edits. The site must feel like a refined academic knowledge product with strong long-form reading pages. Avoid generic academic templates, fake publication sections, empty dashboard chrome, terminal gimmicks, one-note palettes, and decorative effects that do not improve comprehension.
+The active visual direction (user-chosen on 2026-07-06) is **Terminal Luxe**: a dark-first, all-monospace
+"researcher's terminal" at Warp/Ghostty/Linear quality. JetBrains Mono, spring-green/amber accents on
+near-black, ANSI-inspired token colors for chrome, homepage boot sequence, prompt-path breadcrumb,
+status-bar footer, `⌘K` palette with Pagefind, speculative-decoding canvas hero.
 
-Prioritize typography, spatial rhythm, article metadata, table of contents, code/table overflow, dark/light theme quality, mobile reading, and subtle purposeful motion.
+What keeps it premium instead of gimmicky: no scanlines/CRT/glow, no ASCII banners, no per-character
+typing outside the boot overlay, `$` prompts only where a command→output metaphor is truthful, warm-white
+body text (green reserved for accents), a deliberate mono weight/size ladder, and untouched long-form
+readability (68ch measure, KaTeX in its own faces, code frames with copy buttons).
+
+Core content must render without JavaScript; all motion respects `prefers-reduced-motion` with static
+final states; both themes pass WCAG AA.
 
 ## Testing Guidelines
 
