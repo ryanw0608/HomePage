@@ -1,0 +1,182 @@
+---
+interface Props {
+  entryCount: number;
+  interestCount: number;
+}
+
+const { entryCount, interestCount } = Astro.props;
+---
+
+{/*
+  Cold-boot overlay: decorative, once per browser session, skippable by any
+  input. The real homepage is fully rendered underneath from first paint —
+  this never gates content. Hidden by default so no-JS visitors never see it;
+  reduced-motion disables it entirely via CSS.
+*/}
+<div class="boot no-print" data-boot hidden aria-hidden="true">
+  <div class="boot-body">
+    <p class="boot-line boot-prompt">
+      <span class="boot-host">yongzhe@wang</span>:~$ ./init.sh<span class="caret"></span>
+    </p>
+    <p class="boot-line l1"><span class="ok">[ ok ]</span>  loading identity ............ <span class="val">Yongzhe Wang</span></p>
+    <p class="boot-line l2"><span class="ok">[ ok ]</span>  mounting research/ .......... <span class="val">{interestCount} interests</span></p>
+    <p class="boot-line l3"><span class="ok">[ ok ]</span>  indexing writing/ ........... <span class="val">{entryCount} {entryCount === 1 ? "entry" : "entries"}</span></p>
+    <p class="boot-line l4"><span class="ready">[ ok ]  session ready</span></p>
+  </div>
+  <p class="boot-skip">esc to skip</p>
+</div>
+
+<script is:inline>
+  (() => {
+    const boot = document.querySelector("[data-boot]");
+    if (!boot) return;
+
+    const KEY = "yw:boot";
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let seen = "1";
+    try {
+      seen = window.sessionStorage?.getItem(KEY) ?? "";
+    } catch {
+      seen = "1";
+    }
+
+    if (seen === "1" || reduced) return;
+
+    try {
+      // Flag at start, not end: a mid-boot reload must not replay.
+      window.sessionStorage?.setItem(KEY, "1");
+    } catch {
+      return;
+    }
+
+    boot.hidden = false;
+    boot.classList.add("run");
+
+    const finish = () => {
+      boot.hidden = true;
+      removeEventListener("keydown", finish, true);
+      removeEventListener("pointerdown", finish, true);
+      removeEventListener("wheel", finish, true);
+    };
+
+    addEventListener("keydown", finish, true);
+    addEventListener("pointerdown", finish, true);
+    addEventListener("wheel", finish, true);
+
+    boot.addEventListener("animationend", (event) => {
+      if (event.target === boot) finish();
+    });
+  })();
+</script>
+
+<style>
+  .boot {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    align-content: center;
+    justify-content: center;
+    background: var(--bg);
+  }
+
+  .boot.run {
+    animation: boot-out 220ms ease 760ms forwards;
+  }
+
+  @keyframes boot-out {
+    to {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
+
+  .boot-body {
+    display: grid;
+    gap: 0.45rem;
+    min-width: min(34rem, calc(100vw - 3rem));
+  }
+
+  .boot-line {
+    margin: 0;
+    color: var(--faint);
+    font-size: 0.85rem;
+    white-space: pre;
+    opacity: 0;
+  }
+
+  .boot.run .boot-line {
+    animation: boot-line-in 90ms ease both;
+  }
+
+  .boot.run .boot-prompt {
+    animation-delay: 0ms;
+  }
+
+  .boot.run .l1 {
+    animation-delay: 120ms;
+  }
+
+  .boot.run .l2 {
+    animation-delay: 300ms;
+  }
+
+  .boot.run .l3 {
+    animation-delay: 480ms;
+  }
+
+  .boot.run .l4 {
+    animation-delay: 640ms;
+  }
+
+  @keyframes boot-line-in {
+    from {
+      opacity: 0;
+      transform: translateY(3px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .boot-host {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .boot-prompt {
+    color: var(--muted);
+  }
+
+  .ok {
+    color: var(--accent);
+  }
+
+  .val {
+    color: var(--fg);
+  }
+
+  .ready {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .boot-skip {
+    position: fixed;
+    right: 1.1rem;
+    bottom: 1rem;
+    margin: 0;
+    color: var(--faint);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .boot {
+      display: none !important;
+    }
+  }
+</style>

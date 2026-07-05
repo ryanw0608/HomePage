@@ -2,20 +2,18 @@
 import { learningMapNodes } from "@/data/learning-map";
 ---
 
-<section class="rail rise map-section" aria-labelledby="learning-map-title" style="--rise-order: 3;">
-  <p class="rail-label" id="learning-map-title">Topics</p>
-  <div class="rail-body">
-    <p class="map-description">
-      Topics this notebook is accumulating around. The list is short on purpose: it grows only when new notes
-      connect to it.
-    </p>
-    <ul class="node-list">
+<section class="topics rise" aria-labelledby="topics-title" style="--rise-order: 3;">
+  <h2 class="sr-only" id="topics-title">Topics</h2>
+  <p class="prompt-line" aria-hidden="true"><span class="prompt">$</span> <span class="cmd">tree topics/</span></p>
+  <div class="tree">
+    <p class="tree-root" aria-hidden="true">topics/</p>
+    <ul class="tree-list">
       {
         learningMapNodes.map((node) => (
-          <li>
-            <span class="node-head">
-              <span class="node-label">{node.label}</span>
-              <span class="node-type">{node.type}</span>
+          <li class="tree-node">
+            <span class="node-line">
+              <span class="node-label">{node.id}</span>
+              <span class="node-type">[{node.type}]</span>
             </span>
             {node.summary && <span class="node-summary">{node.summary}</span>}
           </li>
@@ -26,53 +24,73 @@ import { learningMapNodes } from "@/data/learning-map";
 </section>
 
 <style>
-  .map-description {
-    margin: 0.2rem 0 1.4rem;
-    max-width: 55ch;
-    color: var(--muted);
-    line-height: 1.62;
+  .topics {
+    display: grid;
+    gap: 1.1rem;
   }
 
-  .node-list {
+  .tree {
+    font-size: 0.875rem;
+  }
+
+  .tree-root {
+    margin: 0 0 0.35rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .tree-list {
     display: grid;
-    gap: 0;
+    gap: 0.65rem;
     list-style: none;
     margin: 0;
     padding: 0;
   }
 
-  .node-list li {
+  .tree-node {
     display: grid;
-    gap: 0.3rem;
-    border-top: 1px solid var(--line);
-    padding-block: 0.95rem;
+    gap: 0.15rem;
   }
 
-  .node-head {
+  .node-line {
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.8rem;
+    gap: 0.7rem;
+  }
+
+  .node-line::before {
+    content: "├── " / "";
+    color: var(--faint);
+    white-space: pre;
+  }
+
+  .tree-node:last-child .node-line::before {
+    content: "└── " / "";
   }
 
   .node-label {
-    font-family: var(--font-serif);
-    font-size: 1.05rem;
-    font-weight: 540;
-    letter-spacing: -0.01em;
+    color: var(--fg);
+    font-weight: 600;
   }
 
   .node-type {
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    color: var(--tk-cyan);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
   }
 
   .node-summary {
-    max-width: 60ch;
+    max-width: 62ch;
+    padding-left: 2.6ch;
     color: var(--muted);
-    font-size: 0.95rem;
+    font-size: 0.82rem;
     line-height: 1.6;
+  }
+
+  .tree-node:not(:last-child) .node-summary {
+    border-left: 1px solid var(--line);
+    margin-left: 0.55ch;
+    padding-left: 2.05ch;
   }
 </style>

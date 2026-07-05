@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 
+import BootSequence from "@/components/BootSequence.astro";
 import EntryRow from "@/components/EntryRow.astro";
 import LearningMapPreview from "@/components/LearningMapPreview.astro";
 import { profile } from "@/data/profile";
@@ -11,17 +12,18 @@ import { byDateDesc, entryPath, publicEntries, readingTime } from "@/lib/content
 const base = import.meta.env.BASE_URL;
 const allCourseNotes = publicEntries(await getCollection("course-notes")).sort(byDateDesc);
 const allPaperReadings = publicEntries(await getCollection("paper-reading")).sort(byDateDesc);
+const entryCount = allCourseNotes.length + allPaperReadings.length;
 
 const latestWriting = [
   ...allCourseNotes.map((entry) => ({
     collection: "course-notes" as const,
     entry,
-    annotation: `Course note · ${courses[entry.data.course].label}`
+    annotation: `course note · ${courses[entry.data.course].label}`
   })),
   ...allPaperReadings.map((entry) => ({
     collection: "paper-reading" as const,
     entry,
-    annotation: ["Paper reading", entry.data.paperTitle, entry.data.venue, String(entry.data.year)]
+    annotation: ["paper reading", entry.data.paperTitle, entry.data.venue, String(entry.data.year)]
       .filter(Boolean)
       .join(" · ")
   }))
@@ -31,50 +33,48 @@ const latestWriting = [
 ---
 
 <SiteShell title="Yongzhe Wang" description="Academic homepage, course notes, and paper reading notes by Yongzhe Wang.">
+  <BootSequence entryCount={entryCount} interestCount={profile.currentFocus.length} />
+
   <div class="container home">
-    <header class="rail rise home-hero" style="--rise-order: 0;">
-      <p class="rail-label">Profile</p>
-      <div class="rail-body">
-        <h1 class="title-serif">{profile.name}</h1>
-        <p class="hero-meta">
-          {profile.secondaryName} · {profile.role} · {profile.location}
-        </p>
-        <p class="hero-abstract">{profile.summary}</p>
-        <p class="hero-note">
-          Notes here are written to be revisited: course material as reusable explanations, papers as structured
-          reviews with their assumptions and limitations on record.
-        </p>
-        <nav class="hero-links" aria-label="Profile links">
-          {
-            profile.links.map((link) => (
-              <a href={link.href} rel="noopener noreferrer">{link.label} &nearr;</a>
-            ))
-          }
-          <a href={`${base}about/`}>About</a>
-          <a href={`${base}rss.xml`}>RSS</a>
-        </nav>
-      </div>
+    <header class="home-hero rise" style="--rise-order: 0;">
+      <p class="prompt-line" aria-hidden="true"><span class="prompt">$</span> <span class="cmd">whoami</span></p>
+      <h1 class="caret">{profile.name}</h1>
+      <p class="hero-meta">
+        {profile.secondaryName} · computer science learner · former frontend engineer · {profile.location}
+      </p>
+      <p class="hero-abstract">{profile.summary}</p>
+      <nav class="hero-links" aria-label="Profile links">
+        {
+          profile.links.map((link) => (
+            <a href={link.href} rel="noopener noreferrer">{link.label.toLowerCase()} &nearr;</a>
+          ))
+        }
+        <a href={`${base}about/`}>about</a>
+        <a href={`${base}rss.xml`}>rss</a>
+      </nav>
     </header>
 
-    <section class="rail rise" aria-labelledby="focus-label" style="--rise-order: 1;">
-      <p class="rail-label" id="focus-label">Now</p>
-      <div class="rail-body">
-        <dl class="focus-list">
-          {
-            profile.currentFocus.map((focus) => (
-              <div class="focus-item">
-                <dt>{focus.label}</dt>
-                <dd>{focus.description}</dd>
-              </div>
-            ))
-          }
-        </dl>
-      </div>
+    <section class="rise" aria-labelledby="focus-title" style="--rise-order: 1;">
+      <h2 class="sr-only" id="focus-title">Research focus</h2>
+      <p class="prompt-line" aria-hidden="true"><span class="prompt">$</span> <span class="cmd">cat focus.md</span></p>
+      <ol class="focus-list">
+        {
+          profile.currentFocus.map((focus) => (
+            <li class="focus-item">
+              <span class="focus-label">{focus.label}</span>
+              <span class="focus-desc">{focus.description}</span>
+            </li>
+          ))
+        }
+      </ol>
     </section>
 
-    <section class="rail rise" aria-labelledby="writing-label" style="--rise-order: 2;">
-      <p class="rail-label" id="writing-label">Writing</p>
-      <div class="rail-body">
+    <section class="rise" aria-labelledby="writing-title" style="--rise-order: 2;">
+      <h2 class="sr-only" id="writing-title">Latest writing</h2>
+      <p class="prompt-line" aria-hidden="true">
+        <span class="prompt">$</span> <span class="cmd">ls writing/ --sort=date</span>
+      </p>
+      <div class="writing-list">
         {
           latestWriting.map(({ collection, entry, annotation }) => (
             <EntryRow
@@ -85,15 +85,15 @@ const latestWriting = [
               annotation={annotation}
               tags={entry.data.tags}
               minutes={readingTime(entry.body ?? "")}
-              headingLevel="h2"
+              headingLevel="h3"
             />
           ))
         }
-        <nav class="writing-links" aria-label="Writing indexes">
-          <a href={`${base}course-notes/`}>All course notes &rarr;</a>
-          <a href={`${base}paper-reading/`}>All paper reading &rarr;</a>
-        </nav>
       </div>
+      <nav class="writing-links" aria-label="Writing indexes">
+        <a href={`${base}course-notes/`}>cd course-notes/ &rarr;</a>
+        <a href={`${base}paper-reading/`}>cd paper-reading/ &rarr;</a>
+      </nav>
     </section>
 
     <LearningMapPreview />
@@ -103,55 +103,53 @@ const latestWriting = [
 <style>
   .home {
     display: grid;
-    gap: clamp(2.75rem, 6vw, 4.5rem);
-    padding-block: clamp(2.5rem, 6vw, 4.5rem) 1rem;
+    gap: clamp(3rem, 7vw, 4.75rem);
+    padding-block: clamp(2.5rem, 7vw, 5rem) 1rem;
+  }
+
+  .home-hero {
+    display: grid;
+    gap: 0;
   }
 
   h1 {
-    margin: 0;
-    font-size: clamp(2.5rem, 6vw, 3.7rem);
-    line-height: 1.05;
+    margin: 0.9rem 0 0;
+    font-size: clamp(2.1rem, 6vw, 3.4rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
   }
 
   .hero-meta {
     margin: 1rem 0 0;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    letter-spacing: 0.03em;
+    color: var(--faint);
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
   }
 
   .hero-abstract {
-    margin: 1.5rem 0 0;
-    max-width: 34em;
-    font-family: var(--font-serif);
-    font-size: 1.22rem;
-    line-height: 1.62;
-  }
-
-  .hero-note {
-    margin: 0.9rem 0 0;
-    max-width: 56ch;
+    margin: 1.4rem 0 0;
+    max-width: 62ch;
     color: var(--muted);
-    line-height: 1.65;
+    font-size: 0.98rem;
+    line-height: 1.75;
   }
 
   .hero-links {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem 1.5rem;
-    margin-top: 1.6rem;
+    gap: 0.4rem 1.4rem;
+    margin-top: 1.5rem;
   }
 
   .hero-links a,
   .writing-links a {
     color: var(--accent);
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    letter-spacing: 0.03em;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
     text-decoration: none;
     border-bottom: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
-    padding-bottom: 0.1rem;
+    padding-bottom: 0.12rem;
     transition: border-color 140ms ease;
   }
 
@@ -160,49 +158,75 @@ const latestWriting = [
     border-bottom-color: var(--accent);
   }
 
+  section {
+    display: grid;
+    gap: 1.1rem;
+  }
+
   .focus-list {
     display: grid;
+    gap: 0;
+    list-style: none;
+    counter-reset: focus;
     margin: 0;
+    padding: 0;
   }
 
   .focus-item {
     display: grid;
-    gap: 0.35rem;
+    gap: 0.3rem;
     border-top: 1px solid var(--line);
-    padding-block: 1rem;
+    padding-block: 1.05rem;
+    counter-increment: focus;
   }
 
   .focus-item:first-child {
     border-top: 0;
-    padding-top: 0.2rem;
+    padding-top: 0.15rem;
   }
 
-  .focus-item dt {
-    font-family: var(--font-serif);
-    font-size: 1.12rem;
-    font-weight: 540;
-    letter-spacing: -0.01em;
+  .focus-label {
+    color: var(--fg);
+    font-size: 1rem;
+    font-weight: 650;
   }
 
-  .focus-item dd {
-    margin: 0;
-    max-width: 60ch;
+  .focus-label::before {
+    content: counter(focus, decimal-leading-zero) "  " / "";
+    color: var(--tk-orange);
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: pre;
+  }
+
+  .focus-desc {
+    max-width: 64ch;
     color: var(--muted);
-    line-height: 1.62;
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+
+  .writing-list {
+    display: grid;
   }
 
   .writing-links {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem 1.5rem;
+    gap: 0.4rem 1.4rem;
     border-top: 1px solid var(--line);
-    padding-top: 1.2rem;
+    padding-top: 1.1rem;
   }
 
   @media (min-width: 640px) {
     .focus-item {
-      grid-template-columns: 14rem minmax(0, 1fr);
+      grid-template-columns: 19rem minmax(0, 1fr);
       column-gap: 1.5rem;
+      align-items: start;
+    }
+
+    .focus-desc {
+      padding-top: 0.1rem;
     }
   }
 </style>

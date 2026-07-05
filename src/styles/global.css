@@ -157,6 +157,18 @@ a {
   text-transform: uppercase;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 /*
  * Article prose. Long-form in mono needs measured numbers: 16px, 1.75
  * leading, 68ch measure, ligatures off in prose (kept in code).

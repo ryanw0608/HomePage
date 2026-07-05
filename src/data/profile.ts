@@ -4,25 +4,27 @@ export const profile = {
   role: "Computer science learner and former frontend engineer",
   location: "Australia",
   summary:
-    "I am building a public record of course notes, paper reading, and research interests while transitioning from frontend engineering toward academic work.",
+    "I am building a public record of course notes, paper reading, and research interests across efficient LLM inference, agentic systems, and AI for condensed matter physics, while transitioning from frontend engineering toward academic work.",
   links: [
     { label: "GitHub", href: "https://github.com/ryanw0608" }
   ],
   currentFocus: [
     {
-      id: "machine-learning",
-      label: "Machine Learning Foundations",
-      description: "Optimization, gradients, representation learning, and core model families."
+      id: "efficient-llm-inference",
+      label: "Efficient LLM Inference",
+      description:
+        "Speculative decoding and system-level optimization for low-latency, high-throughput LLM serving."
     },
     {
-      id: "paper-reading",
-      label: "Paper Reading",
-      description: "Structured reviews that capture ideas, assumptions, limitations, and follow-up questions."
+      id: "agentic-systems",
+      label: "Agentic and Multi-Agent Systems",
+      description: "LLM agents, tool use, planning, collaboration, and reliable multi-agent workflows."
     },
     {
-      id: "frontend-engineering",
-      label: "Frontend Craft",
-      description: "High-quality reading interfaces, typography, accessibility, and long-lived static sites."
+      id: "ai-condensed-matter",
+      label: "AI for Condensed Matter Physics",
+      description:
+        "Machine learning and foundation models for physical modeling, simulation, materials, and scientific discovery."
     }
   ]
 } as const;
