@@ -50,12 +50,8 @@ const navItems = [
           storedTheme = undefined;
         }
 
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        root.dataset.theme = storedTheme === "light" || storedTheme === "dark"
-          ? storedTheme
-          : prefersDark
-            ? "dark"
-            : "light";
+        // Dark-first: dark is the designed default; light is an explicit choice.
+        root.dataset.theme = storedTheme === "light" || storedTheme === "dark" ? storedTheme : "dark";
       })();
     </script>
   </head>
