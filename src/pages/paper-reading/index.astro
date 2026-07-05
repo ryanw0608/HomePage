@@ -1,45 +1,88 @@
 ---
 import { getCollection } from "astro:content";
 
-import NoteCard from "@/components/NoteCard.astro";
+import EntryRow from "@/components/EntryRow.astro";
 import SiteShell from "@/layouts/SiteShell.astro";
-import { byDateDesc, entryPath, publicEntries } from "@/lib/content";
+import { byDateDesc, entryPath, publicEntries, readingTime } from "@/lib/content";
 
 const papers = publicEntries(await getCollection("paper-reading")).sort(byDateDesc);
+
+const reviewYears = [...new Set(papers.map((paper) => paper.data.date.getFullYear()))];
+const groups = reviewYears.map((year) => ({
+  year,
+  papers: papers.filter((paper) => paper.data.date.getFullYear() === year)
+}));
 ---
 
 <SiteShell title="Paper Reading" description="Structured paper reading notes by Yongzhe Wang.">
-  <section class="container notes-page">
-    <h1>Paper Reading</h1>
-    <div class="note-list">
-      {
-        papers.map((paper) => (
-          <NoteCard
-            href={entryPath("paper-reading", paper)}
-            title={paper.data.title}
-            summary={paper.data.summary}
-            meta={`${paper.data.paperTitle} · ${paper.data.year} · ${paper.data.status}`}
-            tags={paper.data.tags}
-          />
-        ))
-      }
-    </div>
+  <section class="container index-page">
+    <header class="rail">
+      <p class="rail-label">Index</p>
+      <div class="rail-body">
+        <h1 class="title-serif">Paper Reading</h1>
+        <p class="page-lede">
+          Reading notes, not publications: problem setting, core idea, strengths, limitations, and open questions
+          for each paper.
+        </p>
+        <p class="page-count" aria-label="Reading count">
+          {papers.length} {papers.length === 1 ? "reading" : "readings"}
+        </p>
+      </div>
+    </header>
+
+    {
+      groups.map((group) => (
+        <div class="rail entry-group">
+          <p class="rail-label">{group.year}</p>
+          <div class="rail-body">
+            {group.papers.map((paper) => (
+              <EntryRow
+                href={entryPath("paper-reading", paper)}
+                title={paper.data.title}
+                summary={paper.data.summary}
+                datestamp={paper.data.date.toISOString().slice(0, 10)}
+                annotation={[paper.data.paperTitle, paper.data.venue, String(paper.data.year), paper.data.status]
+                  .filter(Boolean)
+                  .join(" · ")}
+                tags={paper.data.tags}
+                minutes={readingTime(paper.body ?? "")}
+              />
+            ))}
+          </div>
+        </div>
+      ))
+    }
   </section>
 </SiteShell>
 
 <style>
-  .notes-page {
-    padding-block: 3rem 1rem;
+  .index-page {
+    display: grid;
+    gap: 2.5rem;
+    padding-block: clamp(2rem, 5vw, 3.5rem) 1rem;
   }
 
   h1 {
-    margin: 0 0 1.5rem;
-    font-size: clamp(2rem, 5vw, 3rem);
-    line-height: 1.05;
+    margin: 0;
+    font-size: clamp(1.9rem, 4.5vw, 2.6rem);
+    line-height: 1.1;
   }
 
-  .note-list {
-    display: grid;
-    gap: 1rem;
+  .page-lede {
+    margin: 0.9rem 0 0;
+    max-width: 55ch;
+    color: var(--muted);
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.08rem;
+    line-height: 1.6;
+  }
+
+  .page-count {
+    margin: 1.1rem 0 0;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
   }
 </style>
