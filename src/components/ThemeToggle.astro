@@ -5,7 +5,10 @@
   aria-label="Switch to dark theme"
   aria-pressed="false"
 >
-  Theme
+  <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+    <circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"></circle>
+    <path d="M8 1.75 A 6.25 6.25 0 0 1 8 14.25 Z" fill="currentColor"></path>
+  </svg>
 </button>
 
 <script>
@@ -40,16 +43,21 @@
 
 <style>
   .theme-toggle {
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--surface);
-    color: var(--text);
-    padding: 0.45rem 0.75rem;
-    font: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--muted);
     cursor: pointer;
+    transition: color 140ms ease, border-color 140ms ease;
   }
 
   .theme-toggle:hover {
     border-color: var(--accent);
+    color: var(--accent);
   }
 </style>
