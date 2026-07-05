@@ -8,8 +8,10 @@ import { courses } from "@/data/taxonomy";
 import SiteShell from "@/layouts/SiteShell.astro";
 import { byDateDesc, entryPath, publicEntries } from "@/lib/content";
 
-const latestCourseNotes = publicEntries(await getCollection("course-notes")).sort(byDateDesc).slice(0, 2);
-const latestPaperReadings = publicEntries(await getCollection("paper-reading")).sort(byDateDesc).slice(0, 2);
+const allCourseNotes = publicEntries(await getCollection("course-notes")).sort(byDateDesc);
+const allPaperReadings = publicEntries(await getCollection("paper-reading")).sort(byDateDesc);
+const latestCourseNotes = allCourseNotes.slice(0, 2);
+const latestPaperReadings = allPaperReadings.slice(0, 2);
 const latestWriting = [
   ...latestCourseNotes.map((entry) => ({
     collection: "course-notes" as const,
@@ -21,36 +23,63 @@ const latestWriting = [
     entry,
     meta: `${entry.data.paperTitle} · ${entry.data.year} · ${entry.data.status}`
   }))
-];
+].sort((a, b) => byDateDesc(a.entry, b.entry));
+
+const latestEntry = latestWriting[0]?.entry;
+const latestDate = latestEntry ? latestEntry.data.date.toISOString().slice(0, 10) : "No entries yet";
 ---
 
 <SiteShell title="Yongzhe Wang" description="Academic homepage, course notes, and paper reading notes by Yongzhe Wang.">
   <section class="container home-shell" aria-labelledby="home-title">
-    <div class="hero-panel">
+    <section class="hero-panel" aria-labelledby="home-title">
       <div class="identity">
-        <p class="secondary-name">{profile.secondaryName}</p>
+        <p class="system-label">Academic homepage / frontend craft</p>
         <h1 id="home-title">{profile.name}</h1>
+        <p class="secondary-name">{profile.secondaryName}</p>
         <p class="summary">{profile.summary}</p>
         <p class="engineering-line">
-          Former frontend engineer building a long-lived academic knowledge base for course notes, structured paper reading, and research practice.
+          Former frontend engineer building a durable public notebook for courses, paper reading, and research practice.
         </p>
+        <div class="hero-actions" aria-label="Primary sections">
+          <a href={`${import.meta.env.BASE_URL}course-notes/`}>Course Notes</a>
+          <a href={`${import.meta.env.BASE_URL}paper-reading/`}>Paper Reading</a>
+          <a href={`${import.meta.env.BASE_URL}about/`}>About</a>
+        </div>
       </div>
 
-      <aside class="status-board" aria-label="Academic command center status">
-        <div>
-          <span class="status-label">Mode</span>
-          <strong>Academic command center</strong>
+      <aside class="research-panel" aria-label="Research operating status">
+        <div class="panel-header">
+          <span>Research OS</span>
+          <span>static / indexed</span>
         </div>
-        <div>
-          <span class="status-label">Base</span>
-          <strong>{profile.location}</strong>
-        </div>
-        <div>
-          <span class="status-label">Writing streams</span>
-          <strong>Courses + papers</strong>
+        <dl class="metric-grid">
+          <div>
+            <dt>Course notes</dt>
+            <dd>{allCourseNotes.length}</dd>
+          </div>
+          <div>
+            <dt>Paper readings</dt>
+            <dd>{allPaperReadings.length}</dd>
+          </div>
+          <div>
+            <dt>Location</dt>
+            <dd>{profile.location}</dd>
+          </div>
+          <div>
+            <dt>Latest update</dt>
+            <dd>{latestDate}</dd>
+          </div>
+        </dl>
+        <div class="signal-stack">
+          <p>Current signal</p>
+          <ol>
+            <li>Build typed academic notes before publication pressure.</li>
+            <li>Keep reading notes structured enough to revisit.</li>
+            <li>Use frontend craft as a research communication advantage.</li>
+          </ol>
         </div>
       </aside>
-    </div>
+    </section>
 
     <section class="focus-section" aria-labelledby="focus-title">
       <div class="section-heading">
@@ -98,32 +127,35 @@ const latestWriting = [
 <style>
   .home-shell {
     display: grid;
-    gap: clamp(2rem, 5vw, 3.5rem);
-    padding-block: clamp(2rem, 5vw, 4rem) 1rem;
+    gap: clamp(2.25rem, 5vw, 4rem);
+    padding-block: clamp(1.5rem, 4vw, 3rem) 1rem;
   }
 
   .hero-panel {
     display: grid;
-    grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+    grid-template-columns: minmax(0, 0.98fr) minmax(340px, 1.02fr);
     gap: 1rem;
     align-items: stretch;
   }
 
   .identity,
-  .status-board,
+  .research-panel,
   .focus-card {
     border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    background: var(--surface);
+    background: color-mix(in oklab, var(--surface-strong) 88%, var(--surface));
+    box-shadow: var(--shadow);
   }
 
   .identity {
     display: grid;
+    min-height: 430px;
     align-content: end;
-    min-height: 380px;
-    padding: clamp(1.25rem, 4vw, 2.25rem);
+    border-radius: 0.75rem;
+    border-top: 6px solid var(--text);
+    padding: clamp(1.25rem, 4vw, 2.4rem);
   }
 
+  .system-label,
   .secondary-name,
   h1,
   .summary,
@@ -131,63 +163,138 @@ const latestWriting = [
   .eyebrow,
   h2,
   h3,
-  .focus-card p {
+  .focus-card p,
+  .signal-stack p,
+  .signal-stack ol,
+  .metric-grid {
     margin: 0;
   }
 
-  .secondary-name,
+  .system-label,
   .eyebrow,
-  .status-label {
+  .panel-header,
+  .metric-grid dt,
+  .signal-stack p {
     color: var(--accent);
-    font-size: 0.78rem;
-    font-weight: 800;
+    font-size: 0.75rem;
+    font-weight: 850;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
   h1 {
-    margin-top: 0.55rem;
-    max-width: 11ch;
-    font-size: clamp(3.3rem, 10vw, 7.4rem);
-    line-height: 0.9;
+    max-width: 10ch;
+    margin-top: 0.6rem;
+    font-size: clamp(3.2rem, 8vw, 6.6rem);
+    line-height: 0.92;
+  }
+
+  .secondary-name {
+    margin-top: 0.65rem;
+    color: var(--accent-2);
+    font-size: 0.95rem;
+    font-weight: 800;
   }
 
   .summary {
-    max-width: 65ch;
+    max-width: 62ch;
     margin-top: 1.35rem;
     color: var(--text);
-    font-size: clamp(1.12rem, 2vw, 1.35rem);
-    line-height: 1.55;
+    font-size: clamp(1.08rem, 1.8vw, 1.28rem);
+    line-height: 1.6;
   }
 
   .engineering-line {
-    max-width: 72ch;
-    margin-top: 0.9rem;
+    max-width: 68ch;
+    margin-top: 0.85rem;
     color: var(--muted);
     line-height: 1.65;
   }
 
-  .status-board {
-    display: grid;
-    grid-template-rows: repeat(3, 1fr);
-    min-height: 380px;
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 1.45rem;
   }
 
-  .status-board div {
+  .hero-actions a {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 750;
+    padding: 0.58rem 0.82rem;
+    text-decoration: none;
+  }
+
+  .hero-actions a:first-child {
+    border-color: color-mix(in oklab, var(--accent) 55%, var(--border));
+    background: color-mix(in oklab, var(--accent) 12%, var(--surface-strong));
+  }
+
+  .research-panel {
     display: grid;
-    align-content: center;
-    gap: 0.4rem;
+    grid-template-rows: auto auto auto;
+    overflow: hidden;
+    border-radius: 0.75rem;
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
     border-bottom: 1px solid var(--border);
+    background: var(--text);
+    color: var(--surface-strong);
+    padding: 0.9rem 1rem;
+  }
+
+  .panel-header span:last-child {
+    color: color-mix(in oklab, var(--surface-strong) 72%, var(--accent));
+  }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metric-grid div {
+    min-height: 8.8rem;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem;
+  }
+
+  .metric-grid div:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .metric-grid dt {
+    color: var(--muted);
+  }
+
+  .metric-grid dd {
+    margin: 0.55rem 0 0;
+    color: var(--text);
+    font-size: clamp(1.55rem, 4vw, 2.45rem);
+    font-weight: 850;
+    line-height: 1;
+  }
+
+  .signal-stack {
+    display: grid;
+    gap: 1rem;
     padding: 1.25rem;
   }
 
-  .status-board div:last-child {
-    border-bottom: 0;
-  }
-
-  .status-board strong {
-    font-size: clamp(1.25rem, 2.5vw, 1.7rem);
-    line-height: 1.15;
+  .signal-stack ol {
+    display: grid;
+    gap: 0.65rem;
+    padding-left: 1.2rem;
+    color: var(--muted);
+    line-height: 1.55;
   }
 
   .section-heading {
@@ -211,14 +318,24 @@ const latestWriting = [
 
   .focus-card {
     display: grid;
-    min-height: 220px;
+    min-height: 230px;
     align-content: space-between;
     gap: 1.25rem;
+    border-radius: 0.75rem;
+    border-top: 4px solid var(--accent);
     padding: 1.25rem;
   }
 
+  .focus-card:nth-child(2) {
+    border-top-color: var(--accent-2);
+  }
+
+  .focus-card:nth-child(3) {
+    border-top-color: var(--focus);
+  }
+
   .focus-index {
-    color: color-mix(in oklab, var(--accent-2) 82%, var(--text));
+    color: var(--accent-2);
     font-size: 0.9rem;
     font-weight: 850;
   }
@@ -239,20 +356,15 @@ const latestWriting = [
     gap: 1rem;
   }
 
-  @media (max-width: 850px) {
+  @media (max-width: 900px) {
     .hero-panel,
     .focus-grid,
     .writing-grid {
       grid-template-columns: 1fr;
     }
 
-    .identity,
-    .status-board {
+    .identity {
       min-height: auto;
-    }
-
-    .status-board {
-      grid-template-rows: none;
     }
   }
 
@@ -263,7 +375,16 @@ const latestWriting = [
     }
 
     h1 {
-      font-size: clamp(3rem, 18vw, 4.6rem);
+      font-size: clamp(3rem, 16vw, 4.4rem);
+    }
+
+    .metric-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .metric-grid div {
+      min-height: 7rem;
+      border-right: 0;
     }
   }
 </style>

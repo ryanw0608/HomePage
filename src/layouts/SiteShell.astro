@@ -93,7 +93,7 @@ const href = (pathname = "") => `${base}${pathname.replace(/^\/+/, "")}`;
     top: 0;
     z-index: 10;
     border-bottom: 1px solid var(--border);
-    background: color-mix(in oklab, var(--bg) 88%, transparent);
+    background: color-mix(in oklab, var(--surface-strong) 86%, transparent);
     backdrop-filter: blur(14px);
   }
 
@@ -109,7 +109,7 @@ const href = (pathname = "") => `${base}${pathname.replace(/^\/+/, "")}`;
     display: inline-flex;
     flex-direction: column;
     color: var(--text);
-    font-weight: 750;
+    font-weight: 850;
     line-height: 1.05;
     text-decoration: none;
   }
@@ -129,8 +129,10 @@ const href = (pathname = "") => `${base}${pathname.replace(/^\/+/, "")}`;
   }
 
   .nav-links a {
+    border-radius: 999px;
     color: var(--muted);
     font-size: 0.95rem;
+    padding: 0.42rem 0.2rem;
     text-decoration: none;
   }
 

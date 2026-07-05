@@ -35,8 +35,19 @@ const displayTags = tags.map((tag) => tagDefinitions[tag as keyof typeof tagDefi
 <style>
   .note-card {
     border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    background: var(--surface);
+    border-radius: 0.75rem;
+    background: color-mix(in oklab, var(--surface-strong) 90%, var(--surface));
+    box-shadow: 0 16px 46px color-mix(in oklab, #0b1411 8%, transparent);
+    transition:
+      border-color 160ms ease,
+      transform 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  .note-card:hover {
+    border-color: color-mix(in oklab, var(--accent) 52%, var(--border));
+    box-shadow: 0 22px 58px color-mix(in oklab, #0b1411 13%, transparent);
+    transform: translateY(-2px);
   }
 
   .note-card-link {
@@ -61,6 +72,7 @@ const displayTags = tags.map((tag) => tagDefinitions[tag as keyof typeof tagDefi
   .note-meta {
     color: var(--muted);
     font-size: 0.86rem;
+    font-weight: 700;
     line-height: 1.45;
   }
 
@@ -86,10 +98,20 @@ const displayTags = tags.map((tag) => tagDefinitions[tag as keyof typeof tagDefi
   .tag-list li {
     border: 1px solid var(--border);
     border-radius: 999px;
-    background: var(--surface-strong);
+    background: color-mix(in oklab, var(--accent) 7%, var(--surface-strong));
     color: var(--muted);
     font-size: 0.78rem;
     line-height: 1;
     padding: 0.38rem 0.55rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .note-card {
+      transition: none;
+    }
+
+    .note-card:hover {
+      transform: none;
+    }
   }
 </style>
