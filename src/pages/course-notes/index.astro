@@ -10,6 +10,7 @@ const notes = publicEntries(await getCollection("course-notes")).sort(byDateDesc
 
 const courseIds = [...new Set(notes.map((note) => note.data.course))];
 const groups = courseIds.map((courseId) => ({
+  courseId,
   course: courses[courseId],
   notes: notes.filter((note) => note.data.course === courseId)
 }));
@@ -17,22 +18,22 @@ const groups = courseIds.map((courseId) => ({
 
 <SiteShell title="Course Notes" description="Course learning notes by Yongzhe Wang.">
   <section class="container index-page">
-    <header class="rail">
-      <p class="rail-label">Index</p>
-      <div class="rail-body">
-        <h1 class="title-serif">Course Notes</h1>
-        <p class="page-lede">
-          Learning notes written as reusable explanations rather than one-off summaries, grouped by course.
-        </p>
-        <p class="page-count" aria-label="Note count">{notes.length} {notes.length === 1 ? "note" : "notes"}</p>
-      </div>
+    <header class="index-header">
+      <p class="prompt-line" aria-hidden="true">
+        <span class="prompt">$</span> <span class="cmd">ls course-notes/ --group=course</span>
+      </p>
+      <h1>Course Notes</h1>
+      <p class="page-lede">
+        Learning notes written as reusable explanations rather than one-off summaries, grouped by course.
+      </p>
+      <p class="page-count" aria-label="Note count">{notes.length} {notes.length === 1 ? "note" : "notes"}</p>
     </header>
 
     {
       groups.map((group) => (
-        <div class="rail entry-group">
-          <p class="rail-label">{group.course.label}</p>
-          <div class="rail-body">
+        <section class="entry-group" aria-label={group.course.label}>
+          <p class="group-label" aria-hidden="true">{group.courseId}/</p>
+          <div class="group-body">
             {group.notes.map((note) => (
               <EntryRow
                 href={entryPath("course-notes", note)}
@@ -45,7 +46,7 @@ const groups = courseIds.map((courseId) => ({
               />
             ))}
           </div>
-        </div>
+        </section>
       ))
     }
   </section>
@@ -54,31 +55,54 @@ const groups = courseIds.map((courseId) => ({
 <style>
   .index-page {
     display: grid;
-    gap: 2.5rem;
-    padding-block: clamp(2rem, 5vw, 3.5rem) 1rem;
+    gap: 2.4rem;
+    padding-block: clamp(2.5rem, 6vw, 4rem) 1rem;
+  }
+
+  .index-header {
+    display: grid;
+    gap: 0;
   }
 
   h1 {
-    margin: 0;
-    font-size: clamp(1.9rem, 4.5vw, 2.6rem);
-    line-height: 1.1;
+    margin: 0.9rem 0 0;
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+  }
+
+  h1::before {
+    content: "# " / "";
+    color: var(--accent);
+    font-weight: 600;
   }
 
   .page-lede {
     margin: 0.9rem 0 0;
-    max-width: 55ch;
+    max-width: 62ch;
     color: var(--muted);
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-size: 1.08rem;
-    line-height: 1.6;
+    font-size: 0.9rem;
+    line-height: 1.65;
   }
 
   .page-count {
-    margin: 1.1rem 0 0;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
+    margin: 0.9rem 0 0;
+    color: var(--faint);
+    font-size: 0.74rem;
     letter-spacing: 0.04em;
+  }
+
+  .entry-group {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .group-label {
+    margin: 0;
+    color: var(--tk-blue);
+    font-size: 0.82rem;
+    font-weight: 650;
+    letter-spacing: 0.02em;
   }
 </style>

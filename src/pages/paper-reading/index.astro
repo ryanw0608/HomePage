@@ -16,25 +16,25 @@ const groups = reviewYears.map((year) => ({
 
 <SiteShell title="Paper Reading" description="Structured paper reading notes by Yongzhe Wang.">
   <section class="container index-page">
-    <header class="rail">
-      <p class="rail-label">Index</p>
-      <div class="rail-body">
-        <h1 class="title-serif">Paper Reading</h1>
-        <p class="page-lede">
-          Reading notes, not publications: problem setting, core idea, strengths, limitations, and open questions
-          for each paper.
-        </p>
-        <p class="page-count" aria-label="Reading count">
-          {papers.length} {papers.length === 1 ? "reading" : "readings"}
-        </p>
-      </div>
+    <header class="index-header">
+      <p class="prompt-line" aria-hidden="true">
+        <span class="prompt">$</span> <span class="cmd">ls paper-reading/ --group=year</span>
+      </p>
+      <h1>Paper Reading</h1>
+      <p class="page-lede">
+        Reading notes, not publications: problem setting, core idea, strengths, limitations, and open questions
+        for each paper.
+      </p>
+      <p class="page-count" aria-label="Reading count">
+        {papers.length} {papers.length === 1 ? "reading" : "readings"}
+      </p>
     </header>
 
     {
       groups.map((group) => (
-        <div class="rail entry-group">
-          <p class="rail-label">{group.year}</p>
-          <div class="rail-body">
+        <section class="entry-group" aria-label={String(group.year)}>
+          <p class="group-label" aria-hidden="true">{group.year}/</p>
+          <div class="group-body">
             {group.papers.map((paper) => (
               <EntryRow
                 href={entryPath("paper-reading", paper)}
@@ -49,7 +49,7 @@ const groups = reviewYears.map((year) => ({
               />
             ))}
           </div>
-        </div>
+        </section>
       ))
     }
   </section>
@@ -58,31 +58,54 @@ const groups = reviewYears.map((year) => ({
 <style>
   .index-page {
     display: grid;
-    gap: 2.5rem;
-    padding-block: clamp(2rem, 5vw, 3.5rem) 1rem;
+    gap: 2.4rem;
+    padding-block: clamp(2.5rem, 6vw, 4rem) 1rem;
+  }
+
+  .index-header {
+    display: grid;
+    gap: 0;
   }
 
   h1 {
-    margin: 0;
-    font-size: clamp(1.9rem, 4.5vw, 2.6rem);
-    line-height: 1.1;
+    margin: 0.9rem 0 0;
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+  }
+
+  h1::before {
+    content: "# " / "";
+    color: var(--accent);
+    font-weight: 600;
   }
 
   .page-lede {
     margin: 0.9rem 0 0;
-    max-width: 55ch;
+    max-width: 62ch;
     color: var(--muted);
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-size: 1.08rem;
-    line-height: 1.6;
+    font-size: 0.9rem;
+    line-height: 1.65;
   }
 
   .page-count {
-    margin: 1.1rem 0 0;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
+    margin: 0.9rem 0 0;
+    color: var(--faint);
+    font-size: 0.74rem;
     letter-spacing: 0.04em;
+  }
+
+  .entry-group {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .group-label {
+    margin: 0;
+    color: var(--tk-blue);
+    font-size: 0.82rem;
+    font-weight: 650;
+    letter-spacing: 0.02em;
   }
 </style>
