@@ -40,27 +40,31 @@ const {
 } = Astro.props;
 
 const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+const relPath = Astro.url.pathname.replace(import.meta.env.BASE_URL, "").replace(/\/+$/, "");
+const filePath = `${relPath}.md`;
 ---
 
 <SiteShell title={title} description={description} lang={lang}>
   <article class="container article-grid">
     <header class="article-header">
-      {kicker && <p class="kicker">{kicker}</p>}
-      <h1 class="title-serif">{title}</h1>
+      <p class="prompt-line" aria-hidden="true">
+        <span class="prompt">$</span> <span class="cmd">cat {filePath}</span>
+      </p>
+      <h1>{title}</h1>
       <p class="lede">{description}</p>
+      {kicker && <p class="kicker">{kicker}{readingMinutes ? ` · ~${readingMinutes} min read` : ""}</p>}
     </header>
 
     <aside class="article-rail">
-      <a class="back-link" href={backHref}>&larr; {backLabel}</a>
+      <a class="back-link" href={backHref}>&larr; {backLabel.toLowerCase()}/</a>
       <ArticleMeta items={meta} />
-      {readingMinutes && <p class="reading-time">~{readingMinutes} min read</p>}
     </aside>
 
     <div class="article-content">
       {
         tocHeadings.length > 0 && (
           <details class="toc-mobile no-print">
-            <summary>Contents</summary>
+            <summary>contents</summary>
             <ol>
               {tocHeadings.map((heading) => (
                 <li class:list={{ "depth-3": heading.depth === 3 }}>
@@ -75,7 +79,7 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
         <slot />
       </div>
       <footer class="article-footer no-print">
-        <a class="back-link" href={backHref}>&larr; {backLabel}</a>
+        <a class="back-link" href={backHref}>&larr; {backLabel.toLowerCase()}/</a>
       </footer>
     </div>
 
@@ -86,35 +90,43 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
 </SiteShell>
 
 <script>
-  // Copy buttons for code blocks: progressive enhancement only.
+  // Code frames: title bar with language label + always-visible copy button.
   document.querySelectorAll("[data-article-body] pre").forEach((pre) => {
     const wrapper = document.createElement("div");
     wrapper.className = "code-frame";
     pre.parentNode?.insertBefore(wrapper, pre);
-    wrapper.appendChild(pre);
+
+    const head = document.createElement("div");
+    head.className = "code-head no-print";
+
+    const lang = document.createElement("span");
+    lang.className = "code-lang";
+    lang.textContent = (pre as HTMLElement).dataset.language ?? "code";
 
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "code-copy no-print";
-    button.textContent = "Copy";
+    button.className = "code-copy";
+    button.textContent = "copy";
     button.setAttribute("aria-label", "Copy code to clipboard");
 
     const live = document.createElement("span");
     live.className = "sr-only";
     live.setAttribute("aria-live", "polite");
-    wrapper.append(button, live);
+
+    head.append(lang, button);
+    wrapper.append(head, pre, live);
 
     button.addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(pre.textContent ?? "");
-        button.textContent = "Copied";
+        button.textContent = "copied";
         live.textContent = "Code copied to clipboard";
         setTimeout(() => {
-          button.textContent = "Copy";
+          button.textContent = "copy";
           live.textContent = "";
         }, 1800);
       } catch {
-        button.textContent = "Press Ctrl+C";
+        button.textContent = "press ctrl+c";
       }
     });
   });
@@ -128,13 +140,13 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
       "rail"
       "content";
     grid-template-columns: minmax(0, 1fr);
-    padding-block: clamp(2rem, 5vw, 3.5rem) 1rem;
+    padding-block: clamp(2rem, 5vw, 3.25rem) 1rem;
     row-gap: 1.5rem;
   }
 
   .article-header {
     grid-area: header;
-    max-width: 41rem;
+    max-width: 68ch;
   }
 
   .article-rail {
@@ -143,46 +155,49 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
 
   .article-content {
     grid-area: content;
-    max-width: 41rem;
+    max-width: 68ch;
   }
 
   .article-toc-panel {
     display: none;
   }
 
-  .kicker {
-    margin: 0 0 1rem;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    font-weight: 500;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
-
   h1 {
-    margin: 0;
-    font-size: clamp(1.9rem, 4.5vw, 2.7rem);
-    font-weight: 540;
-    line-height: 1.12;
+    margin: 0.9rem 0 0;
+    font-size: clamp(1.4rem, 4vw, 1.8rem);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
     text-wrap: balance;
   }
 
+  h1::before {
+    content: "# " / "";
+    color: var(--accent);
+    font-weight: 600;
+  }
+
   .lede {
-    margin: 1.1rem 0 0;
+    margin: 0.9rem 0 0;
+    max-width: 60ch;
     color: var(--muted);
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-size: 1.15rem;
-    line-height: 1.6;
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  .kicker {
+    margin: 0.9rem 0 0;
+    color: var(--faint);
+    font-size: 0.74rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 
   .back-link {
     display: inline-block;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    letter-spacing: 0.04em;
+    color: var(--faint);
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
     text-decoration: none;
     transition: color 140ms ease;
   }
@@ -191,15 +206,8 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
     color: var(--accent);
   }
 
-  .reading-time {
-    margin: 1rem 0 0;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-  }
-
   .article-rail :global(.article-meta) {
-    margin-top: 1.1rem;
+    margin-top: 0.9rem;
   }
 
   .article-footer {
@@ -216,11 +224,10 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
 
   .toc-mobile summary {
     cursor: pointer;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
+    color: var(--faint);
+    font-size: 0.74rem;
     font-weight: 500;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
   }
 
@@ -233,8 +240,8 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
   }
 
   .toc-mobile li {
-    font-size: 0.92rem;
-    line-height: 1.4;
+    font-size: 0.85rem;
+    line-height: 1.45;
   }
 
   .toc-mobile .depth-3 {
@@ -255,26 +262,19 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
       grid-template-areas:
         "rail header"
         "rail content";
-      grid-template-columns: var(--rail-width) minmax(0, 1fr);
-      column-gap: var(--rail-gap);
+      grid-template-columns: 15rem minmax(0, 1fr);
+      column-gap: 2.5rem;
       row-gap: 0;
     }
 
-    .article-header,
-    .article-content {
-      border-left: 1px solid var(--line);
-      padding-left: var(--rail-gap);
-    }
-
     .article-header {
-      padding-bottom: 2.25rem;
+      padding-bottom: 2rem;
     }
 
     .article-rail {
       position: sticky;
       top: 5rem;
       align-self: start;
-      text-align: right;
     }
 
     .toc-mobile {
@@ -287,47 +287,53 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
       grid-template-areas:
         "rail header toc"
         "rail content toc";
-      grid-template-columns: var(--rail-width) minmax(0, 1fr) 12.5rem;
+      grid-template-columns: 15rem minmax(0, 1fr) 13.5rem;
     }
 
     .article-toc-panel {
       display: block;
       grid-area: toc;
-      padding-left: 1.5rem;
+      padding-left: 1.25rem;
     }
   }
 </style>
 
 <style is:global>
   .code-frame {
-    position: relative;
-    margin-block: 1.1rem;
+    margin-block: 1.15rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
   }
 
-  .code-frame pre {
-    margin-block: 0;
+  .code-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    padding: 0.35rem 0.75rem;
+  }
+
+  .code-lang {
+    color: var(--tk-cyan);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: lowercase;
   }
 
   .code-copy {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    border: 1px solid var(--line);
-    border-radius: 0.2rem;
-    background: var(--paper);
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.06em;
-    padding: 0.28rem 0.5rem;
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--faint);
+    font-family: inherit;
+    font-size: 0.66rem;
+    letter-spacing: 0.05em;
+    padding: 0.14rem 0.5rem;
     cursor: pointer;
-    opacity: 0;
-    transition: opacity 140ms ease, color 140ms ease, border-color 140ms ease;
-  }
-
-  .code-frame:hover .code-copy,
-  .code-copy:focus-visible {
-    opacity: 1;
+    transition: color 140ms ease, border-color 140ms ease;
   }
 
   .code-copy:hover {
@@ -335,15 +341,9 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
     color: var(--accent);
   }
 
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
+  .code-frame pre {
+    margin-block: 0;
     border: 0;
-    clip: rect(0 0 0 0);
-    overflow: hidden;
-    white-space: nowrap;
+    border-radius: 0;
   }
 </style>

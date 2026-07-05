@@ -10,15 +10,18 @@ interface Props {
 }
 
 const { items } = Astro.props;
+const isDataValue = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) || /^\d+$/.test(value);
 ---
 
+{/* The article's own frontmatter, rendered as the YAML block it really is. */}
 <aside class="article-meta" aria-label="Article metadata">
+  <p class="fence" aria-hidden="true">---</p>
   <dl>
     {
       items.map((item) => (
         <div class="meta-row">
-          <dt>{item.label}</dt>
-          <dd>
+          <dt>{item.label.toLowerCase()}:</dt>
+          <dd class:list={{ "is-data": isDataValue(item.value) }}>
             {
               item.href ? (
                 <a href={item.href} rel="noopener noreferrer" target="_blank">{item.value} &nearr;</a>
@@ -31,34 +34,49 @@ const { items } = Astro.props;
       ))
     }
   </dl>
+  <p class="fence" aria-hidden="true">---</p>
 </aside>
 
 <style>
+  .article-meta {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--surface) 70%, var(--bg));
+    padding: 0.8rem 1rem;
+    font-size: 0.78rem;
+    line-height: 1.6;
+  }
+
+  .fence {
+    margin: 0;
+    color: var(--faint);
+    user-select: none;
+  }
+
   dl {
     display: grid;
-    gap: 0.9rem;
-    margin: 0;
+    gap: 0.3rem;
+    margin: 0.35rem 0;
   }
 
   .meta-row {
     display: grid;
-    gap: 0.2rem;
+    grid-template-columns: 5.4rem minmax(0, 1fr);
+    column-gap: 0.6rem;
   }
 
   dt {
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.66rem;
-    font-weight: 500;
-    letter-spacing: 0.16em;
-    line-height: 1.3;
-    text-transform: uppercase;
+    color: var(--tk-cyan);
   }
 
   dd {
     margin: 0;
-    font-size: 0.88rem;
-    line-height: 1.5;
+    color: var(--tk-green);
+    overflow-wrap: break-word;
+  }
+
+  dd.is-data {
+    color: var(--tk-orange);
   }
 
   a {
@@ -68,6 +86,6 @@ const { items } = Astro.props;
 
   a:hover {
     text-decoration: underline;
-    text-underline-offset: 0.2em;
+    text-underline-offset: 0.22em;
   }
 </style>

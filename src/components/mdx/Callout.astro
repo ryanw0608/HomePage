@@ -3,43 +3,50 @@ interface Props {
   type?: "note" | "insight" | "warning" | "question";
   title?: string;
 }
-const { type = "note", title = "Note" } = Astro.props;
+const { type = "note", title } = Astro.props;
+const label = title ?? type;
 ---
 
 <aside class={`callout callout-${type}`}>
-  <p class="callout-label">{title}</p>
+  <p class="callout-label">{`// ${label.toLowerCase()}`}</p>
   <slot />
 </aside>
 
 <style>
   .callout {
-    border-left: 2px solid var(--accent);
-    background: color-mix(in oklab, var(--accent) 5%, transparent);
+    --callout-color: var(--tk-cyan);
+    border-left: 2px solid var(--callout-color);
+    background: color-mix(in oklab, var(--callout-color) 6%, transparent);
     margin-block: 1.4rem;
-    padding: 0.9rem 1.2rem;
+    padding: 0.85rem 1.15rem;
   }
 
-  .callout-warning,
+  .callout-insight {
+    --callout-color: var(--tk-green);
+  }
+
+  .callout-warning {
+    --callout-color: var(--tk-yellow);
+  }
+
   .callout-question {
-    border-left-color: var(--accent-warm);
-    background: color-mix(in oklab, var(--accent-warm) 5%, transparent);
+    --callout-color: var(--tk-magenta);
   }
 
   .callout-label {
     margin: 0 0 0.35rem;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    font-weight: 500;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
-
-  .callout :global(p:last-child) {
-    margin-bottom: 0;
+    color: var(--callout-color);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
   }
 
   .callout :global(p) {
     margin-block: 0.5rem;
+    font-size: 0.92rem;
+  }
+
+  .callout :global(p:last-child) {
+    margin-bottom: 0;
   }
 </style>
