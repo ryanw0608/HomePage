@@ -354,7 +354,20 @@ const navActions = [
     padding: 0.12rem 0.4rem;
   }
 
-  #palette-list {
+  .palette-status {
+    margin: 0;
+    min-height: 1.6rem;
+    border-top: 1px solid var(--line);
+    color: var(--faint);
+    font-size: 0.72rem;
+    padding: 0.35rem 0.9rem;
+  }
+</style>
+
+{/* Result rows are created at runtime and carry no Astro scope attribute,
+    so their styles must be global, namespaced under [data-palette]. */}
+<style is:global>
+  [data-palette] #palette-list {
     max-height: 21rem;
     overflow-y: auto;
     list-style: none;
@@ -362,7 +375,7 @@ const navActions = [
     padding: 0.45rem;
   }
 
-  [data-palette-option] {
+  [data-palette] [data-palette-option] {
     display: grid;
     gap: 0.15rem;
     border-radius: 4px;
@@ -370,26 +383,26 @@ const navActions = [
     cursor: pointer;
   }
 
-  [data-palette-option].is-active {
+  [data-palette] [data-palette-option].is-active {
     background: color-mix(in oklab, var(--accent) 12%, transparent);
   }
 
-  .opt-label {
+  [data-palette] .opt-label {
     color: var(--fg);
     font-size: 0.85rem;
     font-weight: 550;
   }
 
-  [data-palette-option].is-active .opt-label {
+  [data-palette] [data-palette-option].is-active .opt-label {
     color: var(--accent);
   }
 
-  .opt-hint {
+  [data-palette] .opt-hint {
     color: var(--faint);
     font-size: 0.72rem;
   }
 
-  .opt-excerpt {
+  [data-palette] .opt-excerpt {
     color: var(--muted);
     font-size: 0.76rem;
     line-height: 1.5;
@@ -399,18 +412,9 @@ const navActions = [
     -webkit-box-orient: vertical;
   }
 
-  .opt-excerpt :global(mark) {
+  [data-palette] .opt-excerpt mark {
     background: transparent;
     color: var(--accent);
     font-weight: 650;
-  }
-
-  .palette-status {
-    margin: 0;
-    min-height: 1.6rem;
-    border-top: 1px solid var(--line);
-    color: var(--faint);
-    font-size: 0.72rem;
-    padding: 0.35rem 0.9rem;
   }
 </style>

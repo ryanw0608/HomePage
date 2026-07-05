@@ -107,9 +107,10 @@ const paperCount = publicEntries(await getCollection("paper-reading")).length;
       <div class="container status-inner">
         <p class="status-left">
           <span class="status-ok" aria-hidden="true">●</span>
-          &copy; {new Date().getFullYear()} {site.name}
-          <span class="status-counts">· {noteCount} {noteCount === 1 ? "note" : "notes"} · {paperCount}
-            {paperCount === 1 ? "reading" : "readings"}</span>
+          {`© ${new Date().getFullYear()} ${site.name}`}
+          <span class="status-counts">
+            {` · ${noteCount} ${noteCount === 1 ? "note" : "notes"} · ${paperCount} ${paperCount === 1 ? "reading" : "readings"}`}
+          </span>
         </p>
         <div class="status-right">
           <a href={href("rss.xml")}>rss</a>

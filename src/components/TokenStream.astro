@@ -311,8 +311,7 @@
   }
 
   .ts-frame {
-    display: grid;
-    align-items: center;
+    position: relative;
     height: clamp(120px, 16vw, 160px);
     border: 1px solid var(--line);
     border-radius: 6px;
@@ -321,12 +320,19 @@
   }
 
   canvas {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     display: block;
   }
 
   .ts-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
     margin: 0;
     padding-inline: 1rem;
     font-size: 0.85rem;
