@@ -1,5 +1,13 @@
 # Claude Code Design Review Prompt
 
+Status: this prompt is historical and is mainly useful for reviewing the original design spec. For the next implementation handoff, use:
+
+```txt
+docs/review-prompts/claude-code-redesign-prompt.md
+```
+
+The current site already builds and deploys, but the frontend quality has been rejected by the user. The next Claude Code session should review and redesign the implementation, not only review this spec.
+
 Use this prompt in Claude Code from the repository root:
 
 ```text

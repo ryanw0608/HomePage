@@ -1,5 +1,29 @@
 # Personal Academic Homepage Design
 
+## 2026-07-06 Implementation Handoff Addendum
+
+The first Astro foundation has been implemented and deployed to GitHub Pages, but the current frontend has been rejected by the user. Future implementers should treat the codebase as a working functional foundation, not as an accepted visual design.
+
+Preserve the stable parts:
+
+- Astro 7 static-first architecture.
+- Typed MDX content collections.
+- Course note and paper reading routes.
+- RSS, sitemap, CI, and GitHub Pages deployment.
+- `/HomePage/` project-site base path.
+
+Redo the weak parts:
+
+- Homepage visual hierarchy and first-viewport impact.
+- Article reading design.
+- Index-page scanning density.
+- Typography, spacing, palette, and motion system.
+- Component-level polish for metadata, TOC, note cards, code, tables, and callouts.
+
+Next handoff document:
+
+- `docs/handoff/claude-code-handoff.md`
+
 ## Goal
 
 Build a long-lived personal academic homepage for **Yongzhe Wang / Wang Yongzhe**. The site is primarily for academic presentation, course learning notes, and paper reading notes. Because the owner previously worked as a frontend engineer, the site must also demonstrate visible frontend craft in typography, layout, motion, accessibility, and article detail.

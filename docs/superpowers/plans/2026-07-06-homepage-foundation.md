@@ -2,6 +2,17 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+## Status Note - 2026-07-06
+
+This plan is historical. The Astro foundation described here has been implemented, pushed, and deployed. Do not treat the unchecked boxes below as the current task list.
+
+Current reality:
+
+- The site builds and deploys to GitHub Pages.
+- The production URL is `https://ryanw0608.github.io/HomePage/`.
+- The current frontend is not accepted by the user and needs a serious redesign.
+- Use `docs/handoff/claude-code-handoff.md` and `docs/review-prompts/claude-code-redesign-prompt.md` for the next handoff.
+
 **Goal:** Build the first working Astro vertical slice for Yongzhe Wang's academic homepage: static shell, typed content collections, one course note, one paper reading, article layouts, homepage, search hooks, and verification scaffolding.
 
 **Architecture:** Astro owns routing, static generation, MDX, SEO, RSS, and sitemap. React is reserved for future interactive islands; this first pass keeps core pages readable without client-side JavaScript. Content metadata is validated through Astro content collections and shared helper modules.
