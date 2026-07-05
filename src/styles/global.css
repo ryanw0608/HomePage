@@ -19,25 +19,25 @@
 :root {
   color-scheme: dark;
 
-  --bg: #0c0f0e;
-  --surface: #121614;
-  --fg: #d6dcd3;
-  --muted: #9ba49c;
-  --faint: #767e77;
-  --line: #232a27;
-  --edge: #5a645e;
-  --accent: #67e8a6;
-  --accent-2: #e7b84a;
-  --focus: #67e8a6;
+  --bg: #12131a;
+  --surface: #1a1c26;
+  --fg: #e0e3ee;
+  --muted: #9ea6ba;
+  --faint: #767e93;
+  --line: #262a38;
+  --edge: #59617a;
+  --accent: #97a7ff;
+  --accent-2: #f0a45d;
+  --focus: #97a7ff;
 
-  --tk-red: #f27983;
-  --tk-green: #7ddc9b;
-  --tk-yellow: #e7b84a;
-  --tk-blue: #6fb2f2;
-  --tk-magenta: #c4a0f5;
-  --tk-cyan: #63d6d0;
-  --tk-orange: #ec9a5e;
-  --tk-comment: #7b8880;
+  --tk-red: #f27b93;
+  --tk-green: #7cd9a6;
+  --tk-yellow: #e5c07b;
+  --tk-blue: #7aa2f7;
+  --tk-magenta: #bb9af7;
+  --tk-cyan: #7dcfff;
+  --tk-orange: #f0a45d;
+  --tk-comment: #7d8499;
 
   --font-mono: "JetBrains Mono Variable", "Cascadia Mono", "SFMono-Regular", Consolas,
     ui-monospace, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", monospace;
@@ -48,25 +48,25 @@
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --bg: #f4f6f3;
-  --surface: #e9ece7;
-  --fg: #161a17;
-  --muted: #55605a;
-  --faint: #5e6a63;
-  --line: #d3d9d2;
-  --edge: #9ba69e;
-  --accent: #0f7a52;
-  --accent-2: #8a5a00;
-  --focus: #0f7a52;
+  --bg: #f5f6fa;
+  --surface: #e9ebf2;
+  --fg: #171922;
+  --muted: #545b6e;
+  --faint: #5d6579;
+  --line: #d4d7e2;
+  --edge: #9aa1b5;
+  --accent: #4453c4;
+  --accent-2: #a35418;
+  --focus: #4453c4;
 
-  --tk-red: #b3323e;
-  --tk-green: #1c7a45;
-  --tk-yellow: #8a5a00;
-  --tk-blue: #1d5fae;
-  --tk-magenta: #6f42c1;
-  --tk-cyan: #0f766e;
-  --tk-orange: #a24d12;
-  --tk-comment: #67716b;
+  --tk-red: #bb3352;
+  --tk-green: #1d7a4a;
+  --tk-yellow: #8a6200;
+  --tk-blue: #2b5fc7;
+  --tk-magenta: #7a4bd6;
+  --tk-cyan: #0f7490;
+  --tk-orange: #a85618;
+  --tk-comment: #666e82;
 }
 
 html {
@@ -99,6 +99,26 @@ a {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
   border-radius: 1px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--edge) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border: 2px solid var(--bg);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--edge);
 }
 
 .container {

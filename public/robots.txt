@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ryanw0608.github.io/HomePage/sitemap-index.xml

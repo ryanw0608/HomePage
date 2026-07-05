@@ -49,6 +49,7 @@ const paperCount = publicEntries(await getCollection("paper-reading")).length;
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
     <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href={href("favicon.svg")} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
@@ -60,7 +61,9 @@ const paperCount = publicEntries(await getCollection("paper-reading")).length;
         let storedTheme;
 
         try {
-          storedTheme = window.localStorage?.getItem("theme");
+          // Versioned key: older builds stored "theme" with a light-first
+          // default; ignore that value so dark-first applies cleanly.
+          storedTheme = window.localStorage?.getItem("yw-theme");
         } catch {
           storedTheme = undefined;
         }
