@@ -1,0 +1,149 @@
+---
+import { profile } from "@/data/profile";
+import SiteShell from "@/layouts/SiteShell.astro";
+---
+
+<SiteShell title="About" description="About Yongzhe Wang.">
+  <section class="container about-page" aria-labelledby="about-title">
+    <header class="about-hero">
+      <p>{profile.secondaryName}</p>
+      <h1 id="about-title">{profile.name}</h1>
+      <span>{profile.role}</span>
+    </header>
+
+    <div class="about-grid">
+      <article class="about-copy">
+        <h2>Profile</h2>
+        <p>
+          I am transitioning from frontend engineering toward academic study and research practice. This site is a public workspace for making that transition legible: what I am learning, what I am reading, and how ideas connect over time.
+        </p>
+        <p>
+          My frontend background still shapes the work. I care about durable interfaces, precise typography, accessible reading experiences, and static systems that can keep serving notes long after the original course or paper sprint is over.
+        </p>
+      </article>
+
+      <article class="about-copy">
+        <h2>Study Practice</h2>
+        <p>
+          Course notes are written as reusable explanations rather than one-off summaries. Paper reading notes capture the problem setting, core method, strengths, limitations, and follow-up questions so each reading session leaves a trail.
+        </p>
+        <p>
+          Current interests include machine learning foundations, optimization, attention mechanisms, and the craft of building a long-lived academic knowledge base.
+        </p>
+      </article>
+
+      <aside class="link-panel" aria-label="Profile links">
+        <h2>Links</h2>
+        <ul>
+          {
+            profile.links.map((link) => (
+              <li>
+                <a href={link.href}>{link.label}</a>
+              </li>
+            ))
+          }
+        </ul>
+      </aside>
+    </div>
+  </section>
+</SiteShell>
+
+<style>
+  .about-page {
+    display: grid;
+    gap: 1.25rem;
+    padding-block: 3rem 1rem;
+  }
+
+  .about-hero,
+  .about-copy,
+  .link-panel {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--surface);
+  }
+
+  .about-hero {
+    display: grid;
+    gap: 0.75rem;
+    padding: clamp(1.25rem, 4vw, 2rem);
+  }
+
+  .about-hero p,
+  .about-hero h1,
+  .about-hero span,
+  .about-copy h2,
+  .about-copy p,
+  .link-panel h2 {
+    margin: 0;
+  }
+
+  .about-hero p {
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .about-hero h1 {
+    font-size: clamp(2.6rem, 7vw, 5rem);
+    line-height: 0.95;
+  }
+
+  .about-hero span {
+    color: var(--muted);
+    font-size: 1.08rem;
+  }
+
+  .about-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(220px, 0.55fr);
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .about-copy,
+  .link-panel {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+
+  .about-copy h2,
+  .link-panel h2 {
+    font-size: 1.35rem;
+    line-height: 1.15;
+  }
+
+  .about-copy p {
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .link-panel ul {
+    display: grid;
+    gap: 0.75rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .link-panel a {
+    display: inline-flex;
+    border-bottom: 1px solid var(--accent);
+    color: var(--text);
+    font-weight: 750;
+    text-decoration: none;
+  }
+
+  .link-panel a:hover {
+    color: var(--accent);
+  }
+
+  @media (max-width: 900px) {
+    .about-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,75 @@
+---
+import SiteShell from "@/layouts/SiteShell.astro";
+
+const base = import.meta.env.BASE_URL;
+const href = (pathname = "") => `${base}${pathname.replace(/^\/+/, "")}`;
+---
+
+<SiteShell title="Page not found" description="The requested page could not be found.">
+  <section class="container not-found" aria-labelledby="not-found-title">
+    <p>404</p>
+    <h1 id="not-found-title">Page not found</h1>
+    <span>The requested page could not be found.</span>
+    <nav aria-label="Helpful links">
+      <a href={href()}>Home</a>
+      <a href={href("course-notes/")}>Course Notes</a>
+      <a href={href("paper-reading/")}>Paper Reading</a>
+    </nav>
+  </section>
+</SiteShell>
+
+<style>
+  .not-found {
+    display: grid;
+    min-height: 58vh;
+    align-content: center;
+    justify-items: start;
+    gap: 1rem;
+    padding-block: 3rem;
+  }
+
+  .not-found p,
+  .not-found h1,
+  .not-found span {
+    margin: 0;
+  }
+
+  .not-found p {
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+  }
+
+  .not-found h1 {
+    max-width: 11ch;
+    font-size: clamp(3rem, 9vw, 6rem);
+    line-height: 0.92;
+  }
+
+  .not-found span {
+    color: var(--muted);
+    font-size: 1.1rem;
+  }
+
+  .not-found nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .not-found a {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--surface);
+    padding: 0.7rem 0.9rem;
+    font-weight: 750;
+    text-decoration: none;
+  }
+
+  .not-found a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+</style>

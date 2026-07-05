@@ -1077,7 +1077,7 @@ const { title, description, lang = "en", headings, meta } = Astro.props;
 <SiteShell title={title} description={description} lang={lang}>
   <article class="container article-shell">
     <header class="article-header">
-      <a class="back-link" href="javascript:history.length > 1 ? history.back() : '/'">Back</a>
+      <a class="back-link" href={import.meta.env.BASE_URL}>Home</a>
       <h1>{title}</h1>
       <p>{description}</p>
     </header>
@@ -1347,7 +1347,7 @@ const paperReadings = publicEntries(await getCollection("paper-reading")).sort(b
     <div class="note-list">
       {[...courseNotes, ...paperReadings].map((entry) => (
         <NoteCard
-          href={`${import.meta.env.BASE_URL}${entry.collection === "course-notes" ? "course-notes" : "paper-reading"}/${entry.slug}/`}
+          href={entryPath(entry.collection, entry)}
           title={entry.data.title}
           summary={entry.data.summary}
           meta={`${entry.collection} · ${entry.data.date.toISOString().slice(0, 10)}`}
@@ -1454,9 +1454,7 @@ export async function GET() {
       title: entry.data.title,
       pubDate: entry.data.date,
       description: entry.data.summary,
-      link: entry.collection === "course-notes"
-        ? `/course-notes/${entry.slug}/`
-        : `/paper-reading/${entry.slug}/`
+      link: new URL(`${entry.collection}/${entry.id}/`, site.url).toString()
     }));
 
   return rss({
