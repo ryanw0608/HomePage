@@ -36,7 +36,7 @@ const sharedFrontmatter = z.object({
 
 const courseNotes = defineCollection({
   loader: glob({
-    pattern: "content/course-notes/**/*.{md,mdx}",
+    pattern: "content/course-notes/*.{md,mdx}",
     base: "./src",
     generateId: contentId("course-notes")
   }),
@@ -59,7 +59,7 @@ const courseNotes = defineCollection({
 
 const paperReading = defineCollection({
   loader: glob({
-    pattern: "content/paper-reading/**/*.{md,mdx}",
+    pattern: "content/paper-reading/*.{md,mdx}",
     base: "./src",
     generateId: contentId("paper-reading")
   }),

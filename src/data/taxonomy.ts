@@ -1,16 +1,16 @@
-export const courses = {
-  "ml-foundations": {
-    label: "Machine Learning Foundations",
-    area: "machine-learning"
-  }
-} as const;
-
 export const areas = {
   "machine-learning": { label: "Machine Learning" },
   "deep-learning": { label: "Deep Learning" },
   systems: { label: "Systems" },
   "frontend-engineering": { label: "Frontend Engineering" }
 } as const;
+
+export const courses = {
+  "ml-foundations": {
+    label: "Machine Learning Foundations",
+    area: "machine-learning"
+  }
+} as const satisfies Record<string, { label: string; area: keyof typeof areas }>;
 
 export const tags = {
   optimization: { label: "Optimization" },

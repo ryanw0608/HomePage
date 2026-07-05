@@ -14,5 +14,13 @@ export function readingTime(text: string): number {
   return Math.max(1, Math.ceil(cjk / 450 + words / 220));
 }
 
+export function entrySlug(entry: { id: string }): string {
+  return entry.id;
+}
+
+export function entryPath(collection: "course-notes" | "paper-reading", entry: { id: string }): string {
+  return `/${collection}/${entry.id}/`;
+}
+
 export type CourseNote = CollectionEntry<"course-notes">;
 export type PaperReading = CollectionEntry<"paper-reading">;
