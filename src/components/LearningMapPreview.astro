@@ -8,10 +8,14 @@ const nodePositions = [
   { x: 82, y: 30 }
 ];
 
-const positionedNodes = learningMapNodes.map((node, index) => ({
+const visualNodes = learningMapNodes.slice(0, nodePositions.length);
+const hiddenNodeCount = learningMapNodes.length - visualNodes.length;
+const positionedNodes = visualNodes.map((node, index) => ({
   ...node,
-  position: nodePositions[index % nodePositions.length]
+  position: nodePositions[index]
 }));
+const visibleNodeIds = new Set(positionedNodes.map((node) => node.id));
+const visibleEdges = learningMapEdges.filter((edge) => visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to));
 ---
 
 <section class="learning-map-preview" aria-labelledby="learning-map-title">
@@ -36,7 +40,7 @@ const positionedNodes = learningMapNodes.map((node, index) => ({
   <div class="map-board" aria-hidden="true">
     <svg class="map-lines" viewBox="0 0 100 80" role="img">
       {
-        learningMapEdges.map((edge) => {
+        visibleEdges.map((edge) => {
           const from = positionedNodes.find((node) => node.id === edge.from);
           const to = positionedNodes.find((node) => node.id === edge.to);
 
@@ -64,6 +68,13 @@ const positionedNodes = learningMapNodes.map((node, index) => ({
           <span class="node-type">{node.type}</span>
         </div>
       ))
+    }
+    {
+      hiddenNodeCount > 0 && (
+        <div class="more-node">
+          <span>+{hiddenNodeCount} more</span>
+        </div>
+      )
     }
   </div>
 
@@ -208,6 +219,19 @@ const positionedNodes = learningMapNodes.map((node, index) => ({
 
   .node-method {
     border-left-color: var(--accent-2);
+  }
+
+  .more-node {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 0.86rem;
+    font-weight: 800;
+    padding: 0.45rem 0.65rem;
   }
 
   .node-list {

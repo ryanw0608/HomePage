@@ -1,7 +1,7 @@
 import rss from "@astrojs/rss";
 import { getCollection } from "astro:content";
 
-import { byDateDesc, publicEntries } from "@/lib/content";
+import { absoluteEntryUrl, byDateDesc, publicEntries } from "@/lib/content";
 import { site } from "@/lib/site";
 
 export async function GET() {
@@ -17,7 +17,7 @@ export async function GET() {
       title: entry.data.title,
       description: entry.data.description,
       pubDate: entry.data.date,
-      link: new URL(`${collection}/${entry.id}/`, site.url).toString()
+      link: absoluteEntryUrl(collection, entry)
     }));
 
   return rss({

@@ -23,6 +23,7 @@ const href = (pathname = "") => `${base}${pathname.replace(/^\/+/, "")}`;
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
+    <link rel="alternate" type="application/rss+xml" href={href("rss.xml")} title={site.title} />
     <script is:inline>
       (() => {
         const root = document.documentElement;
