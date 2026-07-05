@@ -1,24 +1,29 @@
 ---
+import { tags as tagDefinitions } from "@/data/taxonomy";
+
 interface Props {
   href: string;
   title: string;
   summary: string;
   meta: string;
   tags: string[];
+  headingLevel?: "h2" | "h3";
 }
 
-const { href, title, summary, meta, tags } = Astro.props;
+const { href, title, summary, meta, tags, headingLevel = "h2" } = Astro.props;
+const HeadingTag = headingLevel;
+const displayTags = tags.map((tag) => tagDefinitions[tag as keyof typeof tagDefinitions]?.label ?? tag);
 ---
 
 <article class="note-card">
   <a class="note-card-link" href={href}>
     <p class="note-meta">{meta}</p>
-    <h2>{title}</h2>
+    <HeadingTag>{title}</HeadingTag>
     <p class="note-summary">{summary}</p>
     {
-      tags.length > 0 && (
+      displayTags.length > 0 && (
         <ul class="tag-list" aria-label="Tags">
-          {tags.map((tag) => (
+          {displayTags.map((tag) => (
             <li>{tag}</li>
           ))}
         </ul>
@@ -43,13 +48,13 @@ const { href, title, summary, meta, tags } = Astro.props;
     text-decoration: none;
   }
 
-  .note-card-link:hover h2 {
+  .note-card-link:hover :is(h2, h3) {
     color: var(--accent);
   }
 
   .note-meta,
   .note-summary,
-  h2 {
+  :is(h2, h3) {
     margin: 0;
   }
 
@@ -59,7 +64,7 @@ const { href, title, summary, meta, tags } = Astro.props;
     line-height: 1.45;
   }
 
-  h2 {
+  :is(h2, h3) {
     font-size: 1.22rem;
     line-height: 1.25;
   }

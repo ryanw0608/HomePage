@@ -26,8 +26,11 @@ const lang = htmlLang(paper.data.language, paper.data.primaryLanguage);
   headings={headings}
   meta={[
     { label: "Paper", value: paper.data.paperTitle },
+    { label: "Authors", value: paper.data.authors.join(", ") },
+    ...(paper.data.venue ? [{ label: "Venue", value: paper.data.venue }] : []),
     { label: "Year", value: String(paper.data.year) },
-    { label: "Status", value: paper.data.status }
+    { label: "Status", value: paper.data.status },
+    ...(paper.data.paperUrl ? [{ label: "Source", value: "Open paper", href: paper.data.paperUrl }] : [])
   ]}
   backHref={`${import.meta.env.BASE_URL}paper-reading/`}
   backLabel="Back to paper reading"

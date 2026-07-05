@@ -2,6 +2,7 @@
 interface MetaItem {
   label: string;
   value: string;
+  href?: string;
 }
 
 interface Props {
@@ -17,7 +18,15 @@ const { items } = Astro.props;
       items.map((item) => (
         <div class="meta-row">
           <dt>{item.label}</dt>
-          <dd>{item.value}</dd>
+          <dd>
+            {
+              item.href ? (
+                <a href={item.href} rel="noopener noreferrer" target="_blank">{item.value}</a>
+              ) : (
+                item.value
+              )
+            }
+          </dd>
         </div>
       ))
     }
@@ -55,5 +64,16 @@ const { items } = Astro.props;
   dd {
     margin: 0;
     line-height: 1.45;
+  }
+
+  a {
+    color: var(--text);
+    font-weight: 750;
+    text-decoration-color: var(--accent);
+    text-underline-offset: 0.18em;
+  }
+
+  a:hover {
+    color: var(--accent);
   }
 </style>

@@ -38,7 +38,7 @@ const visibleEdges = learningMapEdges.filter((edge) => visibleNodeIds.has(edge.f
   </div>
 
   <div class="map-board" aria-hidden="true">
-    <svg class="map-lines" viewBox="0 0 100 80" role="img">
+    <svg class="map-lines" viewBox="0 0 100 80">
       {
         visibleEdges.map((edge) => {
           const from = positionedNodes.find((node) => node.id === edge.from);
