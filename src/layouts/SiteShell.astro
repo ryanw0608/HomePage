@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import { getCollection } from "astro:content";
 
+import CommandPalette from "@/components/CommandPalette.astro";
 import ThemeToggle from "@/components/ThemeToggle.astro";
 import { publicEntries } from "@/lib/content";
 import { site } from "@/lib/site";
@@ -113,10 +114,14 @@ const paperCount = publicEntries(await getCollection("paper-reading")).length;
         <div class="status-right">
           <a href={href("rss.xml")}>rss</a>
           <a href="https://github.com/ryanw0608" rel="noopener noreferrer">github</a>
+          <button class="k-chip" type="button" data-palette-open hidden aria-label="Open command palette">
+            &#8984;K
+          </button>
           <ThemeToggle />
         </div>
       </div>
     </footer>
+    <CommandPalette />
   </body>
 </html>
 
@@ -292,6 +297,24 @@ const paperCount = publicEntries(await getCollection("paper-reading")).length;
   }
 
   .status-right a:hover {
+    color: var(--accent);
+  }
+
+  .k-chip {
+    border: 1px solid var(--edge);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--faint);
+    font-family: inherit;
+    font-size: 0.66rem;
+    letter-spacing: 0.05em;
+    padding: 0.18rem 0.45rem;
+    cursor: pointer;
+    transition: color 140ms ease, border-color 140ms ease;
+  }
+
+  .k-chip:hover {
+    border-color: var(--accent);
     color: var(--accent);
   }
 
