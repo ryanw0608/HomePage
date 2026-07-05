@@ -19,7 +19,7 @@ export function entrySlug(entry: { id: string }): string {
 }
 
 export function entryPath(collection: "course-notes" | "paper-reading", entry: { id: string }): string {
-  return `/${collection}/${entry.id}/`;
+  return `${import.meta.env.BASE_URL}${collection}/${entry.id}/`;
 }
 
 export type CourseNote = CollectionEntry<"course-notes">;
