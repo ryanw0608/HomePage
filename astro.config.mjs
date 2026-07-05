@@ -1,4 +1,5 @@
 import { defineConfig } from "astro/config";
+import { unified } from "@astrojs/markdown-remark";
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
@@ -11,12 +12,15 @@ export default defineConfig({
   base: "/HomePage/",
   trailingSlash: "always",
   output: "static",
-  integrations: [
-    mdx({
-      syntaxHighlight: "shiki",
+  markdown: {
+    syntaxHighlight: "shiki",
+    processor: unified({
       remarkPlugins: [remarkMath],
       rehypePlugins: [rehypeKatex]
-    }),
+    })
+  },
+  integrations: [
+    mdx(),
     react(),
     sitemap()
   ],
