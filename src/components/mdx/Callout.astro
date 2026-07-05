@@ -1,0 +1,25 @@
+---
+interface Props {
+  type?: "note" | "insight" | "warning" | "question";
+  title?: string;
+}
+const { type = "note", title = "Note" } = Astro.props;
+---
+
+<aside class={`callout callout-${type}`}>
+  <strong>{title}</strong>
+  <slot />
+</aside>
+
+<style>
+  .callout {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    padding: 1rem;
+  }
+  .callout-warning {
+    border-left-color: var(--accent-2);
+  }
+</style>

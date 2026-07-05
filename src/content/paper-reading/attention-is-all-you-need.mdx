@@ -1,0 +1,77 @@
+---
+title: "Reading: Attention Is All You Need"
+description: "A structured reading note on the Transformer architecture and its attention-first design."
+summary: "The paper replaces recurrence and convolution with stacked self-attention and feed-forward blocks, making sequence modeling more parallelizable while preserving contextual token interactions."
+paperTitle: "Attention Is All You Need"
+authors: ["Ashish Vaswani", "Noam Shazeer", "Niki Parmar", "Jakob Uszkoreit", "Llion Jones", "Aidan N. Gomez", "Lukasz Kaiser", "Illia Polosukhin"]
+year: 2017
+venue: "NeurIPS"
+date: "2026-07-06"
+language: "en"
+status: "reviewed"
+area: "deep-learning"
+tags: ["transformers", "attention", "reading"]
+paperUrl: "https://arxiv.org/abs/1706.03762"
+takeaways:
+  - "Self-attention gives every token a direct path to every other token in a sequence."
+  - "The architecture improves parallelism compared with recurrent sequence models."
+  - "Positional encodings are needed because attention alone has no built-in token order."
+featured: true
+math: true
+---
+
+## Short Answer
+
+The Transformer is a sequence model built around self-attention rather than recurrence. Its central move is to make token-to-token interaction explicit and highly parallelizable.
+
+## Why This Paper Matters
+
+The paper introduced an architecture that became a foundation for modern language models. It is worth reading carefully because many later systems inherit its vocabulary and design constraints.
+
+## Prerequisites
+
+Useful background includes embeddings, softmax, matrix multiplication, sequence-to-sequence learning, and basic neural-network optimization.
+
+## Problem Setting
+
+The original experiments focus on machine translation, where the model maps an input token sequence to an output token sequence.
+
+## Core Idea
+
+Scaled dot-product attention computes weights between queries and keys, then uses those weights to mix values:
+
+\[
+\text{Attention}(Q, K, V) = \text{softmax}(QK^T / \sqrt{d_k})V
+\]
+
+## Method Breakdown
+
+The model stacks encoder and decoder blocks. Each block combines multi-head attention, feed-forward layers, residual connections, and normalization.
+
+## Experiments
+
+The paper evaluates translation quality and training cost, showing strong results with better parallel training behavior than recurrent baselines.
+
+## Strengths
+
+The architecture is clean, parallel, and modular. Multi-head attention also gives the model multiple representation subspaces.
+
+## Limitations
+
+Self-attention has quadratic sequence-length cost in the standard form. The paper also relies on positional encodings to represent order.
+
+## Critical Analysis
+
+The design trades recurrence for dense pairwise token interaction. That trade works extremely well for many tasks, but it makes long-context efficiency a central systems problem.
+
+## Possible Improvements
+
+Later work can be read as improving efficiency, positional modeling, training stability, and scaling behavior.
+
+## Personal Takeaways
+
+The paper is not only an architecture proposal; it is a shift in what sequence-model computation should look like.
+
+## References
+
+- Vaswani et al., "Attention Is All You Need", 2017.
