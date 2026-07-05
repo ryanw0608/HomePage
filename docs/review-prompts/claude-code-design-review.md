@@ -25,7 +25,7 @@ Important user intent:
 - The stack should be modern, stable, static-first, and suitable for a homepage that may live for many years.
 - Do not propose fake Publications/Projects sections before there is real content.
 
-Please review the design spec only. Do not implement code yet. This is a second-pass review after an earlier review found many "implementation would need to guess" gaps. Focus especially on whether the revised spec now makes the necessary v1 product, visual, content-model, deployment, accessibility, and verification decisions explicit.
+Please review the design spec only. Do not implement code yet. This is a follow-up review after earlier reviews found "implementation would need to guess" gaps. Focus especially on whether the current spec now makes the necessary v1 product, visual, content-model, deployment, accessibility, and verification decisions explicit.
 
 What to check:
 
@@ -80,6 +80,7 @@ What to check:
 - Does the disposition file accurately represent the changes in the revised spec?
 - Are any previously important issues still unresolved despite being marked accepted?
 - Are any deferred decisions actually necessary before implementation?
+- Are the second-review local fixes reflected in the spec without introducing new contradictions?
 
 Output format:
 

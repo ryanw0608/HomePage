@@ -79,8 +79,11 @@ Interface language:
 
 - Use English for global navigation, filters, labels, metadata, and empty states in v1.
 - Individual notes may be `zh`, `en`, or `mixed`.
-- `ArticleLayout` must set article-level `lang` from frontmatter.
-- Non-article pages default to `en`.
+- Note pages must set the page-level `<html lang>` from frontmatter, not only an article-level attribute.
+- `mixed` is a content classification, not a valid HTML language tag. Mixed-language notes must also declare `primaryLanguage: 'zh' | 'en'`.
+- Language mapping for HTML and search: `zh -> zh-CN`, `en -> en`, `mixed -> primaryLanguage`.
+- Non-article pages default to `<html lang="en">`.
+- Pagefind indexing must use the same page-level language value so Chinese notes are not indexed as English pages.
 
 Name display:
 
@@ -158,7 +161,8 @@ Motion should prove craft without hurting reading.
 
 Requirements:
 
-- Use view transitions only as progressive enhancement.
+- Use native cross-document CSS view transitions only as progressive enhancement.
+- Do not use Astro `ClientRouter` in v1. If a future version introduces client-side routing, vanilla scripts must become re-entrant on Astro navigation events before that change ships.
 - Use hover and focus states that make controls feel precise.
 - Use subtle reveal animation for homepage sections.
 - Disable or simplify motion with `prefers-reduced-motion`.
@@ -174,7 +178,7 @@ The home page is a polished academic profile and content gateway.
 Section order:
 
 1. Identity hero: name, academic profile, current direction, previous frontend background, key links.
-2. Current focus: 3-5 areas with short explanations and related note counts.
+2. Current focus: 3-5 areas with short explanations and optional related note counts.
 3. Featured writing: latest or pinned course notes and paper readings with real summaries.
 4. Learning map preview: structured topic relationship preview, not a full graph unless enough content exists.
 5. About snapshot: education, skills, frontend background, contact.
@@ -184,6 +188,9 @@ The hero should be impressive through layout, typography, and interaction qualit
 Low-content rule:
 
 - If there are fewer than five public notes, hide complex filters on the homepage and show "Latest writing" rather than pretending there is a large archive.
+- Current-focus data lives in `src/data/profile.ts`.
+- Only show a related-note count for a focus item when it has at least two related public notes. Otherwise show the focus description without a count.
+- Current-focus related-note counts may derive from paper `area`, course-note `areas`, tags, and explicit related references.
 
 ### Course Notes
 
@@ -197,18 +204,22 @@ Index page requirements:
 - Filter state should be reflected in URL query parameters.
 - Support both Chinese and English titles.
 
-Article page requirements:
+Layout-injected article requirements:
 
 - Title, course, term, date, updated date, tags, status, summary.
 - Sticky desktop table of contents.
 - Collapsible mobile table of contents.
 - Metadata panel.
+- Back to index link.
+- Next/previous navigation within the course.
+
+Recommended author-written sections:
+
 - Concepts section.
 - Detailed notes section.
 - Examples or worked problems where relevant.
 - Code snippets, diagrams, tables, equations, and references where needed.
 - Personal reflection / "what I still do not understand" section.
-- Next/previous navigation within the course.
 
 Recommended course note body structure:
 
@@ -244,12 +255,20 @@ Index page requirements:
 - Filter state should be reflected in URL query parameters.
 - Support bilingual entries when useful.
 
-Article page requirements:
+Layout-injected article requirements:
 
 - Paper title, authors, year, venue/status.
 - DOI and arXiv ID when available.
 - Paper link, code link, and project link when available.
 - Review date, updated date, and review language.
+- Structured takeaways when frontmatter provides them.
+- Sticky/collapsible table of contents.
+- Metadata panel.
+- Back to index link.
+- Related notes and backlinks.
+
+Recommended author-written sections:
+
 - TL;DR / short answer.
 - Why this paper matters.
 - Prerequisites and background.
@@ -264,7 +283,7 @@ Article page requirements:
 - Critical analysis.
 - Possible improvements or follow-up ideas.
 - Personal takeaways.
-- References and backlinks to related notes.
+- References.
 
 Recommended paper reading body structure:
 
@@ -399,7 +418,8 @@ Do not add `src/content/pages/*.mdx` in v1 unless there is a defined schema and 
 - `readingTime` is computed at build time, not handwritten.
 - `related` uses typed cross-collection references and must fail the build if broken.
 - `heroImage` is optional and must use the project image pipeline.
-- `draft: true` excludes content from production index pages, search, RSS, sitemap, and related-note lists.
+- `draft: true` completely excludes content from production builds: no detail route is generated, and the entry is excluded from index pages, search, RSS, sitemap, related-note lists, and learning-map public refs. Draft content may be visible in local development only.
+- `language: 'mixed'` requires `primaryLanguage`.
 
 ### Course Note Schema
 
@@ -419,6 +439,8 @@ Optional fields:
 - `updated: Date`
 - `term: string`
 - `order: number`
+- `areas: AreaId[]`
+- `primaryLanguage: 'zh' | 'en'`
 - `featured: boolean`
 - `related: ContentRef[]`
 - `heroImage: ImageRef`
@@ -453,6 +475,7 @@ Optional fields:
 - `venue: string`
 - `doi: string`
 - `arxivId: string`
+- `primaryLanguage: 'zh' | 'en'`
 - `paperUrl: URL`
 - `codeUrl: URL`
 - `projectUrl: URL`
@@ -468,6 +491,12 @@ Takeaway source of truth:
 - Use frontmatter `takeaways` as the structured source.
 - The `KeyTakeaways` MDX component may render these takeaways.
 - Do not duplicate a separate free-form "Personal Takeaways" section unless the article needs additional prose.
+
+Publishing rules:
+
+- `status: 'queued'` must also set `draft: true`; queued papers must not publish detail pages in v1.
+- `status: 'skimmed'` may be public only when the body includes at least `Short Answer` and `Core Idea` sections.
+- `reading`, `reviewed`, and `revisit` entries may publish when required metadata and body-content checks pass.
 
 ### Taxonomy
 
@@ -522,10 +551,10 @@ Target stack, checked on 2026-07-05:
 - React 19.x only for carefully scoped interactive islands.
 - TypeScript 6.x for data and component reliability.
 - MDX through the Astro MDX integration for rich note pages.
-- Tailwind CSS 4.x for modern styling primitives and maintainable design tokens.
+- Tailwind CSS 4.x through `@tailwindcss/vite` for modern styling primitives and maintainable design tokens.
 - Pagefind 1.x for static search.
 - `remark-math` + `rehype-katex` for build-time math rendering.
-- Shiki or `rehype-pretty-code` for high-quality code blocks.
+- Astro's Shiki-powered code highlighting for high-quality code blocks with light/dark themes.
 - `@astrojs/sitemap`, `@astrojs/rss`, and `@astrojs/check`.
 
 Why Astro:
@@ -552,12 +581,14 @@ Math:
 
 - Render math at build time with `remark-math` + `rehype-katex`.
 - Do not use client-side MathJax in v1.
-- Load KaTeX CSS/font assets only on pages that need math, using the `math` frontmatter flag.
+- Load KaTeX CSS/font assets only on pages that need math.
+- Prefer deriving `hasMath` at build time from parsed MDX. The optional `math` frontmatter flag may force-enable math assets, but detected math without loaded assets is a build error.
 
 Wide content:
 
 - Tables, code blocks, and equations must be wrapped in horizontal scroll containers on narrow screens.
-- Scroll containers should have accessible labels when needed.
+- Scroll containers should be keyboard focusable when horizontal scrolling is required.
+- Scroll containers should use `role="region"` and an accessible label when the surrounding heading does not already provide a clear name.
 - Long URLs and identifiers must wrap without breaking the layout.
 
 ### Search And Filtering
@@ -631,6 +662,7 @@ Component boundaries:
 - Interactive components own client-side behavior and receive typed data as props.
 - Data files own profile, taxonomy, and learning-map content.
 - MDX files own long-form writing.
+- `ArticleLayout` owns `PaperMeta`, `ReadingStatus`, `ArticleMeta`, and structured takeaways rendered from frontmatter. Authors should not manually insert duplicate paper/status metadata blocks inside MDX.
 
 Split large components when they combine layout, data mapping, and interaction state in one file.
 
@@ -753,6 +785,7 @@ GitHub Pages modes:
 - User site: repository named `<username>.github.io`; no project base path.
 - Project site: repository named `HomePage`; use `base: '/HomePage/'`.
 - Custom domain: configure `site` to the custom domain and remove project base when appropriate.
+- Default implementation assumption: GitHub Pages project site from repository `HomePage` until the owner explicitly chooses user-site or custom-domain deployment.
 
 Deployment requirements:
 
@@ -835,6 +868,8 @@ This prevents the site from looking like a shell.
 
 - Run production build.
 - Run `astro check`.
+- Add GitHub Actions workflow for production build, `astro check`, and internal link checks on every push.
+- Add scheduled external link-check workflow or document why it is deferred.
 - Run local static preview under the configured base path.
 - Check desktop, mobile, and reduced-motion behavior.
 - Check JavaScript-disabled article/index pages.
@@ -856,14 +891,24 @@ Before considering v1 complete:
 - Long Chinese and English text render with appropriate line-height and width.
 - Tables, code blocks, and long equations do not break 375px mobile layout.
 - Search works for at least one English query and one Chinese query.
+- Search verifies Chinese notes are indexed with the intended page-level language.
 - Zero-results search state has a reset action.
+- Filter state survives reload through URL query parameters.
 - Copy buttons, previous/next links, heading anchors, and table of contents work.
+- Theme toggle persists, follows first-visit system preference, and does not flash the wrong theme on first paint.
 - Reduced-motion preference is respected.
 - Light and dark themes both pass contrast checks.
+- KaTeX CSS/assets load only for pages that contain math.
+- Draft entries do not generate production detail routes.
+- Queued paper readings are draft-only and do not publish empty detail pages.
+- Article pages without React islands do not load React runtime.
+- Homepage, index pages, and article pages still expose their core content with JavaScript disabled.
 - JavaScript-disabled index pages still show full content lists.
 - JavaScript-disabled article pages still show complete article content.
+- Search, filters, mobile navigation, theme toggle, copy buttons, and TOC controls are keyboard usable.
 - Sitemap, RSS, canonical URLs, OG metadata, favicon, robots.txt, and 404 page exist.
 - GitHub Pages project-site base path works if deploying `HomePage`.
+- Content license is chosen or the site explicitly states all rights reserved before public launch.
 - Print preview for a long article is readable.
 
 Browser/device matrix:

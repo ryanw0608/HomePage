@@ -139,6 +139,75 @@ The spec keeps visual ambition, but long-form reading quality, performance, and 
 ## Remaining Human Decisions
 
 - Exact Chinese characters for the name, if they should appear publicly.
-- Final hosting mode: GitHub Pages user site, GitHub Pages project site, Cloudflare Pages, or custom domain.
-- Content license before public launch.
+- Final hosting mode: default implementation assumes GitHub Pages project site from repository `HomePage`; the owner can switch to user-site, Cloudflare Pages, or a custom domain before deployment.
+- Content license before public launch, now tracked as a v1 verification gate.
 - Real first course note and first paper reading content.
+
+## Second Review Disposition
+
+The second review concluded that the spec was ready with local edits. It found no critical issues and identified eight important issues. The spec now handles them as follows.
+
+### Current Focus Counts
+
+Accepted.
+
+Course notes now support optional `areas: AreaId[]`, and current-focus counts may derive from paper areas, course-note areas, tags, and explicit related references. The homepage hides counts unless a focus item has at least two related public notes.
+
+### Draft Detail Routes
+
+Accepted.
+
+`draft: true` now completely excludes content from production builds, including detail route generation. Testing now requires a draft entry not to generate a production route.
+
+### Language Mapping
+
+Accepted.
+
+The spec now maps content language values to valid HTML language tags. `mixed` requires `primaryLanguage`, note pages must set page-level `<html lang>`, and Pagefind indexing must use the same language value.
+
+### CI Ownership
+
+Accepted.
+
+Phase 4 now explicitly includes adding GitHub Actions workflows for production build, `astro check`, and internal link checks, plus a scheduled or documented external link-check workflow.
+
+### Verification Coverage
+
+Accepted.
+
+The verification checklist now covers theme persistence and flash prevention, filter URL persistence, conditional KaTeX loading, draft exclusion, queued-paper exclusion, no-React article pages, homepage/index/article no-JavaScript checks, and keyboard usability.
+
+### View Transitions
+
+Accepted.
+
+The spec now requires native cross-document CSS view transitions only and explicitly excludes Astro `ClientRouter` in v1.
+
+### Queued Paper Readings
+
+Accepted.
+
+`queued` paper readings must be draft-only and may not publish detail pages. `skimmed` readings require at least `Short Answer` and `Core Idea` sections before publication.
+
+### Article Metadata Ownership
+
+Accepted.
+
+Course and paper article requirements are split into layout-injected requirements and author-written sections. `ArticleLayout` owns paper/status metadata and structured takeaways so authors do not insert duplicate metadata blocks manually.
+
+## Second Review Minor Fixes Applied
+
+- Code highlighting is now Astro Shiki-powered rather than an unresolved Shiki/rehype-pretty-code choice.
+- Tailwind 4 integration is now specified through `@tailwindcss/vite`.
+- Wide scroll containers now require keyboard focusability and accessible region naming when needed.
+
+## Second Review Minor Issues Deferred
+
+These are noted for implementation but do not block planning:
+
+- Authoring starter templates for notes.
+- Full navigation/footer breakpoint design details.
+- Exact image pipeline and icon source.
+- More granular homepage/index JavaScript budgets.
+- More detailed RSS content contract.
+- A full finding-by-finding traceability table for the first review.
