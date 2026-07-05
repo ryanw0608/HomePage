@@ -14,8 +14,8 @@ const tocHeadings = Astro.props.headings.filter((heading) => heading.depth === 2
 
 {
   tocHeadings.length > 0 && (
-    <nav class="toc no-print" aria-label="Table of contents">
-      <strong>On this page</strong>
+    <nav class="toc no-print" aria-label="Table of contents" data-toc>
+      <p class="toc-title">On this page</p>
       <ol>
         {tocHeadings.map((heading) => (
           <li class:list={{ "depth-3": heading.depth === 3 }}>
@@ -27,34 +27,86 @@ const tocHeadings = Astro.props.headings.filter((heading) => heading.depth === 2
   )
 }
 
+<script>
+  // Scrollspy: mark the TOC link of the section currently in view.
+  const toc = document.querySelector("[data-toc]");
+
+  if (toc) {
+    const links = new Map(
+      Array.from(toc.querySelectorAll("a[href^='#']")).map((link) => [
+        decodeURIComponent(link.getAttribute("href")?.slice(1) ?? ""),
+        link
+      ])
+    );
+    const targets = Array.from(links.keys())
+      .map((slug) => document.getElementById(slug))
+      .filter((element): element is HTMLElement => element !== null);
+
+    let activeSlug: string | null = null;
+    const setActive = (slug: string) => {
+      if (slug === activeSlug) return;
+      activeSlug = slug;
+      links.forEach((link, linkSlug) => {
+        if (linkSlug === slug) {
+          link.setAttribute("aria-current", "true");
+        } else {
+          link.removeAttribute("aria-current");
+        }
+      });
+    };
+
+    const visible = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            visible.add(entry.target.id);
+          } else {
+            visible.delete(entry.target.id);
+          }
+        });
+
+        const first = targets.find((target) => visible.has(target.id));
+        if (first) {
+          setActive(first.id);
+        }
+      },
+      { rootMargin: "-15% 0px -70% 0px" }
+    );
+
+    targets.forEach((target) => observer.observe(target));
+  }
+</script>
+
 <style>
   .toc {
     position: sticky;
-    top: 88px;
-    align-self: start;
-    border-left: 1px solid var(--border);
-    color: var(--muted);
-    padding-left: 1rem;
+    top: 5rem;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    font-size: 0.82rem;
   }
 
-  strong {
-    display: block;
-    color: var(--text);
-    font-size: 0.88rem;
-    margin-bottom: 0.75rem;
+  .toc-title {
+    margin: 0 0 0.8rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
   }
 
   ol {
     display: grid;
-    gap: 0.55rem;
+    gap: 0.45rem;
     list-style: none;
     margin: 0;
     padding: 0;
   }
 
   li {
-    font-size: 0.88rem;
-    line-height: 1.35;
+    line-height: 1.4;
   }
 
   .depth-3 {
@@ -62,11 +114,21 @@ const tocHeadings = Astro.props.headings.filter((heading) => heading.depth === 2
   }
 
   a {
-    color: inherit;
+    display: inline-block;
+    border-left: 2px solid transparent;
+    margin-left: -0.75rem;
+    padding-left: calc(0.75rem - 2px);
+    color: var(--muted);
     text-decoration: none;
+    transition: color 140ms ease, border-color 140ms ease;
   }
 
   a:hover {
-    color: var(--text);
+    color: var(--ink);
+  }
+
+  a[aria-current="true"] {
+    border-left-color: var(--accent);
+    color: var(--ink);
   }
 </style>

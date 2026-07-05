@@ -12,3 +12,15 @@ const { id = "key-takeaways", items } = Astro.props;
     {items.map((item) => <li>{item}</li>)}
   </ul>
 </section>
+
+<style>
+  .takeaways {
+    border-block: 1px solid var(--line);
+    margin-block: 1.6rem;
+    padding-block: 0.4rem 1.1rem;
+  }
+
+  .takeaways ul {
+    margin-bottom: 0;
+  }
+</style>

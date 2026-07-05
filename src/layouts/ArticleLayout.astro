@@ -21,6 +21,8 @@ interface Props {
   lang?: "en" | "zh-CN";
   headings: Heading[];
   meta: MetaItem[];
+  kicker?: string;
+  readingMinutes?: number;
   backHref?: string;
   backLabel?: string;
 }
@@ -31,96 +33,317 @@ const {
   lang = "en",
   headings,
   meta,
+  kicker,
+  readingMinutes,
   backHref = import.meta.env.BASE_URL,
   backLabel = "Back"
 } = Astro.props;
+
+const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
 ---
 
 <SiteShell title={title} description={description} lang={lang}>
-  <article class="article-page container">
+  <article class="container article-grid">
     <header class="article-header">
-      <a class="back-link" href={backHref}>{backLabel}</a>
-      <h1>{title}</h1>
-      <p>{description}</p>
+      {kicker && <p class="kicker">{kicker}</p>}
+      <h1 class="title-serif">{title}</h1>
+      <p class="lede">{description}</p>
     </header>
 
-    <div class="article-grid">
-      <div class="article-meta-panel">
-        <ArticleMeta items={meta} />
-      </div>
-      <div class="article-body">
+    <aside class="article-rail">
+      <a class="back-link" href={backHref}>&larr; {backLabel}</a>
+      <ArticleMeta items={meta} />
+      {readingMinutes && <p class="reading-time">~{readingMinutes} min read</p>}
+    </aside>
+
+    <div class="article-content">
+      {
+        tocHeadings.length > 0 && (
+          <details class="toc-mobile no-print">
+            <summary>Contents</summary>
+            <ol>
+              {tocHeadings.map((heading) => (
+                <li class:list={{ "depth-3": heading.depth === 3 }}>
+                  <a href={`#${heading.slug}`}>{heading.text}</a>
+                </li>
+              ))}
+            </ol>
+          </details>
+        )
+      }
+      <div class="article-body" data-article-body lang={lang}>
         <slot />
       </div>
-      <div class="article-toc-panel">
-        <ArticleTOC headings={headings} />
-      </div>
+      <footer class="article-footer no-print">
+        <a class="back-link" href={backHref}>&larr; {backLabel}</a>
+      </footer>
+    </div>
+
+    <div class="article-toc-panel no-print">
+      <ArticleTOC headings={headings} />
     </div>
   </article>
 </SiteShell>
 
+<script>
+  // Copy buttons for code blocks: progressive enhancement only.
+  document.querySelectorAll("[data-article-body] pre").forEach((pre) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "code-frame";
+    pre.parentNode?.insertBefore(wrapper, pre);
+    wrapper.appendChild(pre);
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "code-copy no-print";
+    button.textContent = "Copy";
+    button.setAttribute("aria-label", "Copy code to clipboard");
+
+    const live = document.createElement("span");
+    live.className = "sr-only";
+    live.setAttribute("aria-live", "polite");
+    wrapper.append(button, live);
+
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(pre.textContent ?? "");
+        button.textContent = "Copied";
+        live.textContent = "Code copied to clipboard";
+        setTimeout(() => {
+          button.textContent = "Copy";
+          live.textContent = "";
+        }, 1800);
+      } catch {
+        button.textContent = "Press Ctrl+C";
+      }
+    });
+  });
+</script>
+
 <style>
-  .article-page {
-    padding-block: 3rem 1rem;
+  .article-grid {
+    display: grid;
+    grid-template-areas:
+      "header"
+      "rail"
+      "content";
+    grid-template-columns: minmax(0, 1fr);
+    padding-block: clamp(2rem, 5vw, 3.5rem) 1rem;
+    row-gap: 1.5rem;
   }
 
   .article-header {
-    max-width: 760px;
-    margin-inline: auto;
-    padding-bottom: 2rem;
+    grid-area: header;
+    max-width: 41rem;
   }
 
-  .back-link {
-    display: inline-flex;
-    margin-bottom: 1.25rem;
+  .article-rail {
+    grid-area: rail;
+  }
+
+  .article-content {
+    grid-area: content;
+    max-width: 41rem;
+  }
+
+  .article-toc-panel {
+    display: none;
+  }
+
+  .kicker {
+    margin: 0 0 1rem;
     color: var(--muted);
-    font-size: 0.92rem;
-    text-decoration: none;
-  }
-
-  .back-link:hover {
-    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
   }
 
   h1 {
     margin: 0;
-    font-size: clamp(2.1rem, 6vw, 3.4rem);
-    line-height: 1.05;
+    font-size: clamp(1.9rem, 4.5vw, 2.7rem);
+    font-weight: 540;
+    line-height: 1.12;
+    text-wrap: balance;
   }
 
-  .article-header p {
+  .lede {
+    margin: 1.1rem 0 0;
     color: var(--muted);
-    font-size: 1.08rem;
-    line-height: 1.65;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.15rem;
+    line-height: 1.6;
+  }
+
+  .back-link {
+    display: inline-block;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    transition: color 140ms ease;
+  }
+
+  .back-link:hover {
+    color: var(--accent);
+  }
+
+  .reading-time {
     margin: 1rem 0 0;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
   }
 
-  .article-grid {
+  .article-rail :global(.article-meta) {
+    margin-top: 1.1rem;
+  }
+
+  .article-footer {
+    margin-top: 3rem;
+    border-top: 1px solid var(--line);
+    padding-top: 1.1rem;
+  }
+
+  .toc-mobile {
+    border-block: 1px solid var(--line);
+    padding-block: 0.8rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .toc-mobile summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .toc-mobile ol {
+    margin: 0.9rem 0 0.2rem;
+    padding: 0;
     display: grid;
-    grid-template-areas: "meta body toc";
-    grid-template-columns: 220px minmax(0, 1fr) 220px;
-    gap: 2rem;
-    align-items: start;
+    gap: 0.5rem;
+    list-style: none;
   }
 
-  .article-meta-panel {
-    grid-area: meta;
+  .toc-mobile li {
+    font-size: 0.92rem;
+    line-height: 1.4;
   }
 
-  .article-body {
-    grid-area: body;
+  .toc-mobile .depth-3 {
+    padding-left: 1rem;
   }
 
-  .article-toc-panel {
-    grid-area: toc;
+  .toc-mobile a {
+    color: var(--muted);
+    text-decoration: none;
   }
 
-  @media (max-width: 980px) {
+  .toc-mobile a:hover {
+    color: var(--accent);
+  }
+
+  @media (min-width: 920px) {
     .article-grid {
       grid-template-areas:
-        "meta"
-        "toc"
-        "body";
-      grid-template-columns: 1fr;
+        "rail header"
+        "rail content";
+      grid-template-columns: var(--rail-width) minmax(0, 1fr);
+      column-gap: var(--rail-gap);
+      row-gap: 0;
     }
+
+    .article-header,
+    .article-content {
+      border-left: 1px solid var(--line);
+      padding-left: var(--rail-gap);
+    }
+
+    .article-header {
+      padding-bottom: 2.25rem;
+    }
+
+    .article-rail {
+      position: sticky;
+      top: 5rem;
+      align-self: start;
+      text-align: right;
+    }
+
+    .toc-mobile {
+      display: none;
+    }
+  }
+
+  @media (min-width: 1240px) {
+    .article-grid {
+      grid-template-areas:
+        "rail header toc"
+        "rail content toc";
+      grid-template-columns: var(--rail-width) minmax(0, 1fr) 12.5rem;
+    }
+
+    .article-toc-panel {
+      display: block;
+      grid-area: toc;
+      padding-left: 1.5rem;
+    }
+  }
+</style>
+
+<style is:global>
+  .code-frame {
+    position: relative;
+    margin-block: 1.1rem;
+  }
+
+  .code-frame pre {
+    margin-block: 0;
+  }
+
+  .code-copy {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 0.2rem;
+    background: var(--paper);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    padding: 0.28rem 0.5rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 140ms ease, color 140ms ease, border-color 140ms ease;
+  }
+
+  .code-frame:hover .code-copy,
+  .code-copy:focus-visible {
+    opacity: 1;
+  }
+
+  .code-copy:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    clip: rect(0 0 0 0);
+    overflow: hidden;
+    white-space: nowrap;
   }
 </style>

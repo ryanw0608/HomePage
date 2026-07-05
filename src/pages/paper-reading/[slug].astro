@@ -2,7 +2,7 @@
 import { getCollection, render } from "astro:content";
 
 import ArticleLayout from "@/layouts/ArticleLayout.astro";
-import { entrySlug, publicEntries } from "@/lib/content";
+import { entrySlug, publicEntries, readingTime } from "@/lib/content";
 import { htmlLang } from "@/lib/site";
 
 export async function getStaticPaths() {
@@ -17,6 +17,7 @@ export async function getStaticPaths() {
 const { paper } = Astro.props;
 const { Content, headings } = await render(paper);
 const lang = htmlLang(paper.data.language, paper.data.primaryLanguage);
+const kicker = ["Paper reading", paper.data.venue, String(paper.data.year)].filter(Boolean).join(" · ");
 ---
 
 <ArticleLayout
@@ -24,16 +25,17 @@ const lang = htmlLang(paper.data.language, paper.data.primaryLanguage);
   description={paper.data.description}
   lang={lang}
   headings={headings}
+  kicker={kicker}
+  readingMinutes={readingTime(paper.body ?? "")}
   meta={[
     { label: "Paper", value: paper.data.paperTitle },
     { label: "Authors", value: paper.data.authors.join(", ") },
-    ...(paper.data.venue ? [{ label: "Venue", value: paper.data.venue }] : []),
-    { label: "Year", value: String(paper.data.year) },
+    { label: "Reviewed", value: paper.data.date.toISOString().slice(0, 10) },
     { label: "Status", value: paper.data.status },
     ...(paper.data.paperUrl ? [{ label: "Source", value: "Open paper", href: paper.data.paperUrl }] : [])
   ]}
   backHref={`${import.meta.env.BASE_URL}paper-reading/`}
-  backLabel="Back to paper reading"
+  backLabel="Paper reading"
 >
   <Content />
 </ArticleLayout>
