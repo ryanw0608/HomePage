@@ -1,0 +1,36 @@
+<button class="theme-toggle no-print" type="button" data-theme-toggle aria-label="Toggle theme">
+  Theme
+</button>
+
+<script>
+  const button = document.querySelector("[data-theme-toggle]");
+
+  button?.addEventListener("click", () => {
+    const root = document.documentElement;
+    const nextTheme = root.dataset.theme === "dark" ? "light" : "dark";
+
+    root.dataset.theme = nextTheme;
+
+    try {
+      window.localStorage?.setItem("theme", nextTheme);
+    } catch {
+      // Storage can be unavailable in private or restricted browsing contexts.
+    }
+  });
+</script>
+
+<style>
+  .theme-toggle {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    padding: 0.45rem 0.75rem;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .theme-toggle:hover {
+    border-color: var(--accent);
+  }
+</style>

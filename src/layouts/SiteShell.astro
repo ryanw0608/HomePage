@@ -1,0 +1,166 @@
+---
+import "../styles/global.css";
+import ThemeToggle from "@/components/ThemeToggle.astro";
+import { site } from "@/lib/site";
+
+interface Props {
+  title?: string;
+  description?: string;
+  lang?: "en" | "zh-CN";
+}
+
+const { title = site.title, description = site.description, lang = "en" } = Astro.props;
+const pageTitle = title === site.title ? title : `${title} | ${site.title}`;
+const base = import.meta.env.BASE_URL;
+const href = (pathname = "") => `${base}${pathname}`;
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <script is:inline>
+      (() => {
+        const root = document.documentElement;
+        let storedTheme;
+
+        try {
+          storedTheme = window.localStorage?.getItem("theme");
+        } catch {
+          storedTheme = undefined;
+        }
+
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        root.dataset.theme = storedTheme === "light" || storedTheme === "dark"
+          ? storedTheme
+          : prefersDark
+            ? "dark"
+            : "light";
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link no-print" href="#main">Skip to content</a>
+    <header class="site-header no-print">
+      <nav class="container nav" aria-label="Primary navigation">
+        <a class="brand" href={href()} aria-label={`${site.name} home`}>
+          <span>{site.name}</span>
+          <span class="brand-secondary">{site.secondaryName}</span>
+        </a>
+        <div class="nav-links">
+          <a href={href("course-notes/")}>Course Notes</a>
+          <a href={href("paper-reading/")}>Paper Reading</a>
+          <a href={href("about/")}>About</a>
+          <ThemeToggle />
+        </div>
+      </nav>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="container footer">
+      <p>&copy; {new Date().getFullYear()} {site.name}. Academic notes and reading logs.</p>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .skip-link {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 20;
+    transform: translateY(-200%);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--surface-strong);
+    padding: 0.5rem 0.75rem;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in oklab, var(--bg) 88%, transparent);
+    backdrop-filter: blur(14px);
+  }
+
+  .nav {
+    display: flex;
+    min-height: 64px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    flex-direction: column;
+    color: var(--text);
+    font-weight: 750;
+    line-height: 1.05;
+    text-decoration: none;
+  }
+
+  .brand-secondary {
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+
+  .nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.875rem;
+  }
+
+  .nav-links a {
+    color: var(--muted);
+    font-size: 0.95rem;
+    text-decoration: none;
+  }
+
+  .nav-links a:hover {
+    color: var(--text);
+  }
+
+  main {
+    min-height: calc(100vh - 177px);
+  }
+
+  .footer {
+    margin-top: 4rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    padding-block: 2rem;
+  }
+
+  .footer p {
+    margin: 0;
+  }
+
+  @media (max-width: 640px) {
+    .nav {
+      align-items: flex-start;
+      flex-direction: column;
+      padding-block: 0.875rem;
+    }
+
+    .nav-links {
+      justify-content: flex-start;
+    }
+  }
+</style>
