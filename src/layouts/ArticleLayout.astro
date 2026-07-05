@@ -44,11 +44,15 @@ const {
     </header>
 
     <div class="article-grid">
-      <ArticleMeta items={meta} />
+      <div class="article-meta-panel">
+        <ArticleMeta items={meta} />
+      </div>
       <div class="article-body">
         <slot />
       </div>
-      <ArticleTOC headings={headings} />
+      <div class="article-toc-panel">
+        <ArticleTOC headings={headings} />
+      </div>
     </div>
   </article>
 </SiteShell>
@@ -91,13 +95,30 @@ const {
 
   .article-grid {
     display: grid;
+    grid-template-areas: "meta body toc";
     grid-template-columns: 220px minmax(0, 1fr) 220px;
     gap: 2rem;
     align-items: start;
   }
 
+  .article-meta-panel {
+    grid-area: meta;
+  }
+
+  .article-body {
+    grid-area: body;
+  }
+
+  .article-toc-panel {
+    grid-area: toc;
+  }
+
   @media (max-width: 980px) {
     .article-grid {
+      grid-template-areas:
+        "meta"
+        "toc"
+        "body";
       grid-template-columns: 1fr;
     }
   }
