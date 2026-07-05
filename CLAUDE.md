@@ -1,12 +1,10 @@
-# Project Notes
+# Claude Code Notes
 
-## Agent / model policy
+Read `AGENTS.md` first. It is the canonical contributor and agent guide for this repository.
 
-- **Do NOT use the Fable model for sub-agents or Workflow sub-agents in this project.** It burns quota too fast. Prefer Opus 4.8 (`claude-opus-4-8`) or a cheaper tier (Haiku) for large fan-out work.
-- When launching `Agent` or `Workflow`, either inherit the current session model (keep the main model off Fable) or pass an explicit non-Fable `model` override on each agent call.
-- Keep multi-agent fan-outs small unless the user explicitly opts into a large run, and prefer a lighter model for mechanical stages.
+## Claude-Specific Agent Policy
 
-## About this repo
-
-- Pre-implementation stage: currently only `docs/` (design spec, review prompts, review dispositions). No site code yet.
-- Primary design spec: `docs/superpowers/specs/2026-07-05-homepage-design.md` — a personal academic homepage for Yongzhe Wang (Astro + React islands + TypeScript + MDX + Tailwind, static-first, GitHub Pages / Cloudflare Pages).
+- Do not use Fable for sub-agents or Workflow sub-agents in this project.
+- Prefer Opus 4.8 (`claude-opus-4-8`) or a cheaper tier such as Haiku for large mechanical review tasks.
+- When launching `Agent` or `Workflow`, inherit a non-Fable current session model or pass an explicit non-Fable model override.
+- Keep multi-agent fan-outs small unless the user explicitly approves a large run.
