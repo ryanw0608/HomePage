@@ -1,390 +1,208 @@
 ---
 import { getCollection } from "astro:content";
 
+import EntryRow from "@/components/EntryRow.astro";
 import LearningMapPreview from "@/components/LearningMapPreview.astro";
-import NoteCard from "@/components/NoteCard.astro";
 import { profile } from "@/data/profile";
 import { courses } from "@/data/taxonomy";
 import SiteShell from "@/layouts/SiteShell.astro";
-import { byDateDesc, entryPath, publicEntries } from "@/lib/content";
+import { byDateDesc, entryPath, publicEntries, readingTime } from "@/lib/content";
 
+const base = import.meta.env.BASE_URL;
 const allCourseNotes = publicEntries(await getCollection("course-notes")).sort(byDateDesc);
 const allPaperReadings = publicEntries(await getCollection("paper-reading")).sort(byDateDesc);
-const latestCourseNotes = allCourseNotes.slice(0, 2);
-const latestPaperReadings = allPaperReadings.slice(0, 2);
+
 const latestWriting = [
-  ...latestCourseNotes.map((entry) => ({
+  ...allCourseNotes.map((entry) => ({
     collection: "course-notes" as const,
     entry,
-    meta: `${courses[entry.data.course].label} · ${entry.data.date.toISOString().slice(0, 10)}`
+    annotation: `Course note · ${courses[entry.data.course].label}`
   })),
-  ...latestPaperReadings.map((entry) => ({
+  ...allPaperReadings.map((entry) => ({
     collection: "paper-reading" as const,
     entry,
-    meta: `${entry.data.paperTitle} · ${entry.data.year} · ${entry.data.status}`
+    annotation: ["Paper reading", entry.data.paperTitle, entry.data.venue, String(entry.data.year)]
+      .filter(Boolean)
+      .join(" · ")
   }))
-].sort((a, b) => byDateDesc(a.entry, b.entry));
-
-const latestEntry = latestWriting[0]?.entry;
-const latestDate = latestEntry ? latestEntry.data.date.toISOString().slice(0, 10) : "No entries yet";
+]
+  .sort((a, b) => byDateDesc(a.entry, b.entry))
+  .slice(0, 5);
 ---
 
 <SiteShell title="Yongzhe Wang" description="Academic homepage, course notes, and paper reading notes by Yongzhe Wang.">
-  <section class="container home-shell" aria-labelledby="home-title">
-    <section class="hero-panel" aria-labelledby="home-title">
-      <div class="identity">
-        <p class="system-label">Academic homepage / frontend craft</p>
-        <h1 id="home-title">{profile.name}</h1>
-        <p class="secondary-name">{profile.secondaryName}</p>
-        <p class="summary">{profile.summary}</p>
-        <p class="engineering-line">
-          Former frontend engineer building a durable public notebook for courses, paper reading, and research practice.
+  <div class="container home">
+    <header class="rail rise home-hero" style="--rise-order: 0;">
+      <p class="rail-label">Profile</p>
+      <div class="rail-body">
+        <h1 class="title-serif">{profile.name}</h1>
+        <p class="hero-meta">
+          {profile.secondaryName} · {profile.role} · {profile.location}
         </p>
-        <div class="hero-actions" aria-label="Primary sections">
-          <a href={`${import.meta.env.BASE_URL}course-notes/`}>Course Notes</a>
-          <a href={`${import.meta.env.BASE_URL}paper-reading/`}>Paper Reading</a>
-          <a href={`${import.meta.env.BASE_URL}about/`}>About</a>
-        </div>
+        <p class="hero-abstract">{profile.summary}</p>
+        <p class="hero-note">
+          Notes here are written to be revisited: course material as reusable explanations, papers as structured
+          reviews with their assumptions and limitations on record.
+        </p>
+        <nav class="hero-links" aria-label="Profile links">
+          {
+            profile.links.map((link) => (
+              <a href={link.href} rel="noopener noreferrer">{link.label} &nearr;</a>
+            ))
+          }
+          <a href={`${base}about/`}>About</a>
+          <a href={`${base}rss.xml`}>RSS</a>
+        </nav>
       </div>
+    </header>
 
-      <aside class="research-panel" aria-label="Research operating status">
-        <div class="panel-header">
-          <span>Research OS</span>
-          <span>static / indexed</span>
-        </div>
-        <dl class="metric-grid">
-          <div>
-            <dt>Course notes</dt>
-            <dd>{allCourseNotes.length}</dd>
-          </div>
-          <div>
-            <dt>Paper readings</dt>
-            <dd>{allPaperReadings.length}</dd>
-          </div>
-          <div>
-            <dt>Location</dt>
-            <dd>{profile.location}</dd>
-          </div>
-          <div>
-            <dt>Latest update</dt>
-            <dd>{latestDate}</dd>
-          </div>
+    <section class="rail rise" aria-labelledby="focus-label" style="--rise-order: 1;">
+      <p class="rail-label" id="focus-label">Now</p>
+      <div class="rail-body">
+        <dl class="focus-list">
+          {
+            profile.currentFocus.map((focus) => (
+              <div class="focus-item">
+                <dt>{focus.label}</dt>
+                <dd>{focus.description}</dd>
+              </div>
+            ))
+          }
         </dl>
-        <div class="signal-stack">
-          <p>Current signal</p>
-          <ol>
-            <li>Build typed academic notes before publication pressure.</li>
-            <li>Keep reading notes structured enough to revisit.</li>
-            <li>Use frontend craft as a research communication advantage.</li>
-          </ol>
-        </div>
-      </aside>
-    </section>
-
-    <section class="focus-section" aria-labelledby="focus-title">
-      <div class="section-heading">
-        <p class="eyebrow">Current stack</p>
-        <h2 id="focus-title">Current Focus</h2>
-      </div>
-      <div class="focus-grid">
-        {
-          profile.currentFocus.map((focus, index) => (
-            <article class="focus-card">
-              <span class="focus-index">{String(index + 1).padStart(2, "0")}</span>
-              <h3>{focus.label}</h3>
-              <p>{focus.description}</p>
-            </article>
-          ))
-        }
       </div>
     </section>
 
-    <section class="writing-section" aria-labelledby="writing-title">
-      <div class="section-heading">
-        <p class="eyebrow">Recent output</p>
-        <h2 id="writing-title">Latest Writing</h2>
-      </div>
-      <div class="writing-grid">
+    <section class="rail rise" aria-labelledby="writing-label" style="--rise-order: 2;">
+      <p class="rail-label" id="writing-label">Writing</p>
+      <div class="rail-body">
         {
-          latestWriting.map(({ collection, entry, meta }) => (
-            <NoteCard
+          latestWriting.map(({ collection, entry, annotation }) => (
+            <EntryRow
               href={entryPath(collection, entry)}
               title={entry.data.title}
               summary={entry.data.summary}
-              meta={meta}
+              datestamp={entry.data.date.toISOString().slice(0, 10)}
+              annotation={annotation}
               tags={entry.data.tags}
-              headingLevel="h3"
+              minutes={readingTime(entry.body ?? "")}
+              headingLevel="h2"
             />
           ))
         }
+        <nav class="writing-links" aria-label="Writing indexes">
+          <a href={`${base}course-notes/`}>All course notes &rarr;</a>
+          <a href={`${base}paper-reading/`}>All paper reading &rarr;</a>
+        </nav>
       </div>
     </section>
 
     <LearningMapPreview />
-  </section>
+  </div>
 </SiteShell>
 
 <style>
-  .home-shell {
+  .home {
     display: grid;
-    gap: clamp(2.25rem, 5vw, 4rem);
-    padding-block: clamp(1.5rem, 4vw, 3rem) 1rem;
-  }
-
-  .hero-panel {
-    display: grid;
-    grid-template-columns: minmax(0, 0.98fr) minmax(340px, 1.02fr);
-    gap: 1rem;
-    align-items: stretch;
-  }
-
-  .identity,
-  .research-panel,
-  .focus-card {
-    border: 1px solid var(--border);
-    background: color-mix(in oklab, var(--surface-strong) 88%, var(--surface));
-    box-shadow: var(--shadow);
-  }
-
-  .identity {
-    display: grid;
-    min-height: 430px;
-    align-content: end;
-    border-radius: 0.75rem;
-    border-top: 6px solid var(--text);
-    padding: clamp(1.25rem, 4vw, 2.4rem);
-  }
-
-  .system-label,
-  .secondary-name,
-  h1,
-  .summary,
-  .engineering-line,
-  .eyebrow,
-  h2,
-  h3,
-  .focus-card p,
-  .signal-stack p,
-  .signal-stack ol,
-  .metric-grid {
-    margin: 0;
-  }
-
-  .system-label,
-  .eyebrow,
-  .panel-header,
-  .metric-grid dt,
-  .signal-stack p {
-    color: var(--accent);
-    font-size: 0.75rem;
-    font-weight: 850;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    gap: clamp(2.75rem, 6vw, 4.5rem);
+    padding-block: clamp(2.5rem, 6vw, 4.5rem) 1rem;
   }
 
   h1 {
-    max-width: 10ch;
-    margin-top: 0.6rem;
-    font-size: clamp(3.2rem, 8vw, 6.6rem);
-    line-height: 0.92;
+    margin: 0;
+    font-size: clamp(2.5rem, 6vw, 3.7rem);
+    line-height: 1.05;
   }
 
-  .secondary-name {
-    margin-top: 0.65rem;
-    color: var(--accent-2);
-    font-size: 0.95rem;
-    font-weight: 800;
+  .hero-meta {
+    margin: 1rem 0 0;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
   }
 
-  .summary {
-    max-width: 62ch;
-    margin-top: 1.35rem;
-    color: var(--text);
-    font-size: clamp(1.08rem, 1.8vw, 1.28rem);
-    line-height: 1.6;
+  .hero-abstract {
+    margin: 1.5rem 0 0;
+    max-width: 34em;
+    font-family: var(--font-serif);
+    font-size: 1.22rem;
+    line-height: 1.62;
   }
 
-  .engineering-line {
-    max-width: 68ch;
-    margin-top: 0.85rem;
+  .hero-note {
+    margin: 0.9rem 0 0;
+    max-width: 56ch;
     color: var(--muted);
     line-height: 1.65;
   }
 
-  .hero-actions {
+  .hero-links {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.65rem;
-    margin-top: 1.45rem;
+    gap: 0.4rem 1.5rem;
+    margin-top: 1.6rem;
   }
 
-  .hero-actions a {
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--surface);
-    color: var(--text);
-    font-size: 0.9rem;
-    font-weight: 750;
-    padding: 0.58rem 0.82rem;
+  .hero-links a,
+  .writing-links a {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.03em;
     text-decoration: none;
+    border-bottom: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
+    padding-bottom: 0.1rem;
+    transition: border-color 140ms ease;
   }
 
-  .hero-actions a:first-child {
-    border-color: color-mix(in oklab, var(--accent) 55%, var(--border));
-    background: color-mix(in oklab, var(--accent) 12%, var(--surface-strong));
+  .hero-links a:hover,
+  .writing-links a:hover {
+    border-bottom-color: var(--accent);
   }
 
-  .research-panel {
+  .focus-list {
     display: grid;
-    grid-template-rows: auto auto auto;
-    overflow: hidden;
-    border-radius: 0.75rem;
+    margin: 0;
   }
 
-  .panel-header {
+  .focus-item {
+    display: grid;
+    gap: 0.35rem;
+    border-top: 1px solid var(--line);
+    padding-block: 1rem;
+  }
+
+  .focus-item:first-child {
+    border-top: 0;
+    padding-top: 0.2rem;
+  }
+
+  .focus-item dt {
+    font-family: var(--font-serif);
+    font-size: 1.12rem;
+    font-weight: 540;
+    letter-spacing: -0.01em;
+  }
+
+  .focus-item dd {
+    margin: 0;
+    max-width: 60ch;
+    color: var(--muted);
+    line-height: 1.62;
+  }
+
+  .writing-links {
     display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--text);
-    color: var(--surface-strong);
-    padding: 0.9rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.5rem;
+    border-top: 1px solid var(--line);
+    padding-top: 1.2rem;
   }
 
-  .panel-header span:last-child {
-    color: color-mix(in oklab, var(--surface-strong) 72%, var(--accent));
-  }
-
-  .metric-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .metric-grid div {
-    min-height: 8.8rem;
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    padding: 1rem;
-  }
-
-  .metric-grid div:nth-child(2n) {
-    border-right: 0;
-  }
-
-  .metric-grid dt {
-    color: var(--muted);
-  }
-
-  .metric-grid dd {
-    margin: 0.55rem 0 0;
-    color: var(--text);
-    font-size: clamp(1.55rem, 4vw, 2.45rem);
-    font-weight: 850;
-    line-height: 1;
-  }
-
-  .signal-stack {
-    display: grid;
-    gap: 1rem;
-    padding: 1.25rem;
-  }
-
-  .signal-stack ol {
-    display: grid;
-    gap: 0.65rem;
-    padding-left: 1.2rem;
-    color: var(--muted);
-    line-height: 1.55;
-  }
-
-  .section-heading {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  h2 {
-    font-size: clamp(1.8rem, 4vw, 3rem);
-    line-height: 1;
-  }
-
-  .focus-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
-  }
-
-  .focus-card {
-    display: grid;
-    min-height: 230px;
-    align-content: space-between;
-    gap: 1.25rem;
-    border-radius: 0.75rem;
-    border-top: 4px solid var(--accent);
-    padding: 1.25rem;
-  }
-
-  .focus-card:nth-child(2) {
-    border-top-color: var(--accent-2);
-  }
-
-  .focus-card:nth-child(3) {
-    border-top-color: var(--focus);
-  }
-
-  .focus-index {
-    color: var(--accent-2);
-    font-size: 0.9rem;
-    font-weight: 850;
-  }
-
-  .focus-card h3 {
-    font-size: 1.35rem;
-    line-height: 1.16;
-  }
-
-  .focus-card p {
-    color: var(--muted);
-    line-height: 1.6;
-  }
-
-  .writing-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-  }
-
-  @media (max-width: 900px) {
-    .hero-panel,
-    .focus-grid,
-    .writing-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .identity {
-      min-height: auto;
-    }
-  }
-
-  @media (max-width: 560px) {
-    .section-heading {
-      display: grid;
-      align-items: start;
-    }
-
-    h1 {
-      font-size: clamp(3rem, 16vw, 4.4rem);
-    }
-
-    .metric-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .metric-grid div {
-      min-height: 7rem;
-      border-right: 0;
+  @media (min-width: 640px) {
+    .focus-item {
+      grid-template-columns: 14rem minmax(0, 1fr);
+      column-gap: 1.5rem;
     }
   }
 </style>
