@@ -1,0 +1,36 @@
+---
+import { getCollection, render } from "astro:content";
+
+import ArticleLayout from "@/layouts/ArticleLayout.astro";
+import { courses } from "@/data/taxonomy";
+import { entrySlug, publicEntries } from "@/lib/content";
+
+export async function getStaticPaths() {
+  const notes = publicEntries(await getCollection("course-notes"));
+
+  return notes.map((note) => ({
+    params: { slug: entrySlug(note) },
+    props: { note }
+  }));
+}
+
+const { note } = Astro.props;
+const { Content, headings } = await render(note);
+const htmlLang = note.data.language === "zh" ? "zh-CN" : "en";
+---
+
+<ArticleLayout
+  title={note.data.title}
+  description={note.data.description}
+  lang={htmlLang}
+  headings={headings}
+  meta={[
+    { label: "Course", value: courses[note.data.course].label },
+    { label: "Date", value: note.data.date.toISOString().slice(0, 10) },
+    { label: "Status", value: note.data.status }
+  ]}
+  backHref={`${import.meta.env.BASE_URL}course-notes/`}
+  backLabel="Back to course notes"
+>
+  <Content />
+</ArticleLayout>

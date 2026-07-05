@@ -1,0 +1,59 @@
+---
+interface MetaItem {
+  label: string;
+  value: string;
+}
+
+interface Props {
+  items: MetaItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<aside class="article-meta" aria-label="Article metadata">
+  <dl>
+    {
+      items.map((item) => (
+        <div class="meta-row">
+          <dt>{item.label}</dt>
+          <dd>{item.value}</dd>
+        </div>
+      ))
+    }
+  </dl>
+</aside>
+
+<style>
+  .article-meta {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--surface);
+    padding: 1rem;
+  }
+
+  dl {
+    display: grid;
+    gap: 0.95rem;
+    margin: 0;
+  }
+
+  .meta-row {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  dt {
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    line-height: 1.45;
+  }
+</style>

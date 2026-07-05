@@ -1,0 +1,35 @@
+---
+import { getCollection, render } from "astro:content";
+
+import ArticleLayout from "@/layouts/ArticleLayout.astro";
+import { entrySlug, publicEntries } from "@/lib/content";
+
+export async function getStaticPaths() {
+  const papers = publicEntries(await getCollection("paper-reading"));
+
+  return papers.map((paper) => ({
+    params: { slug: entrySlug(paper) },
+    props: { paper }
+  }));
+}
+
+const { paper } = Astro.props;
+const { Content, headings } = await render(paper);
+const htmlLang = paper.data.language === "zh" ? "zh-CN" : "en";
+---
+
+<ArticleLayout
+  title={paper.data.title}
+  description={paper.data.description}
+  lang={htmlLang}
+  headings={headings}
+  meta={[
+    { label: "Paper", value: paper.data.paperTitle },
+    { label: "Year", value: String(paper.data.year) },
+    { label: "Status", value: paper.data.status }
+  ]}
+  backHref={`${import.meta.env.BASE_URL}paper-reading/`}
+  backLabel="Back to paper reading"
+>
+  <Content />
+</ArticleLayout>

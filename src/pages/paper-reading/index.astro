@@ -1,0 +1,45 @@
+---
+import { getCollection } from "astro:content";
+
+import NoteCard from "@/components/NoteCard.astro";
+import SiteShell from "@/layouts/SiteShell.astro";
+import { byDateDesc, entryPath, publicEntries } from "@/lib/content";
+
+const papers = publicEntries(await getCollection("paper-reading")).sort(byDateDesc);
+---
+
+<SiteShell title="Paper Reading" description="Structured paper reading notes by Yongzhe Wang.">
+  <section class="container notes-page">
+    <h1>Paper Reading</h1>
+    <div class="note-list">
+      {
+        papers.map((paper) => (
+          <NoteCard
+            href={entryPath("paper-reading", paper)}
+            title={paper.data.title}
+            summary={paper.data.summary}
+            meta={`${paper.data.paperTitle} · ${paper.data.year} · ${paper.data.status}`}
+            tags={paper.data.tags}
+          />
+        ))
+      }
+    </div>
+  </section>
+</SiteShell>
+
+<style>
+  .notes-page {
+    padding-block: 3rem 1rem;
+  }
+
+  h1 {
+    margin: 0 0 1.5rem;
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.05;
+  }
+
+  .note-list {
+    display: grid;
+    gap: 1rem;
+  }
+</style>
