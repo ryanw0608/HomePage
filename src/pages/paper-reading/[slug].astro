@@ -3,6 +3,7 @@ import { getCollection, render } from "astro:content";
 
 import ArticleLayout from "@/layouts/ArticleLayout.astro";
 import { entrySlug, publicEntries } from "@/lib/content";
+import { htmlLang } from "@/lib/site";
 
 export async function getStaticPaths() {
   const papers = publicEntries(await getCollection("paper-reading"));
@@ -15,13 +16,13 @@ export async function getStaticPaths() {
 
 const { paper } = Astro.props;
 const { Content, headings } = await render(paper);
-const htmlLang = paper.data.language === "zh" ? "zh-CN" : "en";
+const lang = htmlLang(paper.data.language, paper.data.primaryLanguage);
 ---
 
 <ArticleLayout
   title={paper.data.title}
   description={paper.data.description}
-  lang={htmlLang}
+  lang={lang}
   headings={headings}
   meta={[
     { label: "Paper", value: paper.data.paperTitle },

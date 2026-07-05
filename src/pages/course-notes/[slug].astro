@@ -4,6 +4,7 @@ import { getCollection, render } from "astro:content";
 import ArticleLayout from "@/layouts/ArticleLayout.astro";
 import { courses } from "@/data/taxonomy";
 import { entrySlug, publicEntries } from "@/lib/content";
+import { htmlLang } from "@/lib/site";
 
 export async function getStaticPaths() {
   const notes = publicEntries(await getCollection("course-notes"));
@@ -16,13 +17,13 @@ export async function getStaticPaths() {
 
 const { note } = Astro.props;
 const { Content, headings } = await render(note);
-const htmlLang = note.data.language === "zh" ? "zh-CN" : "en";
+const lang = htmlLang(note.data.language, note.data.primaryLanguage);
 ---
 
 <ArticleLayout
   title={note.data.title}
   description={note.data.description}
-  lang={htmlLang}
+  lang={lang}
   headings={headings}
   meta={[
     { label: "Course", value: courses[note.data.course].label },
