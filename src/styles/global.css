@@ -1,116 +1,324 @@
 @import "tailwindcss";
 @import "katex/dist/katex.min.css";
+@import "@fontsource-variable/stix-two-text/wght.css";
+@import "@fontsource-variable/stix-two-text/wght-italic.css";
 
+/*
+ * Design tokens.
+ *
+ * The visual system is "scholar's manuscript": near-white paper, near-black
+ * ink, one continuous hairline margin rail, and three typographic voices —
+ * serif (STIX Two Text) for authored prose and titles, the system sans for
+ * interface chrome, and monospace for data: dates, tags, labels, status.
+ * Two accent families: viridian for structure and links, vermilion for
+ * status and sparing emphasis.
+ */
 :root {
   color-scheme: light;
-  --bg: #f3f6f1;
-  --surface: #fbfaf4;
-  --surface-strong: #ffffff;
-  --text: #151712;
-  --muted: #5d655c;
-  --border: #ccd5c9;
-  --accent: #087f70;
-  --accent-2: #b6402f;
+
+  --paper: #fafaf6;
+  --ink: #1b1d1b;
+  --muted: #545a54;
+  --line: #dcdcd2;
+  --line-strong: #1b1d1b;
+  --surface: #f1f0e9;
+  --accent: #0e6a5b;
+  --accent-warm: #a63d22;
   --focus: #1d4ed8;
-  --shadow: 0 24px 70px color-mix(in oklab, #0b1411 10%, transparent);
+
+  --font-serif: "STIX Two Text Variable", "STIX Two Text", Georgia, "Times New Roman",
+    "Songti SC", "SimSun", serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", "SFMono-Regular",
+    Consolas, "Liberation Mono", monospace;
+
+  --rail-width: 168px;
+  --rail-gap: 2.25rem;
+  --content-width: 1080px;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #101214;
-  --surface: #171a1f;
-  --surface-strong: #20242b;
-  --text: #f4f1e8;
-  --muted: #b7b3a8;
-  --border: #343941;
-  --accent: #5eead4;
-  --accent-2: #fbbf24;
-  --focus: #93c5fd;
-  --shadow: 0 24px 70px color-mix(in oklab, #000 28%, transparent);
+
+  --paper: #151714;
+  --ink: #e9e7dd;
+  --muted: #a9aea3;
+  --line: #2e312b;
+  --line-strong: #e9e7dd;
+  --surface: #1d201c;
+  --accent: #63c6ac;
+  --accent-warm: #e2926f;
+  --focus: #8ab4f8;
 }
 
 html {
-  background: var(--bg);
-  color: var(--text);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
   scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    linear-gradient(color-mix(in oklab, var(--border) 36%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklab, var(--border) 36%, transparent) 1px, transparent 1px),
-    var(--bg);
-  background-size: 72px 72px, 72px 72px, auto;
-  color: var(--text);
+  background: var(--paper);
+  color: var(--ink);
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
   color: inherit;
 }
 
+::selection {
+  background: color-mix(in oklab, var(--accent) 24%, var(--paper));
+}
+
 :focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 3px;
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 1px;
 }
 
 .container {
-  width: min(1120px, calc(100% - 32px));
+  width: min(var(--content-width), calc(100% - 2.5rem));
   margin-inline: auto;
 }
 
+/*
+ * Margin rail: the shared structural device. A mono label hangs in the left
+ * margin; content sits right of a continuous hairline. On narrow screens the
+ * label becomes an eyebrow and the rule is dropped.
+ */
+.rail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 0.75rem;
+}
+
+.rail-label {
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.rail-label a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.rail-label a:hover {
+  color: var(--accent);
+}
+
+.rail-body {
+  min-width: 0;
+}
+
+@media (min-width: 920px) {
+  .rail {
+    grid-template-columns: var(--rail-width) minmax(0, 1fr);
+    column-gap: var(--rail-gap);
+    row-gap: 0;
+  }
+
+  .rail-label {
+    padding-top: 0.3rem;
+    text-align: right;
+  }
+
+  .rail-body {
+    border-left: 1px solid var(--line);
+    padding-left: var(--rail-gap);
+  }
+}
+
+/* Serif voice for titles. */
+.title-serif {
+  font-family: var(--font-serif);
+  font-weight: 520;
+  letter-spacing: -0.015em;
+}
+
+/* Mono voice for data: dates, tags, counts, statuses. */
+.data-mono {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+/*
+ * Article prose. Long-form reading is the credibility core: serif body,
+ * measured line length, quiet structure.
+ */
 .article-body {
+  font-family: var(--font-serif);
   font-size: 1.0625rem;
-  line-height: 1.72;
-  overflow-wrap: anywhere;
+  line-height: 1.78;
+  overflow-wrap: break-word;
 }
 
-.article-body :where(p, ul, ol, blockquote, pre, table) {
-  margin-block: 1rem;
+.article-body:lang(zh-CN) {
+  line-height: 1.95;
 }
 
-.article-body :where(h2, h3) {
-  line-height: 1.2;
-  scroll-margin-top: 6rem;
+.article-body :where(p, ul, ol, blockquote, pre, table, figure) {
+  margin-block: 1.1rem;
+}
+
+.article-body :where(h2, h3, h4) {
+  font-family: var(--font-serif);
+  font-weight: 560;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  scroll-margin-top: 6.5rem;
 }
 
 .article-body :where(h2) {
-  margin-block: 2rem 1rem;
-  font-size: 1.6rem;
+  margin-block: 2.6rem 0.9rem;
+  font-size: 1.5rem;
+}
+
+.article-body :where(h2)::after {
+  content: "";
+  display: block;
+  width: 2rem;
+  margin-top: 0.55rem;
+  border-top: 1px solid var(--line);
 }
 
 .article-body :where(h3) {
-  margin-block: 1.5rem 0.75rem;
-  font-size: 1.25rem;
+  margin-block: 1.9rem 0.7rem;
+  font-size: 1.17rem;
+}
+
+.article-body :where(ul, ol) {
+  padding-left: 1.4rem;
+}
+
+.article-body :where(li) {
+  margin-block: 0.35rem;
+}
+
+.article-body :where(li)::marker {
+  color: var(--muted);
+}
+
+.article-body :where(a) {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  text-decoration-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  transition: text-decoration-color 140ms ease;
+}
+
+.article-body :where(a:hover) {
+  text-decoration-color: var(--accent);
+}
+
+.article-body :where(strong) {
+  font-weight: 640;
 }
 
 .article-body :where(code) {
-  border-radius: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
   background: var(--surface);
-  padding: 0.125rem 0.25rem;
-  font-size: 0.92em;
+  border-radius: 0.2rem;
+  padding: 0.1rem 0.3rem;
 }
 
 .article-body :where(pre) {
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.25rem;
+  padding: 1rem 1.1rem;
   overflow-x: auto;
+  font-size: 0.86rem;
+  line-height: 1.65;
 }
 
 .article-body :where(pre code) {
   background: transparent;
   padding: 0;
+  font-size: inherit;
+}
+
+/* Shiki dual-theme support: swap to the dark palette under the dark theme. */
+:root[data-theme="dark"] .astro-code,
+:root[data-theme="dark"] .astro-code span {
+  color: var(--shiki-dark, inherit) !important;
+  background-color: var(--shiki-dark-bg, transparent) !important;
 }
 
 .article-body :where(blockquote) {
-  border-left: 4px solid var(--accent);
-  color: var(--muted);
+  border-left: 2px solid var(--line-strong);
   margin-inline: 0;
-  padding-inline: 1rem;
+  padding-inline: 1.25rem 0;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.article-body :where(blockquote em) {
+  font-style: normal;
+}
+
+.article-body :where(hr) {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin-block: 2.5rem;
+}
+
+.article-body :where(table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.article-body :where(th, td) {
+  border-bottom: 1px solid var(--line);
+  padding: 0.55rem 1.1rem 0.55rem 0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.article-body :where(th) {
+  border-bottom-color: var(--line-strong);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.article-body :where(figcaption) {
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+}
+
+/* Display math must scroll, never overflow, on narrow screens. */
+.article-body .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.25rem;
+}
+
+.article-body :where(sup a) {
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 0.75em;
 }
 
 .wide-scroll {
@@ -118,11 +326,30 @@ a {
   overflow-x: auto;
 }
 
+/* Homepage entrance: one staggered rise, disabled under reduced motion. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.6rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise-in 480ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  animation-delay: calc(var(--rise-order, 0) * 70ms);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
@@ -140,5 +367,19 @@ a {
   body {
     background: white !important;
     color: black !important;
+  }
+
+  .article-body {
+    font-size: 11pt;
+    line-height: 1.6;
+  }
+
+  .article-body :where(a) {
+    color: black;
+    text-decoration: none;
+  }
+
+  .article-body :where(pre) {
+    white-space: pre-wrap;
   }
 }

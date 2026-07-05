@@ -14,6 +14,12 @@ export default defineConfig({
   output: "static",
   markdown: {
     syntaxHighlight: "shiki",
+    shikiConfig: {
+      themes: {
+        light: "github-light",
+        dark: "github-dark"
+      }
+    },
     processor: unified({
       remarkPlugins: [remarkMath],
       rehypePlugins: [rehypeKatex]
