@@ -11,6 +11,9 @@ C:\Users\wyz16\HomePage
 Primary file to review:
 docs/superpowers/specs/2026-07-05-homepage-design.md
 
+Related review-disposition file:
+docs/superpowers/specs/2026-07-05-claude-review-disposition.md
+
 Context:
 The site is for Yongzhe Wang / Wang Yongzhe. It is primarily an academic personal homepage, but the owner previously worked as a frontend engineer, so the frontend design quality must be high. The site should not look like a generic academic template, a placeholder shell, or a terminal gimmick. It should be a refined academic knowledge product with strong long-form course-note and paper-reading pages.
 
@@ -22,7 +25,7 @@ Important user intent:
 - The stack should be modern, stable, static-first, and suitable for a homepage that may live for many years.
 - Do not propose fake Publications/Projects sections before there is real content.
 
-Please review the design spec only. Do not implement code yet.
+Please review the design spec only. Do not implement code yet. This is a second-pass review after an earlier review found many "implementation would need to guess" gaps. Focus especially on whether the revised spec now makes the necessary v1 product, visual, content-model, deployment, accessibility, and verification decisions explicit.
 
 What to check:
 
@@ -72,6 +75,11 @@ What to check:
 - Are the verification steps concrete enough?
 - Are there missing checks before public deployment?
 - Should the spec require screenshots, Lighthouse checks, or Playwright smoke tests?
+
+9. Review-disposition accuracy
+- Does the disposition file accurately represent the changes in the revised spec?
+- Are any previously important issues still unresolved despite being marked accepted?
+- Are any deferred decisions actually necessary before implementation?
 
 Output format:
 

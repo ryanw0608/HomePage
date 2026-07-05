@@ -2,162 +2,211 @@
 
 ## Goal
 
-Build a long-lived personal academic homepage for Yongzhe Wang / Wang Yongzhe. The site is primarily for academic presentation, learning notes, and paper reading, but it must also demonstrate strong frontend taste because the owner previously worked as a frontend engineer.
+Build a long-lived personal academic homepage for **Yongzhe Wang / Wang Yongzhe**. The site is primarily for academic presentation, course learning notes, and paper reading notes. Because the owner previously worked as a frontend engineer, the site must also demonstrate visible frontend craft in typography, layout, motion, accessibility, and article detail.
 
-The site must not feel like a generic academic template or a terminal gimmick. The desired impression is:
+The site must not feel like:
 
-- Academically credible.
-- Visually refined and technically current.
-- Content-rich once a reader opens a note.
-- Easy to maintain for many years.
+- A generic academic template.
+- A fake publication-heavy senior researcher homepage.
+- A thin placeholder shell.
+- A terminal gimmick.
+- A decorative portfolio that hides weak content.
 
-The first version focuses on:
+The guiding phrase for v1 is:
 
-- Personal identity and basic academic profile.
-- Course learning notes with detailed article pages.
-- Paper reading notes with structured but flexible review pages.
-- Current learning and research interests.
-
-Publications, formal research projects, awards, teaching, and full CV sections are future extensions and should not be faked in v1.
+> A refined academic knowledge base with visible frontend craft.
 
 ## Audience And Success Criteria
 
 Primary audiences:
 
 - Academic readers: potential supervisors, research collaborators, lab peers, and classmates.
-- Technical readers: people who care whether the previous frontend background is real.
-- Future self: the site should remain pleasant to update after courses, papers, and research output grow.
+- Technical readers: people who may judge whether the previous frontend background is credible.
+- Future self: the site should remain easy to update after courses, papers, and research output grow.
 
 Success criteria:
 
 - A visitor can understand who Yongzhe is, what he is learning, and what direction he is moving toward within 30 seconds.
 - A visitor who opens a course note or paper reading sees a serious long-form page, not a thin placeholder.
-- The frontend quality feels deliberate in typography, layout, motion, and article details.
+- The frontend quality feels deliberate in typography, layout, motion, responsiveness, and article details.
 - Adding a new note requires writing one MDX file plus metadata, not touching layout code.
 - The site can evolve for years without a framework rewrite.
 
 Non-goals:
 
-- Do not imitate a publication-heavy senior researcher homepage before there are publications.
-- Do not use visual effects to compensate for missing content.
-- Do not build a backend, CMS, or graph database in v1.
-- Do not make the site hard to update by over-customizing every page.
+- Do not publish a `Publications` page before there are real publications.
+- Do not build a backend, CMS, comments system, database, or graph database in v1.
+- Do not over-customize each article page so much that long-term maintenance becomes painful.
+- Do not rely on client-side JavaScript for core reading/navigation content.
 
 ## Reference Observations
 
-The reference site uses an academic homepage plus a substantial blog/reading system:
+Reference site: `https://www.zhongzhuzhou.org/`.
 
-- The blog index groups entries by year and date, shows language labels, tags, and one-paragraph summaries.
-- Individual paper-reading pages are long-form technical documents, not placeholders.
-- Reading pages include metadata, a short answer, prerequisites, problem framing, method explanation, evaluation, comparison with related work, limitations, critical analysis, improvement ideas, and a conclusion.
-- The site also uses an on-page outline, which is important for long technical articles.
+Useful patterns to borrow:
 
-Our site should borrow the information discipline, not copy the exact visual style.
+- The homepage has dense but scan-friendly academic identity, research interests, links, news, and project/publication previews.
+- The blog index groups posts by year/date and shows language labels, tags, and summaries.
+- Individual paper-reading pages are long technical documents with metadata, a short answer, prerequisites, problem framing, method explanation, evaluation, comparison, limitations, critique, improvement ideas, and conclusion.
+- Long articles include an on-page outline.
+
+What not to copy directly:
+
+- The exact visual style.
+- The level of publication/project density, because v1 does not yet have that content.
+- Any future section that would make this site look artificially inflated.
 
 ## Design Direction
 
 The site should feel like a premium academic knowledge product:
 
-- Clean but distinctive, with high craft in spacing, typography, motion, and interaction.
-- Strong first-screen identity, but not overloaded with fake terminal interactions.
-- A modern visual language influenced by research dashboards, technical editorial design, and high-end developer tools.
-- Interactions should be purposeful: reveal context, help navigation, make reading smoother, or show relationships between notes.
+- Clean but distinctive.
+- Editorial and technical, not marketing-like.
+- Content-first, with interactions that improve navigation or comprehension.
+- Modern enough to show frontend taste, but stable enough to live for years.
 
-The "command center" idea remains only as a small optional motif:
+The earlier "command center" idea is downgraded to an optional micro-interaction:
 
-- A compact command palette can provide fast navigation.
-- Keyboard shortcuts can open search or jump between sections.
-- A subtle status strip can show current focus, latest note, or reading queue.
+- A compact command palette may provide fast navigation later.
+- Keyboard shortcuts may open search or jump between sections later.
+- A subtle status strip is not part of v1 unless it has real data and a clear purpose.
 
-It should not dominate the whole identity.
+It must not dominate the site identity.
 
-The guiding phrase for v1 is:
+## Site Language And Identity
 
-> A refined academic knowledge base with visible frontend craft.
+Interface language:
 
-## Visual Standard
+- Use English for global navigation, filters, labels, metadata, and empty states in v1.
+- Individual notes may be `zh`, `en`, or `mixed`.
+- `ArticleLayout` must set article-level `lang` from frontmatter.
+- Non-article pages default to `en`.
 
-The frontend quality bar is intentionally high:
+Name display:
 
-- No generic template look.
-- No empty decorative hero that hides weak content.
-- No single-color theme that feels flat.
-- No overused dark-blue/purple SaaS gradient as the entire visual identity.
-- No fragile animation that harms readability or mobile performance.
+- Primary display name: `Yongzhe Wang`.
+- Secondary display name: `Wang Yongzhe`.
+- Do not invent Chinese characters. Add Chinese characters only after the owner supplies the exact form.
 
-The site should use:
+Dates:
 
-- Editorial typography with strong hierarchy for long reading.
-- Polished article pages with side metadata, sticky outline, footnote/reference styling, code blocks, callouts, equations, figures, and comparison tables.
-- Thoughtful motion: page transitions, hover intent, section reveals, and interactive diagrams where useful.
-- Responsive layout that keeps long Chinese and English technical text readable on desktop and mobile.
+- Use ISO dates in metadata and URLs where dates appear.
+- Display dates consistently as `YYYY-MM-DD`.
 
-### Visual System
+## Visual System
 
-The visual system should be designed before component implementation:
+The visual system is a foundation task, not a final polish task.
 
-- Use a small set of design tokens for background, foreground, muted text, accent colors, borders, surfaces, spacing, and shadows.
-- Prefer a restrained base palette with two accent families rather than a one-note theme. Avoid making the entire site dark blue, purple, beige, brown, or orange.
-- Support a dark-first interface if it improves the technical editorial feel, but article pages must keep high contrast and comfortable reading.
-- Use one display type treatment for identity/hero sections and one highly readable text treatment for long-form writing.
-- Keep line length controlled: long-form articles should target roughly 65-85 English characters or a comfortable Chinese reading width.
-- Use subtle technical motifs such as grids, coordinate labels, thin rules, status chips, and data-like dividers. These should support structure, not decorate randomly.
-- Use icons only where they reduce reading effort: external links, filters, status, search, copy, previous/next, and table of contents controls.
+Required design artifacts before page implementation:
 
-### Motion System
+- Tailwind theme tokens for background, foreground, muted text, accent colors, borders, surfaces, spacing, shadows, radius, and focus rings.
+- Typography scale for hero, section headings, article headings, body text, metadata, captions, and code.
+- One article style sample that includes headings, paragraphs, tables, code, math, callouts, figures, footnotes, and references.
+- One homepage style sample that shows the identity hero, note cards, and current focus modules.
 
-Motion should prove craft without hurting reading:
+Palette:
 
-- Use view transitions for page continuity.
+- Use a restrained base palette with two accent families.
+- Avoid one-note palettes dominated by dark blue, purple, beige, brown, or orange.
+- Avoid the overused dark-blue/purple SaaS gradient look.
+- Use color to communicate structure, not random decoration.
+
+Theme:
+
+- Build a token-driven light/dark theme.
+- Default theme follows `prefers-color-scheme`.
+- Provide a visible theme toggle.
+- Use a tiny pre-hydration inline script to avoid first-frame theme flash.
+- Shiki/code highlighting must support both themes.
+- Both themes must pass WCAG contrast requirements.
+
+Technical motifs:
+
+- Thin rules, grid hints, coordinate labels, status chips, and data-like dividers are allowed.
+- Decorative technical motifs must support structure or orientation.
+- Avoid continuous visual noise near article bodies.
+
+## Typography And Font Loading
+
+Typography is a core frontend credibility signal.
+
+Font strategy:
+
+- Use system CJK fonts in v1 unless a subset pipeline is added.
+- Do not ship a full Chinese webfont.
+- If webfonts are used for Latin display/body text, self-host WOFF2 files, preload only what is needed, and use `font-display: swap`.
+- Use a dedicated monospace stack for code.
+
+Recommended font stacks:
+
+- Display/body Latin: `Inter`, `ui-sans-serif`, `system-ui`, `-apple-system`, `BlinkMacSystemFont`, `Segoe UI`, `sans-serif`.
+- CJK fallback: `PingFang SC`, `Microsoft YaHei`, `Noto Sans CJK SC`, `Source Han Sans SC`, `sans-serif`.
+- Monospace: `JetBrains Mono`, `SFMono-Regular`, `Consolas`, `Liberation Mono`, `monospace`.
+
+Reading constraints:
+
+- English article line length: roughly 65-85 characters.
+- Chinese article line length: roughly 36-44 Chinese characters.
+- English body line height: about 1.6.
+- Chinese/mixed body line height: at least 1.8.
+- Long tokens, URLs, code identifiers, and equations must not break mobile layout.
+- Use `overflow-wrap` and controlled horizontal scroll containers where needed.
+
+## Motion System
+
+Motion should prove craft without hurting reading.
+
+Requirements:
+
+- Use view transitions only as progressive enhancement.
 - Use hover and focus states that make controls feel precise.
 - Use subtle reveal animation for homepage sections.
-- Use `prefers-reduced-motion` to disable or simplify motion.
+- Disable or simplify motion with `prefers-reduced-motion`.
 - Avoid continuous motion near article bodies.
-- Avoid heavy canvas/WebGL in v1 unless measured performance is excellent.
+- Avoid WebGL/3D/canvas hero effects in v1 unless performance targets are still met.
 
 ## Information Architecture
 
 ### Home
 
-The home page is a polished academic profile and content gateway:
+The home page is a polished academic profile and content gateway.
 
-- Hero section with name, identity, short academic direction, previous frontend background, and key links.
-- Current focus section for learning/research interests.
-- Featured course notes and paper readings with real summaries.
-- Learning map that connects topics, courses, and readings.
-- About snapshot with education, skills, frontend background, and contact links.
+Section order:
 
-The homepage should make the visitor believe the site is actively maintained even before there are publications.
-
-Home page section order:
-
-1. Identity hero: name, short profile, current focus, links.
+1. Identity hero: name, academic profile, current direction, previous frontend background, key links.
 2. Current focus: 3-5 areas with short explanations and related note counts.
-3. Featured writing: latest or pinned course notes and paper readings.
-4. Learning map preview: interactive but lightweight.
-5. About snapshot: education, frontend background, skills, contact.
+3. Featured writing: latest or pinned course notes and paper readings with real summaries.
+4. Learning map preview: structured topic relationship preview, not a full graph unless enough content exists.
+5. About snapshot: education, skills, frontend background, contact.
 
 The hero should be impressive through layout, typography, and interaction quality, not through a huge empty graphic.
 
+Low-content rule:
+
+- If there are fewer than five public notes, hide complex filters on the homepage and show "Latest writing" rather than pretending there is a large archive.
+
 ### Course Notes
 
-The course notes section must be real and detailed, not a placeholder list.
+Course notes are a first-class content type.
 
 Index page requirements:
 
-- List notes by course, topic, date, and tags.
-- Provide filters by course/topic/status.
-- Show concise summaries and reading time.
+- List notes by reverse chronological order, grouped by course when useful.
+- Show title, course, term, date, tags, status, summary, and reading time.
+- Provide filters only when there is enough content to make filtering meaningful.
+- Filter state should be reflected in URL query parameters.
 - Support both Chinese and English titles.
 
 Article page requirements:
 
-- Title, course, date, tags, status, and summary.
-- Sticky or collapsible table of contents.
+- Title, course, term, date, updated date, tags, status, summary.
+- Sticky desktop table of contents.
+- Collapsible mobile table of contents.
+- Metadata panel.
 - Concepts section.
 - Detailed notes section.
 - Examples or worked problems where relevant.
-- Code snippets, diagrams, tables, equations, and references when needed.
+- Code snippets, diagrams, tables, equations, and references where needed.
 - Personal reflection / "what I still do not understand" section.
 - Next/previous navigation within the course.
 
@@ -189,15 +238,18 @@ Paper reading is a first-class content type.
 
 Index page requirements:
 
-- List readings by date, topic, status, venue/year, and tags.
-- Show a one-paragraph technical summary for each entry.
-- Support filters for area, method, model/system, and reading status.
-- Allow bilingual entries when useful.
+- List readings by reverse chronological order, grouped by year.
+- Show paper title, authors, year, venue/status, review date, tags, status, and summary.
+- Support filters for area, method, model/system, language, and reading status when enough content exists.
+- Filter state should be reflected in URL query parameters.
+- Support bilingual entries when useful.
 
 Article page requirements:
 
-- Paper title, authors, year, venue/status, paper link, code/project links if available.
-- Review date and review language.
+- Paper title, authors, year, venue/status.
+- DOI and arXiv ID when available.
+- Paper link, code link, and project link when available.
+- Review date, updated date, and review language.
 - TL;DR / short answer.
 - Why this paper matters.
 - Prerequisites and background.
@@ -213,8 +265,6 @@ Article page requirements:
 - Possible improvements or follow-up ideas.
 - Personal takeaways.
 - References and backlinks to related notes.
-
-Each reading note may omit sections that do not apply, but the layout system should make different structures look coherent.
 
 Recommended paper reading body structure:
 
@@ -248,114 +298,219 @@ Recommended paper reading body structure:
 ## References
 ```
 
-The paper reading layout should support both concise reviews and very long technical reviews.
+The layout should support both concise reviews and very long technical reviews.
 
 ### Learning Map
 
-The learning map should be a serious navigation tool, not only decoration.
+The learning map should be a serious navigation aid, not decoration.
 
-It should connect:
+V1 decision:
+
+- Do not publish a full `/learning-map/` route in v1.
+- On the homepage, show a lightweight learning-map preview.
+- If there are fewer than 10 public cross-linked nodes, render the preview as a structured topic list/matrix rather than a graph.
+- Promote `/learning-map/` to a public route only after there is enough content for a graph to be useful.
+
+When promoted, the map should connect:
 
 - Research interests.
 - Course notes.
 - Paper readings.
 - Methods and tools.
 
-The first implementation can use curated local data. A graph database is out of scope.
-
 ### About
 
-The about section should present:
+The About page has a distinct job beyond repeating the homepage.
 
-- Name: Yongzhe Wang / Wang Yongzhe, with Chinese name if desired.
+It should include:
+
+- Longer narrative bio.
+- Education timeline.
+- Previous frontend engineering background.
 - Current academic identity.
-- Former frontend engineering background.
 - Research/learning interests.
 - Technical skills.
 - Contact and social links.
+- CV PDF link only when a real CV file exists.
 
-## Routing
+## Routing And URL Policy
 
-Recommended public routes:
+V1 public routes:
 
 - `/`
 - `/course-notes/`
 - `/course-notes/[slug]/`
 - `/paper-reading/`
 - `/paper-reading/[slug]/`
-- `/learning-map/`
 - `/about/`
+- `/rss.xml`
+- `/sitemap-index.xml` or equivalent Astro sitemap output.
+- `/404.html`
 
 Future routes:
 
+- `/learning-map/`
 - `/publications/`
 - `/projects/`
 - `/cv/`
 
 Future routes should not appear in public navigation until there is real content.
 
+Slug policy:
+
+- Use explicit ASCII kebab-case slugs.
+- Prefer file names as slugs.
+- Chinese titles must still have ASCII slugs.
+- Published slugs are stable and should not change casually.
+- Course note slugs should include a course/topic prefix when needed to prevent collisions.
+- Slug uniqueness must be validated at build time.
+- Heading anchors should use a stable slugger and allow explicit custom IDs for important sections.
+
+Astro URL settings:
+
+- Use `trailingSlash: 'always'`.
+- Use directory-style static output.
+- All internal links must be base-aware.
+
+GitHub Pages base path:
+
+- If deployed as a project site from repository `HomePage`, configure Astro `base: '/HomePage/'`.
+- If deployed as a user site or custom domain, remove that base path and configure `site` accordingly.
+- The deployment instructions must state which mode is active.
+
 ## Content Model
 
-Use local typed content so the site remains durable and portable.
+Use Astro content collections and build-time schema validation.
 
 Recommended structure:
 
 - `src/content/course-notes/*.mdx`
 - `src/content/paper-reading/*.mdx`
-- `src/content/pages/*.mdx`
 - `src/data/profile.ts`
+- `src/data/taxonomy.ts`
 - `src/data/learning-map.ts`
 
-Course note frontmatter:
+Do not add `src/content/pages/*.mdx` in v1 unless there is a defined schema and a concrete use case.
 
-- `title`
-- `description`
-- `course`
-- `date`
-- `updated`
-- `language`
-- `status`
-- `tags`
-- `summary`
-- `readingTime`
-- `featured`
-- `related`
+### Shared Field Rules
 
-Paper reading frontmatter:
+- `description` is the SEO/meta description, one concise sentence.
+- `summary` is the index-card summary, usually longer than `description`.
+- `readingTime` is computed at build time, not handwritten.
+- `related` uses typed cross-collection references and must fail the build if broken.
+- `heroImage` is optional and must use the project image pipeline.
+- `draft: true` excludes content from production index pages, search, RSS, sitemap, and related-note lists.
 
-- `title`
-- `description`
-- `paperTitle`
-- `authors`
-- `year`
-- `venue`
-- `paperUrl`
-- `codeUrl`
-- `projectUrl`
-- `date`
-- `language`
-- `status`
-- `area`
-- `tags`
-- `summary`
-- `takeaways`
-- `featured`
-- `related`
+### Course Note Schema
 
-MDX is required so notes can contain custom components such as callouts, equations, diagrams, comparison cards, figure captions, and interactive explainers.
+Required fields:
 
-### Data Validation
+- `title: string`
+- `description: string`
+- `summary: string`
+- `course: CourseId`
+- `date: Date`
+- `language: 'zh' | 'en' | 'mixed'`
+- `status: 'active' | 'complete' | 'evergreen'`
+- `tags: TagId[]`
 
-Astro content collections should validate required metadata at build time:
+Optional fields:
 
-- Dates must be parseable.
-- `language` should be constrained to known values such as `zh`, `en`, or `mixed`.
-- `status` should be constrained to known values such as `draft`, `reading`, `complete`, or `evergreen`.
-- Tags should be arrays.
-- External URLs should be optional but valid when present.
-- Required summaries should be non-empty for index pages.
+- `updated: Date`
+- `term: string`
+- `order: number`
+- `featured: boolean`
+- `related: ContentRef[]`
+- `heroImage: ImageRef`
+- `math: boolean`
+- `draft: boolean`
 
-Broken content metadata should fail the build rather than silently degrading the site.
+Course note sorting:
+
+- Within a course, sort by `order` when present.
+- Fall back to `date`.
+- Next/previous navigation uses this same order.
+
+### Paper Reading Schema
+
+Required fields:
+
+- `title: string`
+- `description: string`
+- `summary: string`
+- `paperTitle: string`
+- `authors: string[]`
+- `year: number`
+- `date: Date`
+- `language: 'zh' | 'en' | 'mixed'`
+- `status: 'queued' | 'reading' | 'skimmed' | 'reviewed' | 'revisit'`
+- `area: AreaId`
+- `tags: TagId[]`
+
+Optional fields:
+
+- `updated: Date`
+- `venue: string`
+- `doi: string`
+- `arxivId: string`
+- `paperUrl: URL`
+- `codeUrl: URL`
+- `projectUrl: URL`
+- `takeaways: string[]`
+- `featured: boolean`
+- `related: ContentRef[]`
+- `heroImage: ImageRef`
+- `math: boolean`
+- `draft: boolean`
+
+Takeaway source of truth:
+
+- Use frontmatter `takeaways` as the structured source.
+- The `KeyTakeaways` MDX component may render these takeaways.
+- Do not duplicate a separate free-form "Personal Takeaways" section unless the article needs additional prose.
+
+### Taxonomy
+
+Use `src/data/taxonomy.ts` for controlled IDs:
+
+- `CourseId`
+- `AreaId`
+- `TagId`
+- Optional display labels and descriptions.
+
+Build-time validation:
+
+- Unregistered courses, areas, or tags fail the build.
+- Broken `related` references fail the build.
+- Broken learning-map refs fail the build.
+- Invalid URLs fail the build when a URL is present.
+- Required summaries must be non-empty.
+
+### Learning Map Data
+
+Use curated local data:
+
+```ts
+type LearningMapNode = {
+  id: string;
+  label: string;
+  type: 'area' | 'course' | 'paper' | 'note' | 'method' | 'tool';
+  summary?: string;
+  ref?: ContentRef;
+};
+
+type LearningMapEdge = {
+  from: string;
+  to: string;
+  kind?: 'prerequisite' | 'related' | 'applies-to' | 'extends';
+};
+```
+
+Validation:
+
+- Node IDs must be unique.
+- Edge endpoints must exist.
+- `ref` values must resolve to public content unless the node is explicitly marked future/internal.
 
 ## Technical Approach
 
@@ -364,13 +519,14 @@ Use a modern static-first stack with selective interactivity.
 Target stack, checked on 2026-07-05:
 
 - Astro 7.x for routing, static generation, content collections, and deployment.
-- React 19.x for carefully scoped interactive islands.
+- React 19.x only for carefully scoped interactive islands.
 - TypeScript 6.x for data and component reliability.
 - MDX through the Astro MDX integration for rich note pages.
 - Tailwind CSS 4.x for modern styling primitives and maintainable design tokens.
-- Shiki or rehype-pretty-code for high-quality code blocks.
-- Fuse.js or a small client-side index for local search and filtering.
-- Motion may be used sparingly for transitions and micro-interactions.
+- Pagefind 1.x for static search.
+- `remark-math` + `rehype-katex` for build-time math rendering.
+- Shiki or `rehype-pretty-code` for high-quality code blocks.
+- `@astrojs/sitemap`, `@astrojs/rss`, and `@astrojs/check`.
 
 Why Astro:
 
@@ -379,44 +535,81 @@ Why Astro:
 - It allows interactive islands without turning the whole site into a heavy SPA.
 - It deploys cleanly to GitHub Pages, Cloudflare Pages, or any static host.
 
-Avoid using Next.js unless the site later needs server features. For the current scope, Next.js adds complexity without improving the academic content workflow.
+Avoid Next.js unless the site later needs server features.
 
 ### Dependency Policy
-
-Use modern dependencies, but avoid novelty for its own sake:
 
 - Prefer official Astro integrations where possible.
 - Keep interactive islands small and isolated.
 - Avoid UI kits that make the site look generic.
-- Use copied/customized primitives only when they improve accessibility and speed up development.
-- Avoid large visualization libraries for the learning map unless the curated graph becomes complex.
+- Use copied/customized accessible primitives only when they improve quality and speed.
+- Avoid large visualization libraries in v1.
 - Keep all core content readable without client-side JavaScript.
 
-### Deployment
+### Math And Wide Content
 
-The site should build to static output.
+Math:
 
-Preferred deployment options:
+- Render math at build time with `remark-math` + `rehype-katex`.
+- Do not use client-side MathJax in v1.
+- Load KaTeX CSS/font assets only on pages that need math, using the `math` frontmatter flag.
 
-- GitHub Pages for simple hosting.
-- Cloudflare Pages if custom domains, previews, and deployment workflow become important.
+Wide content:
 
-The implementation should avoid server-only features so either hosting path remains available.
+- Tables, code blocks, and equations must be wrapped in horizontal scroll containers on narrow screens.
+- Scroll containers should have accessible labels when needed.
+- Long URLs and identifiers must wrap without breaking the layout.
+
+### Search And Filtering
+
+V1 search decision:
+
+- Use Pagefind for static search.
+- Search must work for both English and Chinese query snippets used in sample content.
+- Use metadata filters for content type, tag, language, status, course, and area.
+- Filter state must be stored in URL query parameters.
+- Provide a useful zero-results state with a reset action.
+- If Pagefind cannot satisfy Chinese search reliably in verification, add a small supplemental metadata index or adjust tokenization before public deployment.
+
+Progressive enhancement:
+
+- Index pages must render full static lists without JavaScript.
+- Search and filtering enhance those lists, not replace them.
+
+### Islands Inventory
+
+Use React only where it is justified.
+
+No-framework Astro/vanilla script:
+
+- Theme toggle.
+- Copy code buttons.
+- Mobile navigation.
+- Table of contents enhancements.
+- Skip links and focus helpers.
+
+React islands:
+
+- Search/filter interface, hydrated with `client:idle`.
+- Learning map preview, hydrated with `client:visible`.
+- Future command palette, if added, hydrated with `client:idle`.
+
+Article pages without React islands should not load the React runtime.
 
 ## Components
 
 Core layout components:
 
-- `SiteShell`: metadata, nav, footer, page frame.
+- `SiteShell`: metadata, nav, footer, page frame, skip link, theme script.
 - `HomeHero`: refined identity section with subtle technical visual treatment.
 - `ProfilePanel`: academic identity, frontend background, links, current focus.
-- `LearningMap`: interactive topic/note map.
+- `LearningMapPreview`: static-first topic matrix with optional interaction.
 - `ContentIndex`: reusable index for course notes and paper readings.
-- `ContentFilters`: tag, topic, status, and language filtering.
+- `ContentFilters`: progressive-enhancement filters.
 - `ArticleLayout`: shared long-form reading layout.
 - `ArticleMeta`: metadata panel for date, tags, status, links, and reading time.
 - `ArticleTOC`: sticky/collapsible table of contents.
-- `MDXComponents`: typography, callouts, figures, equations, code, tables, references.
+- `MDXComponents`: typography, callouts, figures, equations, code, tables, footnotes, references.
 - `RelatedNotes`: backlinks and next/previous links.
 
 Special MDX components:
@@ -435,45 +628,17 @@ Component boundaries:
 
 - Layout components own page structure and SEO.
 - Content components own article rendering.
-- Interactive components own client-side behavior and should receive typed data as props.
-- Data files own profile and learning-map content.
+- Interactive components own client-side behavior and receive typed data as props.
+- Data files own profile, taxonomy, and learning-map content.
 - MDX files own long-form writing.
 
-Large components should be split when they combine layout, data mapping, and interaction state in one file.
+Split large components when they combine layout, data mapping, and interaction state in one file.
 
-## Interaction
+## Article Reading Experience
 
-Interactions must serve content quality.
+Long-form article pages are the credibility core of the site.
 
-V1 interactions:
-
-- Fast search/filter across notes.
-- Sticky outline for long articles.
-- Smooth view transitions between index and article pages.
-- Learning map node hover/click details.
-- Copy buttons for code blocks.
-- Optional command palette for navigation.
-
-Avoid over-building:
-
-- No full CMS in v1.
-- No backend database in v1.
-- No heavy 3D hero in v1 unless performance remains excellent.
-- No decorative animation that competes with article reading.
-
-### Search And Filtering
-
-V1 search/filter behavior:
-
-- Filter by content type, tag, language, status, and area/course.
-- Search title, summary, tags, course, area, paper title, and authors.
-- Keep filters client-side using a generated static index.
-- Show a useful empty state with a reset action.
-- Do not index entire article bodies in v1 unless bundle size remains small.
-
-### Article Reading Experience
-
-Long-form article pages must include:
+Required:
 
 - Sticky desktop table of contents.
 - Mobile-friendly collapsible outline.
@@ -483,19 +648,141 @@ Long-form article pages must include:
 - Copyable code blocks.
 - Styled tables that do not overflow mobile.
 - Figure captions.
+- Figure alt text distinct from captions.
+- Figure source/attribution when the image is not original.
 - Callouts for definitions, warnings, insights, and open questions.
+- Footnote support using GFM-style footnotes.
 - Reasonable anchor links for headings.
+- Print stylesheet that hides interactive controls and preserves readable long-form content.
 
-Article pages are the credibility core of the site.
+## SEO, Metadata, And Feeds
+
+Site metadata:
+
+- Configure Astro `site`.
+- Use a consistent title template.
+- Use frontmatter `description` for page descriptions.
+- Generate canonical URLs.
+- Generate Open Graph and Twitter card metadata.
+- Provide a default OG image and allow article-specific `heroImage` overrides.
+
+Structured data:
+
+- Add `Person` JSON-LD on the homepage/About page.
+- Add `Article` JSON-LD on course note and paper reading pages.
+
+Feeds and discovery:
+
+- Generate sitemap with `@astrojs/sitemap`.
+- Generate RSS with `@astrojs/rss`.
+- Add `robots.txt`.
+- Add `favicon` and app icons.
+- Add a designed `404.html`.
+
+## Accessibility Requirements
+
+Target WCAG 2.2 AA.
+
+Requirements:
+
+- Body text and muted text contrast at least 4.5:1.
+- Focus indicators at least 3:1 against adjacent colors.
+- First focusable element is a skip link.
+- Use visible `:focus-visible` states.
+- All icon buttons need accessible names.
+- Search, filters, navigation, and TOC must be keyboard usable.
+- Learning map nodes must be focusable and have an equivalent static HTML list.
+- Any command palette/dialog must use dialog semantics, focus trapping, Escape close, and focus restoration.
+- Copy buttons need accessible labels and `aria-live` success feedback.
+- Article `lang` must match frontmatter language.
+- Figures require alt text; captions are not a substitute for alt text.
+
+## Progressive Enhancement Contract
+
+Core content must work without client-side JavaScript:
+
+- Home identity and links.
+- Full course note index list.
+- Full paper reading index list.
+- Full article bodies.
+- Basic table of contents links.
+- Related notes and previous/next links.
+
+JavaScript enhancements:
+
+- Search.
+- Filters.
+- TOC scroll highlighting.
+- Copy buttons.
+- Theme persistence.
+- Learning map interaction.
+
+Verification must include opening index and article pages with JavaScript disabled.
 
 ## Empty States
 
 Because the site is early-stage, empty states should feel intentional:
 
-- No "Publications" section until there are actual publications.
+- No `Publications` section until there are actual publications.
 - Paper reading is framed as reading notes, not published papers.
-- Course notes can start with a few detailed sample notes.
-- Future sections should be hidden or marked as "planned" only in admin/development notes, not as public filler.
+- Course notes can start with a few detailed notes.
+- If there are fewer than five notes, hide complex filter controls and show simple latest-writing lists.
+- Future sections should be hidden from public navigation rather than shown as filler.
+
+## Licensing And Attribution
+
+Content credibility includes attribution hygiene:
+
+- Add source attribution for non-original figures.
+- `Figure` should accept `source` and `sourceUrl`.
+- Note pages should clearly distinguish personal explanation from quoted or adapted material.
+- Pick a content license before public launch, or explicitly state all rights reserved.
+- Do not copy long copyrighted passages from papers into notes.
+
+## Deployment
+
+The site should build to static output.
+
+Supported hosting:
+
+- GitHub Pages.
+- Cloudflare Pages.
+
+GitHub Pages modes:
+
+- User site: repository named `<username>.github.io`; no project base path.
+- Project site: repository named `HomePage`; use `base: '/HomePage/'`.
+- Custom domain: configure `site` to the custom domain and remove project base when appropriate.
+
+Deployment requirements:
+
+- All internal links and assets must work under the configured base path.
+- Local production preview should serve the built `dist` output before deployment.
+- Deployment instructions must state the active hosting mode.
+
+CI:
+
+- On every push, run production build.
+- Run `astro check`.
+- Run internal link checks.
+- Run Lighthouse/axe checks on key pages when feasible.
+- External link checks can run on a scheduled workflow to avoid flaky CI.
+
+## Measurable Quality Targets
+
+Targets for public v1:
+
+- Lighthouse mobile Performance >= 90 on homepage, one index page, and one long article page.
+- Lighthouse Accessibility >= 95.
+- Lighthouse SEO >= 95.
+- No axe serious or critical issues on homepage, one index page, and one long article page.
+- LCP < 2.5s on local production preview for key pages.
+- CLS < 0.1.
+- Article pages without React islands should not load React runtime.
+- Client-side JS per article page should stay under 75 KB gzip unless justified.
+- Search index size should stay under 100 KB initially; if it exceeds that later, revisit indexing scope.
+
+Performance language in other sections ("small", "excellent", "lightweight") refers to these targets.
 
 ## Quality Bar For V1
 
@@ -506,63 +793,86 @@ The first public version must include:
 - A real paper reading index.
 - At least one detailed course note page.
 - At least one detailed paper reading page.
-- Shared article layout with table of contents, metadata, code/table/callout styling, and responsive typography.
+- Shared article layout with TOC, metadata, code/table/callout/math styling, responsive typography, and print styles.
+- Working static search and filters when content volume justifies filters.
+- RSS, sitemap, canonical URLs, OG metadata, favicon, robots.txt, and 404 page.
 
 This prevents the site from looking like a shell.
 
 ## Implementation Phases
 
-### Phase 1: Foundation
+### Phase 0: Design Foundation
 
-- Create Astro project with TypeScript, React, MDX, and Tailwind.
+- Define Tailwind theme tokens.
+- Decide font stacks and typography scale.
+- Build static visual samples for homepage and article content.
+- Confirm light/dark theme tokens pass contrast checks.
+
+### Phase 1: Project Foundation
+
+- Create Astro project with TypeScript, React, MDX, Tailwind, sitemap, RSS, check, Pagefind, math, and code highlighting.
+- Configure `site`, `base`, `trailingSlash`, and static output.
 - Define content collections and schemas.
-- Add profile data and learning map data.
-- Build `SiteShell`, navigation, footer, and metadata defaults.
+- Add profile data, taxonomy data, and initial learning-map data.
+- Build `SiteShell`, navigation, footer, SEO defaults, skip link, theme support, and 404 page.
 
 ### Phase 2: Content Experience
 
 - Build course note index and detail pages.
 - Build paper reading index and detail pages.
-- Implement article layout, TOC, metadata panel, MDX components, code styling, tables, callouts, and navigation.
+- Implement article layout, TOC, metadata panel, MDX components, code styling, tables, math, callouts, footnotes, references, and navigation.
 - Add one real course note sample and one real paper reading sample.
+- Add print styles.
 
-### Phase 3: Homepage And Visual Polish
+### Phase 3: Homepage And Search
 
 - Build homepage sections.
-- Add learning map preview.
-- Add refined visual system, responsive layout, motion, and transitions.
-- Add search/filter behavior.
+- Add learning-map preview with low-content fallback.
+- Add Pagefind search and progressive filters.
+- Add RSS and sitemap routes.
 
 ### Phase 4: Verification And Deployment Prep
 
 - Run production build.
-- Check desktop and mobile.
-- Check reduced-motion behavior.
-- Check static deployment output.
+- Run `astro check`.
+- Run local static preview under the configured base path.
+- Check desktop, mobile, and reduced-motion behavior.
+- Check JavaScript-disabled article/index pages.
+- Run Lighthouse and axe checks.
+- Run internal link checks.
 - Add deployment instructions.
 
 ## Testing And Verification
 
 Before considering v1 complete:
 
-- Run the production build.
-- Run type checking or Astro checking.
-- Check desktop and mobile layouts.
-- Inspect article pages with long Chinese and English text.
-- Confirm MDX components render correctly.
-- Confirm filters/search work.
-- Confirm page transitions and animations respect reduced-motion preferences.
-- Confirm generated static output can deploy to GitHub Pages or Cloudflare Pages.
-
-Manual QA checklist:
-
-- Home page first viewport communicates identity clearly.
+- Production build passes.
+- `astro check` passes.
+- Internal links pass.
+- Homepage first viewport communicates identity clearly.
 - Course notes index looks meaningful with few notes.
 - Paper reading index looks meaningful with few readings.
 - Long article page remains readable for 2,000+ words.
-- Tables and code blocks do not break mobile layout.
-- Links, tags, filters, and table of contents are keyboard accessible.
-- No hidden future section makes the site look unfinished.
+- Long Chinese and English text render with appropriate line-height and width.
+- Tables, code blocks, and long equations do not break 375px mobile layout.
+- Search works for at least one English query and one Chinese query.
+- Zero-results search state has a reset action.
+- Copy buttons, previous/next links, heading anchors, and table of contents work.
+- Reduced-motion preference is respected.
+- Light and dark themes both pass contrast checks.
+- JavaScript-disabled index pages still show full content lists.
+- JavaScript-disabled article pages still show complete article content.
+- Sitemap, RSS, canonical URLs, OG metadata, favicon, robots.txt, and 404 page exist.
+- GitHub Pages project-site base path works if deploying `HomePage`.
+- Print preview for a long article is readable.
+
+Browser/device matrix:
+
+- Chrome desktop.
+- Edge desktop.
+- Firefox desktop for progressive degradation of view transitions.
+- Safari/WebKit if available.
+- One real mobile or mobile-sized viewport around 375px width.
 
 ## Out Of Scope For V1
 
@@ -571,6 +881,9 @@ Manual QA checklist:
 - Comment system.
 - Authentication.
 - Backend database.
+- CMS.
 - Automated knowledge graph extraction.
+- Full `/learning-map/` page.
 - Complex 3D scenes.
 - Analytics dashboard.
+- Playwright end-to-end suite beyond optional smoke checks.
