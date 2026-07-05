@@ -17,3 +17,21 @@ const { src, alt, caption, source, sourceUrl } = Astro.props;
     {source && !sourceUrl && <span> Source: {source}.</span>}
   </figcaption>
 </figure>
+
+<style>
+  figure {
+    margin: 1.5rem 0;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  figcaption {
+    margin-top: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+  }
+</style>
