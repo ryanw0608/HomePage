@@ -1,27 +1,32 @@
 ---
 /*
- * Hero showpiece: a live diagram of speculative decoding.
- * Draft tokens stream in ghosted; a verify bar sweeps them in parallel;
- * the matching prefix is accepted, the first mismatch is rejected and
- * corrected. Canvas 2D, 30fps, paused off-screen, static under
- * reduced-motion and without JavaScript.
+ * Hero showpiece: two speculative-decoding drafters, live.
+ *   eagle3 — autoregressive drafting: ghost tokens stream out one by one.
+ *   dflash — block diffusion drafting: a whole masked block resolves in a
+ *            single forward pass.
+ * Both lanes get a parallel verify sweep from the target model: the matching
+ * prefix is accepted, the first mismatch is rejected and corrected. Canvas 2D,
+ * 30fps, paused off-screen, static under reduced-motion and without JS.
  */
 ---
 
 <figure class="token-stream rise" style="--rise-order: 1;" data-token-stream>
   <p class="prompt-line" aria-hidden="true">
-    <span class="prompt">$</span> <span class="cmd">./spec-decode --visualize</span>
+    <span class="prompt">$</span> <span class="cmd">./spec-decode --compare eagle3,dflash</span>
   </p>
   <div class="ts-frame">
     <canvas data-ts-canvas hidden aria-hidden="true"></canvas>
-    <pre class="ts-fallback" data-ts-fallback aria-hidden="true"><span class="tk-ok">spec</span> <span class="tk-ok">ulat</span> <span class="tk-ok">ive</span> <span class="tk-acc">dec</span> <span class="tk-acc">oding</span> <span class="tk-rej">gemm</span> <span class="tk-draft">kv</span> <span class="tk-draft">cache</span><span class="ts-caret"></span></pre>
+    <pre class="ts-fallback" data-ts-fallback aria-hidden="true"><span class="lane-line"><span class="lane-name">eagle3</span><span class="tk-ok">spec</span> <span class="tk-ok">ulat</span> <span class="tk-acc">ive</span> <span class="tk-acc">dec</span> <span class="tk-rej">gemm</span> <span class="tk-draft">kv</span><span class="ts-caret"></span></span>
+<span class="lane-line"><span class="lane-name">dflash</span><span class="tk-acc">batch</span> <span class="tk-acc">fuse</span> <span class="tk-acc">attn</span> <span class="tk-acc">soft</span> <span class="tk-acc">max</span> <span class="tk-mask">&#9617;&#9617;</span> <span class="tk-mask">&#9617;&#9617;</span><span class="ts-caret"></span></span></pre>
   </div>
   <figcaption class="ts-legend">
+    <span class="legend-item"><span class="swatch sw-mask" aria-hidden="true"></span>masked</span>
     <span class="legend-item"><span class="swatch sw-draft" aria-hidden="true"></span>draft</span>
     <span class="legend-item"><span class="swatch sw-accept" aria-hidden="true"></span>accepted</span>
     <span class="legend-item"><span class="swatch sw-reject" aria-hidden="true"></span>rejected</span>
     <span class="legend-note">
-      speculative decoding — draft tokens verified in parallel, matching prefix accepted
+      eagle-3 drafts token-by-token · dflash drafts a whole block in one pass — the target model verifies both
+      in parallel
     </span>
   </figcaption>
 </figure>
@@ -64,33 +69,72 @@
         };
       }
 
+      type TokenState = "committed" | "masked" | "draft" | "accepted" | "rejected" | "corrected";
+
       interface Token {
         text: string;
-        state: "committed" | "draft" | "accepted" | "rejected" | "corrected";
+        state: TokenState;
         alpha: number;
         jitter: number;
       }
 
+      type Phase = "draft" | "verify" | "resolve" | "commit" | "idle";
+
+      interface Lane {
+        mode: "ar" | "block";
+        label: string;
+        sublabel: string;
+        yFrac: number;
+        tokens: Token[];
+        phase: Phase;
+        phaseT: number;
+        draftStart: number;
+        draftTarget: number;
+        acceptCount: number;
+        sweep: number;
+        scrollX: number;
+        scrollFrom: number;
+        scrollTo: number;
+      }
+
       const FONT_SIZE = 13;
-      const CELL_H = 26;
+      const CELL_H = 25;
       const PAD_X = 9;
       const GAP = 8;
+      const LANE_X = 16;
 
       let cssW = 0;
       let cssH = 0;
-      let tokens: Token[] = [];
-      let phase: "draft" | "verify" | "resolve" | "commit" = "draft";
-      let phaseT = 0;
-      let draftTarget = 4;
-      let draftStart = 0;
-      let acceptCount = 0;
-      let sweep = 0;
-      let scrollX = 0;
-      let scrollFrom = 0;
-      let scrollTo = 0;
 
       const rand = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
       const pick = () => POOL[Math.floor(Math.random() * POOL.length)];
+
+      const makeLane = (mode: "ar" | "block", label: string, sublabel: string, yFrac: number): Lane => ({
+        mode,
+        label,
+        sublabel,
+        yFrac,
+        tokens: Array.from({ length: 3 }, () => ({
+          text: pick(),
+          state: "committed" as const,
+          alpha: 1,
+          jitter: 0
+        })),
+        phase: "idle",
+        phaseT: mode === "block" ? 260 : 0,
+        draftStart: 3,
+        draftTarget: mode === "block" ? rand(6, 8) : rand(4, 6),
+        acceptCount: 0,
+        sweep: 0,
+        scrollX: 0,
+        scrollFrom: 0,
+        scrollTo: 0
+      });
+
+      const lanes: Lane[] = [
+        makeLane("ar", "eagle3", "autoregressive draft", 0.3),
+        makeLane("block", "dflash", "block diffusion draft", 0.76)
+      ];
 
       const resize = () => {
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -99,7 +143,6 @@
         canvas.width = Math.round(cssW * dpr);
         canvas.height = Math.round(cssH * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.font = `500 ${FONT_SIZE}px "JetBrains Mono Variable", Consolas, monospace`;
         ctx.textBaseline = "middle";
       };
 
@@ -109,112 +152,146 @@
         resizeTimer = window.setTimeout(resize, 150);
       });
 
-      const tokenWidth = (token: Token) => ctx.measureText(token.text).width + PAD_X * 2;
-
-      const seed = () => {
-        tokens = Array.from({ length: 3 }, () => ({
-          text: pick(),
-          state: "committed" as const,
-          alpha: 1,
-          jitter: 0
-        }));
-        phase = "draft";
-        phaseT = 0;
-        draftTarget = rand(4, 6);
-        draftStart = tokens.length;
-        scrollX = 0;
+      const tokenWidth = (token: Token) => {
+        ctx.font = `500 ${FONT_SIZE}px "JetBrains Mono Variable", Consolas, monospace`;
+        return ctx.measureText(token.text).width + PAD_X * 2;
       };
 
-      const update = (dt: number) => {
-        phaseT += dt;
+      const computeOverflow = (lane: Lane) => {
+        const total = lane.tokens.reduce((sum, token) => sum + tokenWidth(token) + GAP, 0);
+        return Math.max(0, total - cssW * 0.8);
+      };
 
-        if (phase === "draft") {
-          const wanted = Math.min(draftTarget, Math.floor(phaseT / 100));
-          while (tokens.length - draftStart < wanted) {
-            tokens.push({ text: pick(), state: "draft", alpha: 0.55, jitter: 0 });
-          }
-          if (tokens.length - draftStart >= draftTarget && phaseT > draftTarget * 100 + 160) {
-            phase = "verify";
-            phaseT = 0;
-            sweep = 0;
-          }
-        } else if (phase === "verify") {
-          sweep = Math.min(1, phaseT / 180);
-          if (sweep >= 1 && phaseT > 300) {
-            acceptCount = Math.random() < 0.25 ? draftTarget : rand(1, draftTarget - 1);
-            tokens.forEach((token, index) => {
-              if (token.state !== "draft") return;
-              const offset = index - draftStart;
-              if (offset < acceptCount) {
-                token.state = "accepted";
-                token.alpha = 1;
-              } else if (offset === acceptCount) {
-                token.state = "rejected";
-                token.alpha = 1;
-              }
-            });
-            phase = "resolve";
-            phaseT = 0;
-          }
-        } else if (phase === "resolve") {
-          tokens.forEach((token, index) => {
-            if (token.state === "rejected") {
-              token.jitter = phaseT < 200 ? Math.sin(phaseT / 14) * 2 : 0;
-              token.alpha = Math.max(0, 1 - Math.max(0, phaseT - 220) / 180);
-            }
-            if (token.state === "draft" && index > draftStart + acceptCount) {
-              token.alpha = Math.max(0, 0.55 - phaseT / 300);
-            }
-          });
-
-          if (phaseT > 420) {
-            tokens = tokens.filter((token) => token.state !== "rejected" && token.state !== "draft");
-            tokens.forEach((token) => {
-              if (token.state === "accepted") token.state = "committed";
-            });
-            if (acceptCount < draftTarget) {
-              tokens.push({ text: pick(), state: "corrected", alpha: 1, jitter: 0 });
-            }
-            phase = "commit";
-            phaseT = 0;
-            scrollFrom = scrollX;
-            scrollTo = computeOverflow();
-          }
-        } else if (phase === "commit") {
-          const t = Math.min(1, phaseT / 300);
-          scrollX = scrollFrom + (scrollTo - scrollFrom) * (1 - Math.pow(1 - t, 3));
-          if (t >= 1) {
-            tokens.forEach((token) => {
-              if (token.state === "corrected") token.state = "committed";
-            });
-            if (tokens.length > 24) tokens = tokens.slice(tokens.length - 12);
-            phase = "draft";
-            phaseT = 0;
-            draftStart = tokens.length;
-            draftTarget = rand(4, 6);
-            scrollX = computeOverflow();
-            scrollFrom = scrollX;
+      const beginDraft = (lane: Lane) => {
+        lane.phase = "draft";
+        lane.phaseT = 0;
+        lane.draftStart = lane.tokens.length;
+        lane.draftTarget = lane.mode === "block" ? rand(6, 8) : rand(4, 6);
+        if (lane.mode === "block") {
+          // The whole block appears at once as masked cells.
+          for (let i = 0; i < lane.draftTarget; i++) {
+            lane.tokens.push({ text: pick(), state: "masked", alpha: 0.9, jitter: 0 });
           }
         }
       };
 
-      const computeOverflow = () => {
-        const total = tokens.reduce((sum, token) => sum + tokenWidth(token) + GAP, 0);
-        return Math.max(0, total - cssW * 0.82);
+      const update = (lane: Lane, dt: number) => {
+        lane.phaseT += dt;
+
+        if (lane.phase === "idle") {
+          if (lane.phaseT > (lane.mode === "block" ? 160 : 260)) beginDraft(lane);
+        } else if (lane.phase === "draft") {
+          if (lane.mode === "ar") {
+            const wanted = Math.min(lane.draftTarget, Math.floor(lane.phaseT / 95));
+            while (lane.tokens.length - lane.draftStart < wanted) {
+              lane.tokens.push({ text: pick(), state: "draft", alpha: 0.55, jitter: 0 });
+            }
+            if (lane.tokens.length - lane.draftStart >= lane.draftTarget && lane.phaseT > lane.draftTarget * 95 + 150) {
+              lane.phase = "verify";
+              lane.phaseT = 0;
+              lane.sweep = 0;
+            }
+          } else {
+            // Single forward pass: all masked cells resolve together.
+            if (lane.phaseT > 210) {
+              lane.tokens.forEach((token) => {
+                if (token.state === "masked") {
+                  token.state = "draft";
+                  token.alpha = 0.55;
+                }
+              });
+            }
+            if (lane.phaseT > 340) {
+              lane.phase = "verify";
+              lane.phaseT = 0;
+              lane.sweep = 0;
+            }
+          }
+        } else if (lane.phase === "verify") {
+          lane.sweep = Math.min(1, lane.phaseT / 170);
+          if (lane.sweep >= 1 && lane.phaseT > 280) {
+            // dflash: higher acceptance rate; eagle3: shorter accepted prefix.
+            lane.acceptCount =
+              lane.mode === "block"
+                ? Math.random() < 0.45
+                  ? lane.draftTarget
+                  : lane.draftTarget - 1
+                : Math.random() < 0.25
+                  ? lane.draftTarget
+                  : rand(1, lane.draftTarget - 1);
+            lane.tokens.forEach((token, index) => {
+              if (token.state !== "draft") return;
+              const offset = index - lane.draftStart;
+              if (offset < lane.acceptCount) {
+                token.state = "accepted";
+                token.alpha = 1;
+              } else if (offset === lane.acceptCount) {
+                token.state = "rejected";
+                token.alpha = 1;
+              }
+            });
+            lane.phase = "resolve";
+            lane.phaseT = 0;
+          }
+        } else if (lane.phase === "resolve") {
+          lane.tokens.forEach((token, index) => {
+            if (token.state === "rejected") {
+              token.jitter = lane.phaseT < 190 ? Math.sin(lane.phaseT / 14) * 2 : 0;
+              token.alpha = Math.max(0, 1 - Math.max(0, lane.phaseT - 210) / 170);
+            }
+            if (token.state === "draft" && index > lane.draftStart + lane.acceptCount) {
+              token.alpha = Math.max(0, 0.55 - lane.phaseT / 280);
+            }
+          });
+
+          if (lane.phaseT > 400) {
+            lane.tokens = lane.tokens.filter((token) => token.state !== "rejected" && token.state !== "draft");
+            lane.tokens.forEach((token) => {
+              if (token.state === "accepted") token.state = "committed";
+            });
+            if (lane.acceptCount < lane.draftTarget) {
+              lane.tokens.push({ text: pick(), state: "corrected", alpha: 1, jitter: 0 });
+            }
+            lane.phase = "commit";
+            lane.phaseT = 0;
+            lane.scrollFrom = lane.scrollX;
+            lane.scrollTo = computeOverflow(lane);
+          }
+        } else if (lane.phase === "commit") {
+          const t = Math.min(1, lane.phaseT / 280);
+          lane.scrollX = lane.scrollFrom + (lane.scrollTo - lane.scrollFrom) * (1 - Math.pow(1 - t, 3));
+          if (t >= 1) {
+            lane.tokens.forEach((token) => {
+              if (token.state === "corrected") token.state = "committed";
+            });
+            if (lane.tokens.length > 26) lane.tokens = lane.tokens.slice(lane.tokens.length - 12);
+            lane.phase = "idle";
+            lane.phaseT = 0;
+            lane.scrollX = computeOverflow(lane);
+            lane.scrollFrom = lane.scrollX;
+          }
+        }
       };
 
-      const draw = () => {
-        ctx.clearRect(0, 0, cssW, cssH);
-        const y = cssH / 2;
-        let x = 16 - scrollX;
+      const drawLane = (lane: Lane) => {
+        const y = cssH * lane.yFrac;
+
+        ctx.font = `600 10px "JetBrains Mono Variable", Consolas, monospace`;
+        ctx.fillStyle = palette.accent;
+        ctx.fillText(lane.label, LANE_X, y - CELL_H / 2 - 12);
+        ctx.fillStyle = palette.faint;
+        ctx.fillText(lane.sublabel, LANE_X + ctx.measureText(lane.label).width + 10, y - CELL_H / 2 - 12);
+
+        ctx.font = `500 ${FONT_SIZE}px "JetBrains Mono Variable", Consolas, monospace`;
+        let x = LANE_X - lane.scrollX;
         let sweepFrom = 0;
         let sweepTo = 0;
 
-        tokens.forEach((token, index) => {
+        lane.tokens.forEach((token, index) => {
           const w = tokenWidth(token);
 
-          if (index === draftStart) sweepFrom = x;
-          if (index >= draftStart) sweepTo = x + w;
+          if (index === lane.draftStart) sweepFrom = x;
+          if (index >= lane.draftStart) sweepTo = x + w;
 
           if (x + w > -20 && x < cssW + 20 && token.alpha > 0.01) {
             ctx.globalAlpha = token.alpha;
@@ -230,29 +307,38 @@
                       : palette.fg;
 
             ctx.fillStyle = palette.surface;
-            ctx.strokeStyle = token.state === "committed" ? palette.line : color;
+            ctx.strokeStyle = token.state === "committed" ? palette.line : token.state === "masked" ? palette.faint : color;
+            if (token.state === "masked") ctx.setLineDash([3, 3]);
             ctx.beginPath();
             ctx.roundRect(x, y - CELL_H / 2 + token.jitter, w, CELL_H, 4);
             ctx.fill();
             ctx.stroke();
-            ctx.fillStyle = color;
-            ctx.fillText(token.text, x + PAD_X, y + token.jitter + 0.5);
+            ctx.setLineDash([]);
+            if (token.state !== "masked") {
+              ctx.fillStyle = color;
+              ctx.fillText(token.text, x + PAD_X, y + token.jitter + 0.5);
+            }
             ctx.globalAlpha = 1;
           }
 
           x += w + GAP;
         });
 
-        if (phase === "verify" && sweepTo > sweepFrom) {
-          const barX = sweepFrom + (sweepTo - sweepFrom) * sweep;
+        if (lane.phase === "verify" && sweepTo > sweepFrom) {
+          const barX = sweepFrom + (sweepTo - sweepFrom) * lane.sweep;
           ctx.fillStyle = palette.accent;
-          ctx.fillRect(barX, y - CELL_H / 2 - 6, 2, CELL_H + 12);
+          ctx.fillRect(barX, y - CELL_H / 2 - 5, 2, CELL_H + 10);
         }
 
-        if (phase === "draft" || phase === "commit") {
+        if (lane.phase === "draft" || lane.phase === "commit" || lane.phase === "idle") {
           ctx.fillStyle = palette.accent;
           ctx.fillRect(x, y - CELL_H / 2 + 4, 7, CELL_H - 8);
         }
+      };
+
+      const draw = () => {
+        ctx.clearRect(0, 0, cssW, cssH);
+        lanes.forEach(drawLane);
       };
 
       let rafId = 0;
@@ -265,7 +351,7 @@
         if (now - last < 33) return;
         const dt = Math.min(100, now - last);
         last = now;
-        update(dt);
+        lanes.forEach((lane) => update(lane, dt));
         draw();
       };
 
@@ -290,7 +376,6 @@
 
       const boot = () => {
         resize();
-        seed();
         draw();
       };
 
@@ -312,7 +397,7 @@
 
   .ts-frame {
     position: relative;
-    height: clamp(120px, 16vw, 160px);
+    height: clamp(190px, 24vw, 232px);
     border: 1px solid var(--line);
     border-radius: 6px;
     background: color-mix(in oklab, var(--surface) 55%, var(--bg));
@@ -330,14 +415,28 @@
   .ts-fallback {
     position: absolute;
     inset: 0;
+    display: grid;
+    align-content: center;
+    gap: 1.6rem;
+    margin: 0;
+    padding-inline: 1rem;
+    font-size: 0.82rem;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .lane-line {
     display: flex;
     align-items: center;
     gap: 0.55rem;
-    margin: 0;
-    padding-inline: 1rem;
-    font-size: 0.85rem;
-    overflow: hidden;
-    white-space: nowrap;
+  }
+
+  .lane-name {
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    margin-right: 0.5rem;
   }
 
   .tk-ok {
@@ -358,12 +457,15 @@
     opacity: 0.6;
   }
 
+  .tk-mask {
+    color: var(--faint);
+  }
+
   .ts-caret {
     display: inline-block;
     width: 0.5em;
     height: 1em;
     margin-left: 0.3em;
-    vertical-align: text-bottom;
     background: var(--accent);
   }
 
@@ -389,6 +491,10 @@
     border-radius: 2px;
   }
 
+  .sw-mask {
+    border: 1px dashed var(--faint);
+  }
+
   .sw-draft {
     background: var(--tk-orange);
   }
@@ -405,7 +511,7 @@
     color: var(--faint);
   }
 
-  @media (max-width: 640px) {
+  @media (max-width: 800px) {
     .legend-note {
       flex-basis: 100%;
     }

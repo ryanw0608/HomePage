@@ -41,7 +41,14 @@ const latestWriting = [
       <p class="prompt-line" aria-hidden="true"><span class="prompt">$</span> <span class="cmd">whoami</span></p>
       <h1 class="caret">{profile.name}</h1>
       <p class="hero-meta">
-        {profile.secondaryName} · computer science learner · former frontend engineer · {profile.location}
+        {profile.secondaryName} · MSc computer science · University of Sydney · {profile.location}
+      </p>
+      <p class="hero-affil">
+        <a href={profile.lab.href} rel="noopener noreferrer">{profile.lab.shortName} &nearr;</a>
+        {" · advised by "}
+        <a href={profile.advisors[0].href} rel="noopener noreferrer">{profile.advisors[0].name}</a>
+        {" & "}
+        <a href={profile.advisors[1].href} rel="noopener noreferrer">{profile.advisors[1].name}</a>
       </p>
       <p class="hero-abstract">{profile.summary}</p>
       <nav class="hero-links" aria-label="Profile links">
@@ -101,6 +108,25 @@ const latestWriting = [
 
     <LearningMapPreview />
   </div>
+
+  <script
+    type="application/ld+json"
+    is:inline
+    set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Person",
+      name: profile.name,
+      alternateName: profile.secondaryName,
+      affiliation: {
+        "@type": "Organization",
+        name: profile.lab.name,
+        url: profile.lab.href
+      },
+      alumniOf: profile.education.map((item) => ({ "@type": "CollegeOrUniversity", name: item.school })),
+      url: "https://ryanw0608.github.io/HomePage/",
+      sameAs: profile.links.map((link) => link.href)
+    })}
+  />
 </SiteShell>
 
 <style>
@@ -128,6 +154,31 @@ const latestWriting = [
     color: var(--faint);
     font-size: 0.8rem;
     letter-spacing: 0.02em;
+  }
+
+  .hero-affil {
+    margin: 0.55rem 0 0;
+    color: var(--faint);
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+  }
+
+  .hero-affil a {
+    color: var(--muted);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.22em;
+    text-decoration-color: color-mix(in oklab, var(--accent) 40%, transparent);
+    transition: color 140ms ease, text-decoration-color 140ms ease;
+  }
+
+  .hero-affil a:hover {
+    color: var(--accent);
+    text-decoration-color: var(--accent);
+  }
+
+  .affil-sep {
+    color: var(--faint);
   }
 
   .hero-abstract {

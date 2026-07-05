@@ -8,30 +8,39 @@ import SiteShell from "@/layouts/SiteShell.astro";
     <p class="prompt-line" aria-hidden="true"><span class="prompt">$</span> <span class="cmd">cat about.md</span></p>
     <div class="article-body about-body">
       <h1 id="about-title">{profile.name}</h1>
-      <p class="about-meta">{profile.secondaryName} · {profile.role.toLowerCase()} · {profile.location}</p>
+      <p class="about-meta">{profile.secondaryName} · MSc computer science · University of Sydney · {profile.location}</p>
 
       <h2>Profile</h2>
       <p>
-        I am transitioning from frontend engineering toward academic study and research practice. This site is a
-        public workspace for making that transition legible: what I am learning, what I am reading, and how ideas
-        connect over time.
+        I am a master's student in computer science at the University of Sydney and a member of the{" "}
+        <a href={profile.lab.href} rel="noopener noreferrer">{profile.lab.name}</a>, advised by{" "}
+        <a href={profile.advisors[0].href} rel="noopener noreferrer">{profile.advisors[0].name}</a> and{" "}
+        <a href={profile.advisors[1].href} rel="noopener noreferrer">{profile.advisors[1].name}</a>.
       </p>
       <p>
-        My frontend background still shapes the work. I care about durable interfaces, precise typography,
-        accessible reading experiences, and static systems that can keep serving notes long after the original
-        course or paper sprint is over.
+        My research sits around machine learning systems: efficient LLM inference (speculative decoding and
+        system-level serving optimization), agentic and multi-agent systems (tool use, planning, and reliable
+        workflows), and AI for condensed matter physics (learned models for physical simulation, materials, and
+        scientific discovery).
       </p>
+
+      <h2>Education</h2>
+      <ul>
+        {
+          profile.education.map((item) => (
+            <li>
+              <strong>{item.degree}</strong> — {item.school}
+            </li>
+          ))
+        }
+      </ul>
 
       <h2>Practice</h2>
       <p>
-        Course notes are written as reusable explanations rather than one-off summaries. Paper reading notes
-        capture the problem setting, core method, strengths, limitations, and follow-up questions so each reading
-        session leaves a trail.
-      </p>
-      <p>
-        Current research interests: efficient LLM inference (speculative decoding and system-level serving
-        optimization), agentic and multi-agent systems (tool use, planning, and reliable workflows), and AI for
-        condensed matter physics (learned models for physical simulation, materials, and scientific discovery).
+        This site is a public workspace for making the work legible: what I am learning, what I am reading, and
+        how ideas connect over time. Course notes are written as reusable explanations rather than one-off
+        summaries. Paper reading notes capture the problem setting, core method, strengths, limitations, and
+        follow-up questions so each reading session leaves a trail.
       </p>
 
       <h2>Links</h2>
@@ -40,6 +49,16 @@ import SiteShell from "@/layouts/SiteShell.astro";
           profile.links.map((link) => (
             <li>
               <a href={link.href} rel="noopener noreferrer">{link.label}</a>
+            </li>
+          ))
+        }
+        <li>
+          <a href={profile.lab.href} rel="noopener noreferrer">{profile.lab.shortName}</a>
+        </li>
+        {
+          profile.advisors.map((advisor) => (
+            <li>
+              <a href={advisor.href} rel="noopener noreferrer">{advisor.name}</a>
             </li>
           ))
         }

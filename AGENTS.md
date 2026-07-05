@@ -2,7 +2,7 @@
 
 ## Current Project State
 
-This repository contains a working Astro academic homepage for Yongzhe Wang. It builds, deploys to GitHub Pages, and has typed MDX content routes. The current frontend is functional but explicitly not accepted as the final visual direction. Treat it as an implementation foundation, not as a design baseline.
+This repository contains a working Astro academic homepage for Yongzhe Wang (master's student in computer science at the University of Sydney, FutureMLS Lab). It builds, deploys to GitHub Pages, and has typed MDX content routes. The active visual direction is the user-chosen Terminal Luxe system described in the Frontend Quality Bar section below.
 
 Canonical handoff for the next agent: `docs/handoff/claude-code-handoff.md`.
 
@@ -33,7 +33,7 @@ Use Node 24 for parity with GitHub Actions.
 
 Use TypeScript, Astro, and MDX. Keep route names and public slugs ASCII kebab-case. Content titles may be English, Chinese, or mixed, but URLs stay stable and ASCII. Prefer small components with clear ownership: layouts own structure, components own UI pieces, data files own typed site data, and MDX owns prose.
 
-Do not add a generic UI kit. The visual system must be custom enough to support the user's frontend-background credibility.
+Do not add a generic UI kit. The visual system must be custom enough to signal serious engineering craft.
 
 ## Frontend Quality Bar
 
