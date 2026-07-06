@@ -2,6 +2,7 @@
 title: "Reading: Attention Is All You Need"
 description: "A structured reading note on the Transformer architecture and its attention-first design."
 summary: "The paper replaces recurrence and convolution with stacked self-attention and feed-forward blocks, making sequence modeling more parallelizable while preserving contextual token interactions."
+tldr: "The Transformer makes token-to-token interaction explicit and parallel; every modern LLM inherits its design constraints."
 paperTitle: "Attention Is All You Need"
 authors: ["Ashish Vaswani", "Noam Shazeer", "Niki Parmar", "Jakob Uszkoreit", "Llion Jones", "Aidan N. Gomez", "Lukasz Kaiser", "Illia Polosukhin"]
 year: 2017
@@ -11,7 +12,11 @@ language: "en"
 status: "reviewed"
 area: "deep-learning"
 tags: ["transformers", "attention", "reading"]
+arxivId: "1706.03762"
 paperUrl: "https://arxiv.org/abs/1706.03762"
+rating: 5
+recommendation: "must-read"
+reproducible: "code-only"
 takeaways:
   - "Self-attention gives every token a direct path to every other token in a sequence."
   - "The architecture improves parallelism compared with recurrent sequence models."
@@ -20,58 +25,118 @@ featured: true
 math: true
 ---
 
-## Short Answer
-
-The Transformer is a sequence model built around self-attention rather than recurrence. Its central move is to make token-to-token interaction explicit and highly parallelizable.
+<Tldr>
+  The Transformer is a sequence model built around self-attention rather than recurrence. Its central move
+  is to make token-to-token interaction explicit and highly parallelizable.
+</Tldr>
 
 ## Why This Paper Matters
 
-The paper introduced an architecture that became a foundation for modern language models. It is worth reading carefully because many later systems inherit its vocabulary and design constraints.
+The paper introduced an architecture that became a foundation for modern language models. It is worth
+reading carefully because many later systems inherit its vocabulary and design constraints.
 
-## Prerequisites
+## Background
 
-Useful background includes embeddings, softmax, matrix multiplication, sequence-to-sequence learning, and basic neural-network optimization.
+Useful background includes embeddings, softmax, matrix multiplication, sequence-to-sequence learning, and
+basic neural-network optimization.
 
-## Problem Setting
+<Callout type="definition" title="def · self-attention">
+  A mechanism where each position in a sequence computes a weighted mixture of all positions in the same
+  sequence, with weights derived from learned query–key similarity.
+</Callout>
 
-The original experiments focus on machine translation, where the model maps an input token sequence to an output token sequence.
+## Problem
+
+The original experiments focus on machine translation, where the model maps an input token sequence to an
+output token sequence. Recurrent models process tokens serially, which limits training parallelism and
+makes long-range dependencies pass through many steps.
 
 ## Core Idea
 
-Scaled dot-product attention computes weights between queries and keys, then uses those weights to mix values:
+Scaled dot-product attention computes weights between queries and keys, then uses those weights to mix
+values:
 
 $$
 \text{Attention}(Q, K, V) = \text{softmax}(QK^T / \sqrt{d_k})V
 $$
 
-## Method Breakdown
-
-The model stacks encoder and decoder blocks. Each block combines multi-head attention, feed-forward layers, residual connections, and normalization.
+The model stacks encoder and decoder blocks. Each block combines multi-head attention, feed-forward
+layers, residual connections, and normalization. Multi-head attention runs several attention functions in
+parallel over projected subspaces, giving the model multiple representation subspaces at once.
 
 ## Experiments
 
-The paper evaluates translation quality and training cost, showing strong results with better parallel training behavior than recurrent baselines.
+The paper evaluates translation quality and training cost, showing strong results with better parallel
+training behavior than recurrent baselines. Headline WMT 2014 numbers from the paper:
 
-## Strengths
+<Bench
+  caption="WMT 2014 test BLEU, as reported in the paper (Table 2)."
+  columns={["BLEU EN→DE", "BLEU EN→FR"]}
+  better={["max", "max"]}
+  rows={[
+    { name: "Transformer (big)", cells: [28.4, 41.8] },
+    { name: "Transformer (base)", cells: [27.3, 38.1] },
+    { name: "ConvS2S", cells: [25.16, 40.46], baseline: true },
+    { name: "GNMT + RL", cells: [24.6, 39.92], baseline: true }
+  ]}
+/>
 
-The architecture is clean, parallel, and modular. Multi-head attention also gives the model multiple representation subspaces.
+## Verdict
 
-## Limitations
+<Critique
+  weaknesses={[
+    "Self-attention has quadratic sequence-length cost in time and memory in its standard form.",
+    "Token order is not intrinsic: the model depends on injected positional encodings.",
+    "Dense pairwise interaction makes long-context efficiency a central systems problem downstream.",
+    "Evaluation is translation-only; generality beyond seq2seq is asserted more than demonstrated here."
+  ]}
+  improvements={[
+    "Sub-quadratic or sparse attention for long sequences (a whole research area followed).",
+    "Better positional modeling (relative, rotary, learned schemes).",
+    "Training-stability and scaling recipes for much deeper stacks.",
+    "Inference-time systems work — KV caching, batching, speculative decoding — to tame serving cost."
+  ]}
+/>
 
-Self-attention has quadratic sequence-length cost in the standard form. The paper also relies on positional encodings to represent order.
+<WhenMatrix
+  helps={[
+    "Training throughput matters and hardware favors large parallel matmuls.",
+    "Dependencies span long distances and need short interaction paths.",
+    "The task benefits from multiple simultaneous relational views (multi-head)."
+  ]}
+  hurts={[
+    "Very long sequences where quadratic attention dominates cost.",
+    "Strictly streaming settings where full-sequence attention is unavailable.",
+    "Tiny-data regimes where the architecture's capacity outpaces supervision."
+  ]}
+/>
 
-## Critical Analysis
+## Significance
 
-The design trades recurrence for dense pairwise token interaction. That trade works extremely well for many tasks, but it makes long-context efficiency a central systems problem.
+The design trades recurrence for dense pairwise token interaction. That trade works extremely well for
+many tasks, but it moved the bottleneck from optimization to systems: the efficiency of attention at
+inference time is now a first-order research problem — the direct ancestor of today's work on KV caching
+and speculative decoding.
 
-## Possible Improvements
+<KeyTakeaways items={frontmatter.takeaways} />
 
-Later work can be read as improving efficiency, positional modeling, training stability, and scaling behavior.
+## Appendix
 
-## Personal Takeaways
-
-The paper is not only an architecture proposal; it is a shift in what sequence-model computation should look like.
+<FormulaCard
+  formulas={[
+    {
+      name: "scaled dot-product attention",
+      tex: "\\text{Attention}(Q, K, V) = \\text{softmax}\\!\\left(\\frac{QK^{T}}{\\sqrt{d_k}}\\right)V",
+      note: "The 1/√d_k scaling keeps logits in a range where softmax gradients stay useful."
+    },
+    {
+      name: "multi-head attention",
+      tex: "\\text{MultiHead}(Q,K,V) = \\text{Concat}(\\text{head}_1, \\dots, \\text{head}_h)W^{O}",
+      note: "Each head attends over a learned projection of the inputs."
+    }
+  ]}
+/>
 
 ## References
 
-- Vaswani et al., "Attention Is All You Need", 2017.
+- Vaswani et al., "Attention Is All You Need", NeurIPS 2017. arXiv:1706.03762.
