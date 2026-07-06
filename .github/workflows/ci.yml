@@ -97,9 +97,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAIL=$(tail -c 1200 /tmp/agent.log)
-          BODY=$(printf 'Agent run failed. Log tail:\n\n```\n%s\n```' "$TAIL")
-          gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" -f body="$BODY"
+          # Publish the log to a branch so it is readable without API auth.
+          git config user.name "site-agent"
+          git config user.email "actions@github.com"
+          git checkout --orphan agent-error-log
+          git rm -rf --quiet . || true
+          cp /tmp/agent.log agent-error.log
+          git add agent-error.log
+          git commit -m "agent error log from run ${{ github.run_id }}"
+          git push -f origin agent-error-log
           exit 1
 
       - name: Open pull request when output changed
