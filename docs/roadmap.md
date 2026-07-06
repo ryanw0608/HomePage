@@ -1,5 +1,11 @@
 # Roadmap
 
+> 2026-07-06: shipped since the list below was written — Sveltia CMS `/admin` (repo side),
+> GoatCounter hook (fill `site.goatcounter`), GLM site agent (overview + weekly digest via PR),
+> `/digest/` routes. Owner-side activation steps: `docs/admin-setup.md`.
+> Next custom build on the analytics track: `/stats/` terminal dot-matrix world map from
+> GoatCounter's public API (replaces the idea of a mapmyvisitors widget).
+
 Next optimizations, ranked by value ÷ effort for an MSc student building research credibility.
 Content comes first — none of these matter as much as writing real notes.
 
