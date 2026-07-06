@@ -11,7 +11,7 @@ backend:
   name: github
   repo: ryanw0608/HomePage
   branch: master
-  base_url: https://REPLACE-WITH-YOUR-WORKER.workers.dev
+  base_url: https://cms-auth.wyz162536.workers.dev
   auth_endpoint: /auth
 
 media_folder: "public/media"
