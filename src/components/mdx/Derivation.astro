@@ -57,6 +57,10 @@ const rendered = steps.map((step) => ({
     padding-left: 1.6rem;
   }
 
+  li {
+    min-width: 0;
+  }
+
   li::marker {
     color: var(--faint);
     font-size: 0.85rem;
@@ -69,6 +73,7 @@ const rendered = steps.map((step) => ({
   }
 
   .step-math {
+    max-width: 100%;
     overflow-x: auto;
     padding-block: 0.2rem;
   }

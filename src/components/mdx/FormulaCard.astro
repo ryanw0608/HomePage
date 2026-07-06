@@ -63,6 +63,11 @@ const rendered = formulas.map((formula) => ({
   .formula-row {
     display: grid;
     gap: 0.2rem;
+    min-width: 0;
+  }
+
+  dd {
+    min-width: 0;
   }
 
   dt {
@@ -76,6 +81,7 @@ const rendered = formulas.map((formula) => ({
   }
 
   .formula-math {
+    max-width: 100%;
     overflow-x: auto;
     padding-block: 0.2rem;
   }
