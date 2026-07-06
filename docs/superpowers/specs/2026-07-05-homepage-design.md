@@ -1,5 +1,11 @@
 # Personal Academic Homepage Design
 
+> **Archived (2026-07-06):** this spec describes the original editorial v1 direction. The shipped
+> site uses the user-chosen Terminal Luxe system instead — see `CLAUDE.md`, `AGENTS.md`, and
+> `docs/handoff/claude-code-handoff.md` for the current state, and `docs/authoring.md` for the
+> content workflow. Kept for design history; the content model, accessibility, and deployment
+> sections remain broadly accurate.
+
 ## 2026-07-06 Implementation Handoff Addendum
 
 The first Astro foundation has been implemented and deployed to GitHub Pages, but the current frontend has been rejected by the user. Future implementers should treat the codebase as a working functional foundation, not as an accepted visual design.

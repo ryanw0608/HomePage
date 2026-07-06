@@ -18,6 +18,12 @@ Canonical handoff for the next agent: `docs/handoff/claude-code-handoff.md`.
 - `.github/workflows/ci.yml` runs checks/builds; `.github/workflows/deploy.yml` publishes `dist/` to Pages.
 - `docs/` contains design specs, implementation plan history, deployment notes, handoff notes, and review prompts.
 
+## Authoring Content
+
+All note-writing workflow (scaffolds, frontmatter reference, MDX component catalog, Notion export
+checklist, language policy) lives in `docs/authoring.md`. Scaffold with `npm run new:paper` or
+`npm run new:note`; taxonomy keys must be registered in `src/data/taxonomy.ts` before use.
+
 ## Build, Test, and Development Commands
 
 - `npm ci` installs locked dependencies.

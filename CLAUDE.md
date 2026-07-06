@@ -4,7 +4,7 @@ Read this file first, then read:
 
 1. `AGENTS.md`
 2. `docs/handoff/claude-code-handoff.md`
-3. `docs/superpowers/specs/2026-07-05-homepage-design.md`
+3. `docs/authoring.md` (content workflow — most day-to-day work starts here)
 4. `docs/deployment.md`
 
 ## Current Mandate
@@ -46,7 +46,19 @@ The latest deployment succeeded after enabling GitHub Pages Source = GitHub Acti
 
 ## Suggested First Action
 
-Open `docs/review-prompts/claude-code-redesign-prompt.md` and use it as the starting prompt for the next session. It is written to make Claude audit the current frontend, propose a better direction, implement, and verify.
+The redesign is complete. Most sessions are about content now: open `docs/authoring.md` for the
+note-writing workflow (scaffolds, frontmatter, MDX components, Notion export, language policy).
+`docs/roadmap.md` holds the ranked list of next site improvements.
+
+## Content System Rules
+
+- MDX components are injected globally via `src/components/mdx/index.ts` — notes never import them.
+- Taxonomy keys (`src/data/taxonomy.ts`) are strict enums; register new tags/areas/courses there
+  first or the build fails (intended).
+- Language policy: paper deep-dives zh with a mandatory English `tldr`; course notes en.
+- Paper verdict fields (`rating`/`recommendation`/`reproducible`) live in frontmatter and render
+  automatically — never hand-write a `<Verdict>` in a paper note.
+- Scaffold new notes with `npm run new:paper` / `npm run new:note`.
 
 ## Model Policy
 

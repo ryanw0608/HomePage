@@ -1,5 +1,8 @@
 # Claude Code Redesign Prompt
 
+> **Obsolete (2026-07-06):** the redesign this prompt requests has been completed and shipped
+> (Terminal Luxe). Kept for history. Start new sessions from `CLAUDE.md` and `docs/authoring.md`.
+
 Use this prompt in Claude Code from the repository root:
 
 ```text
