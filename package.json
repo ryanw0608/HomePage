@@ -8,7 +8,9 @@
     "build": "astro check && astro build && pagefind --site dist",
     "preview": "astro preview",
     "check": "astro check",
-    "verify": "npm run build"
+    "verify": "npm run build",
+    "new:paper": "node scripts/new-entry.mjs paper",
+    "new:note": "node scripts/new-entry.mjs course"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",
