@@ -10,8 +10,8 @@ on:
   push:
   pull_request:
   schedule:
-    - cron: "7 19 * * *" # daily overview refresh (~05:00 Sydney)
-    - cron: "37 9 * * 0" # weekly digest (Sunday ~19:30 Sydney)
+    - cron: "0 23 * * *" # daily overview refresh (09:00 Sydney AEST; 10:00 during AEDT)
+    - cron: "0 23 * * 6" # weekly digest (Sunday 09:00 Sydney AEST)
   workflow_dispatch:
     inputs:
       mode:
@@ -76,7 +76,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event.schedule }}" = "37 9 * * 0" ]; then
+          elif [ "${{ github.event.schedule }}" = "0 23 * * 6" ]; then
             echo "mode=digest" >> "$GITHUB_OUTPUT"
           elif [ "${{ contains(github.event.head_commit.message, '[agent:digest]') }}" = "true" ]; then
             echo "mode=digest" >> "$GITHUB_OUTPUT"

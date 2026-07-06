@@ -12,7 +12,7 @@ Everything below this box is the original how-to, kept for reference. The live c
 | App callback URL | `https://cms-auth.wyz162536.workers.dev/callback` |
 | Analytics | GoatCounter account code **`yongzhewang`** → dashboard https://yongzhewang.goatcounter.com; wired in `src/lib/site.ts` `goatcounter` |
 | Agent secret | `ZHIPU_API_KEY` in repo Actions secrets (Settings → Secrets and variables → Actions). Optional vars: `GLM_MODEL` (default `glm-5.2`), `GLM_BASE_URL` (default coding-plan endpoint `api/coding/paas/v4`) |
-| Agent schedule | daily overview 19:07 UTC, weekly digest Sun 09:37 UTC, manual via Actions → **CI** → Run workflow (the agent job is hosted inside ci.yml because this repo refuses to register new workflow files — GitHub-side issue, 2026-07-06). Output arrives as a PR; merging deploys |
+| Agent schedule | daily overview 23:00 UTC (09:00 Sydney), weekly digest Sat 23:00 UTC (Sun 09:00 Sydney), manual via Actions → **CI** → Run workflow (the agent job is hosted inside ci.yml because this repo refuses to register new workflow files — GitHub-side issue, 2026-07-06). Output arrives as a PR; merging deploys |
 
 **Key rotation (do this if a credential ever leaks or as routine hygiene):**
 
