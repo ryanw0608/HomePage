@@ -1,0 +1,76 @@
+---
+/*
+ * Active-recall self-test: questions as native <details>, answers hidden
+ * until opened. Pairs with the `revisit` frontmatter date.
+ */
+interface Item {
+  q: string;
+  a: string;
+}
+
+interface Props {
+  title?: string;
+  items: Item[];
+}
+const { title = "active recall", items } = Astro.props;
+---
+
+<section class="recall" aria-label={title}>
+  <p class="recall-label">{title}</p>
+  {
+    items.map((item) => (
+      <details>
+        <summary>{item.q}</summary>
+        <p>{item.a}</p>
+      </details>
+    ))
+  }
+</section>
+
+<style>
+  .recall {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    margin-block: 1.4rem;
+    padding: 0.9rem 1.15rem;
+  }
+
+  .recall-label {
+    margin: 0 0 0.6rem;
+    color: var(--faint);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  details {
+    border-top: 1px solid var(--line);
+    padding-block: 0.6rem;
+  }
+
+  details:first-of-type {
+    border-top: 0;
+  }
+
+  summary {
+    cursor: pointer;
+    color: var(--fg);
+    font-size: 0.92rem;
+    font-weight: 550;
+    line-height: 1.55;
+  }
+
+  summary::marker {
+    color: var(--tk-magenta);
+  }
+
+  details p {
+    margin: 0.55rem 0 0.1rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.65;
+    padding-left: 1.1rem;
+    border-left: 2px solid var(--line);
+  }
+</style>

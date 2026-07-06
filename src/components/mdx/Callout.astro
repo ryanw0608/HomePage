@@ -1,10 +1,14 @@
 ---
 interface Props {
-  type?: "note" | "insight" | "warning" | "question";
+  type?: "note" | "insight" | "warning" | "question" | "exam" | "definition";
   title?: string;
 }
 const { type = "note", title } = Astro.props;
-const label = title ?? type;
+const defaultLabels: Record<string, string> = {
+  exam: "exam-trap",
+  definition: "def"
+};
+const label = title ?? defaultLabels[type] ?? type;
 ---
 
 <aside class={`callout callout-${type}`}>
@@ -31,6 +35,14 @@ const label = title ?? type;
 
   .callout-question {
     --callout-color: var(--tk-magenta);
+  }
+
+  .callout-exam {
+    --callout-color: var(--tk-orange);
+  }
+
+  .callout-definition {
+    --callout-color: var(--tk-blue);
   }
 
   .callout-label {

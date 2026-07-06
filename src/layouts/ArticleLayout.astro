@@ -78,6 +78,7 @@ const filePath = `${relPath}.md`;
       <div class="article-body" data-article-body data-pagefind-body lang={lang}>
         <slot />
       </div>
+      <slot name="after-body" />
       <footer class="article-footer no-print">
         <a class="back-link" href={backHref}>&larr; {backLabel.toLowerCase()}/</a>
       </footer>

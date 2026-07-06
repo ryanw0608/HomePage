@@ -1,9 +1,11 @@
 ---
 import { getCollection, render } from "astro:content";
 
+import CourseNav from "@/components/CourseNav.astro";
+import { mdxComponents } from "@/components/mdx";
 import ArticleLayout from "@/layouts/ArticleLayout.astro";
 import { courses, tags } from "@/data/taxonomy";
-import { entrySlug, publicEntries, readingTime } from "@/lib/content";
+import { byDateDesc, entryPath, entrySlug, publicEntries, readingTime } from "@/lib/content";
 import { htmlLang } from "@/lib/site";
 
 export async function getStaticPaths() {
@@ -19,6 +21,26 @@ const { note } = Astro.props;
 const { Content, headings } = await render(note);
 const lang = htmlLang(note.data.language, note.data.primaryLanguage);
 const tagLabels = note.data.tags.map((tag) => tags[tag].label).join(", ");
+
+// Prev/next within the same course: explicit `order` first, then date.
+const courseNotes = publicEntries(await getCollection("course-notes"))
+  .filter((entry) => entry.data.course === note.data.course)
+  .sort((a, b) => {
+    const orderA = a.data.order ?? Number.POSITIVE_INFINITY;
+    const orderB = b.data.order ?? Number.POSITIVE_INFINITY;
+    if (orderA !== orderB) return orderA - orderB;
+    return -byDateDesc(a, b);
+  });
+const position = courseNotes.findIndex((entry) => entry.id === note.id);
+const prevNote = position > 0 ? courseNotes[position - 1] : undefined;
+const nextNote = position < courseNotes.length - 1 ? courseNotes[position + 1] : undefined;
+
+const kicker = [
+  `Course note · ${courses[note.data.course].label}`,
+  courseNotes.length > 1 ? `part ${position + 1} of ${courseNotes.length}` : undefined
+]
+  .filter(Boolean)
+  .join(" · ");
 ---
 
 <ArticleLayout
@@ -26,16 +48,24 @@ const tagLabels = note.data.tags.map((tag) => tags[tag].label).join(", ");
   description={note.data.description}
   lang={lang}
   headings={headings}
-  kicker={`Course note · ${courses[note.data.course].label}`}
+  kicker={kicker}
   readingMinutes={readingTime(note.body ?? "")}
   meta={[
     { label: "Date", value: note.data.date.toISOString().slice(0, 10) },
     ...(note.data.updated ? [{ label: "Updated", value: note.data.updated.toISOString().slice(0, 10) }] : []),
     { label: "Status", value: note.data.status },
+    ...(note.data.revisit ? [{ label: "Revisit", value: note.data.revisit.toISOString().slice(0, 10) }] : []),
     ...(tagLabels ? [{ label: "Tags", value: tagLabels }] : [])
   ]}
   backHref={`${import.meta.env.BASE_URL}course-notes/`}
   backLabel="Course notes"
 >
-  <Content />
+  <Content components={mdxComponents} />
+  <CourseNav
+    slot="after-body"
+    position={position + 1}
+    total={courseNotes.length}
+    prev={prevNote && { title: prevNote.data.title, href: entryPath("course-notes", prevNote) }}
+    next={nextNote && { title: nextNote.data.title, href: entryPath("course-notes", nextNote) }}
+  />
 </ArticleLayout>

@@ -1,4 +1,4 @@
-import { defineCollection } from "astro:content";
+import { defineCollection, reference } from "astro:content";
 import { glob } from "astro/loaders";
 import { z } from "astro/zod";
 
@@ -24,8 +24,13 @@ const sharedFrontmatter = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
   summary: z.string().min(1),
+  // One-sentence English takeaway. Required by site policy for zh notes so
+  // indexes, RSS, and share cards stay legible to international readers.
+  tldr: z.string().optional(),
   date: z.coerce.date(),
   updated: z.coerce.date().optional(),
+  // Spaced-repetition: when this note is due for a re-read.
+  revisit: z.coerce.date().optional(),
   language,
   primaryLanguage,
   tags: z.array(tagId),
@@ -45,7 +50,8 @@ const courseNotes = defineCollection({
     status: z.enum(["active", "complete", "evergreen"]),
     term: z.string().optional(),
     order: z.number().optional(),
-    areas: z.array(areaId).default([])
+    areas: z.array(areaId).default([]),
+    related: z.array(reference("course-notes")).default([])
   }).superRefine((entry, ctx) => {
     if (entry.language === "mixed" && !entry.primaryLanguage) {
       ctx.addIssue({
@@ -75,7 +81,11 @@ const paperReading = defineCollection({
     paperUrl: z.url().optional(),
     codeUrl: z.url().optional(),
     projectUrl: z.url().optional(),
-    takeaways: z.array(z.string()).default([])
+    takeaways: z.array(z.string()).default([]),
+    rating: z.number().int().min(1).max(5).optional(),
+    recommendation: z.enum(["skip", "skim", "read", "must-read"]).optional(),
+    reproducible: z.enum(["code+weights", "code-only", "partial", "none"]).optional(),
+    related: z.array(reference("paper-reading")).default([])
   }).superRefine((entry, ctx) => {
     if (entry.language === "mixed" && !entry.primaryLanguage) {
       ctx.addIssue({

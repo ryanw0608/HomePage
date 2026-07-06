@@ -1,0 +1,75 @@
+---
+import katex from "katex";
+
+interface Step {
+  text: string;
+  math?: string;
+}
+
+interface Props {
+  title?: string;
+  steps: Step[];
+  open?: boolean;
+}
+const { title = "derivation", steps, open = true } = Astro.props;
+
+const rendered = steps.map((step) => ({
+  ...step,
+  html: step.math ? katex.renderToString(step.math, { displayMode: true, throwOnError: false }) : undefined
+}));
+---
+
+<details class="derivation" open={open}>
+  <summary>{title}</summary>
+  <ol>
+    {
+      rendered.map((step) => (
+        <li>
+          <p class="step-text">{step.text}</p>
+          {step.html && <div class="step-math" set:html={step.html} />}
+        </li>
+      ))
+    }
+  </ol>
+</details>
+
+<style>
+  .derivation {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    margin-block: 1.4rem;
+    padding: 0.85rem 1.15rem;
+  }
+
+  summary {
+    cursor: pointer;
+    color: var(--faint);
+    font-size: 0.74rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  ol {
+    display: grid;
+    gap: 0.9rem;
+    margin: 0.9rem 0 0.2rem;
+    padding-left: 1.6rem;
+  }
+
+  li::marker {
+    color: var(--faint);
+    font-size: 0.85rem;
+  }
+
+  .step-text {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.65;
+  }
+
+  .step-math {
+    overflow-x: auto;
+    padding-block: 0.2rem;
+  }
+</style>

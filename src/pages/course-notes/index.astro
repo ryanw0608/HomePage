@@ -43,6 +43,8 @@ const groups = courseIds.map((courseId) => ({
                 annotation={note.data.term}
                 tags={note.data.tags}
                 minutes={readingTime(note.body ?? "")}
+                lang={note.data.language}
+                status={note.data.status}
               />
             ))}
           </div>

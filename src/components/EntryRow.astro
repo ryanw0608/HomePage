@@ -9,14 +9,44 @@ interface Props {
   annotation?: string;
   tags?: string[];
   minutes?: number;
+  lang?: "zh" | "en" | "mixed";
+  status?: string;
+  rating?: number;
   headingLevel?: "h2" | "h3";
 }
 
-const { href, title, summary, datestamp, annotation, tags = [], minutes, headingLevel = "h2" } = Astro.props;
+const {
+  href,
+  title,
+  summary,
+  datestamp,
+  annotation,
+  tags = [],
+  minutes,
+  lang,
+  status,
+  rating,
+  headingLevel = "h2"
+} = Astro.props;
 const HeadingTag = headingLevel;
 const displayTags = tags.map(
   (tag) => tagDefinitions[tag as keyof typeof tagDefinitions]?.label.toLowerCase().replace(/\s+/g, "-") ?? tag
 );
+const langLabel = lang === "zh" ? "中" : lang === "mixed" ? "EN·中" : lang === "en" ? "EN" : undefined;
+const stars = rating ? "●".repeat(rating) + "○".repeat(5 - rating) : undefined;
+
+// Status tone: color families shared with the article verdict chips.
+const statusTone: Record<string, string> = {
+  reviewed: "green",
+  reading: "yellow",
+  skimmed: "blue",
+  revisit: "magenta",
+  queued: "comment",
+  active: "yellow",
+  complete: "green",
+  evergreen: "cyan"
+};
+const tone = status ? statusTone[status] ?? "comment" : undefined;
 ---
 
 <article class="entry-row">
@@ -27,16 +57,20 @@ const displayTags = tags.map(
     </HeadingTag>
     {annotation && <p class="entry-annotation">{annotation}</p>}
     <p class="entry-summary">{summary}</p>
-    {
-      (displayTags.length > 0 || minutes) && (
-        <p class="entry-data" aria-label="Tags and reading time">
-          {displayTags.map((tag) => (
-            <span class="entry-tag">#{tag}</span>
-          ))}
-          {minutes && <span class="entry-minutes">~{minutes} min</span>}
-        </p>
-      )
-    }
+    <p class="entry-data" aria-label="Language, status, tags, and reading time">
+      {langLabel && <span class="entry-lang">{langLabel}</span>}
+      {status && tone && <span class:list={["entry-status", `tone-${tone}`]}>{status}</span>}
+      {displayTags.map((tag) => <span class="entry-tag">#{tag}</span>)}
+      {minutes && <span class="entry-minutes">~{minutes} min</span>}
+      {
+        stars && (
+          <span class="entry-rating">
+            <span aria-hidden="true">{stars}</span>
+            <span class="sr-only">rated {rating} out of 5</span>
+          </span>
+        )
+      }
+    </p>
   </div>
 </article>
 
@@ -105,10 +139,50 @@ const displayTags = tags.map(
   .entry-data {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.2rem 0.85rem;
+    align-items: baseline;
+    gap: 0.3rem 0.85rem;
     margin: 0.15rem 0 0;
     font-size: 0.74rem;
     letter-spacing: 0.02em;
+  }
+
+  .entry-lang {
+    color: var(--tk-cyan);
+    border: 1px solid color-mix(in oklab, var(--tk-cyan) 45%, transparent);
+    border-radius: 3px;
+    font-size: 0.66rem;
+    padding: 0.05rem 0.35rem;
+  }
+
+  .entry-status {
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    font-size: 0.66rem;
+    padding: 0.05rem 0.35rem;
+  }
+
+  .tone-green {
+    color: var(--tk-green);
+  }
+
+  .tone-yellow {
+    color: var(--tk-yellow);
+  }
+
+  .tone-blue {
+    color: var(--tk-blue);
+  }
+
+  .tone-magenta {
+    color: var(--tk-magenta);
+  }
+
+  .tone-cyan {
+    color: var(--tk-cyan);
+  }
+
+  .tone-comment {
+    color: var(--tk-comment);
   }
 
   .entry-tag {
@@ -117,6 +191,11 @@ const displayTags = tags.map(
 
   .entry-minutes {
     color: var(--faint);
+  }
+
+  .entry-rating {
+    color: var(--tk-yellow);
+    letter-spacing: 0.12em;
   }
 
   @media (min-width: 640px) {

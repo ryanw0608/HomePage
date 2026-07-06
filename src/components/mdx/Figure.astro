@@ -7,10 +7,15 @@ interface Props {
   sourceUrl?: string;
 }
 const { src, alt, caption, source, sourceUrl } = Astro.props;
+
+// Base-path aware: `media/paper-reading/x/fig1.png` resolves under /HomePage/.
+const resolvedSrc = /^(https?:)?\/\//.test(src) || src.startsWith("/")
+  ? src
+  : `${import.meta.env.BASE_URL}${src}`;
 ---
 
 <figure>
-  <img src={src} alt={alt} loading="lazy" />
+  <img src={resolvedSrc} alt={alt} loading="lazy" />
   <figcaption>
     {caption}
     {source && sourceUrl && <span> Source: <a href={sourceUrl}>{source}</a>.</span>}

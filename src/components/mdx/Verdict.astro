@@ -1,0 +1,133 @@
+---
+interface Props {
+  rating?: number;
+  recommendation?: "skip" | "skim" | "read" | "must-read";
+  reproducible?: "code+weights" | "code-only" | "partial" | "none";
+  effort?: string;
+}
+const { rating, recommendation, reproducible, effort } = Astro.props;
+
+const clamped = rating ? Math.min(5, Math.max(1, Math.round(rating))) : undefined;
+const stars = clamped ? "●".repeat(clamped) + "○".repeat(5 - clamped) : undefined;
+---
+
+<aside class="verdict" aria-label="Reading verdict">
+  <dl>
+    {
+      stars && (
+        <div class="row">
+          <dt>rating</dt>
+          <dd><span class="stars" aria-hidden="true">{stars}</span><span class="sr-only">{clamped} out of 5</span></dd>
+        </div>
+      )
+    }
+    {
+      recommendation && (
+        <div class="row">
+          <dt>verdict</dt>
+          <dd><span class:list={["chip", `rec-${recommendation}`]}>{recommendation}</span></dd>
+        </div>
+      )
+    }
+    {
+      reproducible && (
+        <div class="row">
+          <dt>repro</dt>
+          <dd><span class:list={["chip", `repro-${reproducible.replace("+", "-")}`]}>{reproducible}</span></dd>
+        </div>
+      )
+    }
+    {
+      effort && (
+        <div class="row">
+          <dt>effort</dt>
+          <dd class="effort">{effort}</dd>
+        </div>
+      )
+    }
+  </dl>
+</aside>
+
+<style>
+  .verdict {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--surface) 70%, var(--bg));
+    margin-block: 1.4rem;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.85rem;
+  }
+
+  dl {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr);
+    column-gap: 0.6rem;
+    align-items: baseline;
+  }
+
+  dt {
+    color: var(--tk-cyan);
+    font-size: 0.74rem;
+    letter-spacing: 0.04em;
+  }
+
+  dd {
+    margin: 0;
+  }
+
+  .stars {
+    color: var(--tk-yellow);
+    letter-spacing: 0.15em;
+  }
+
+  .chip {
+    display: inline-block;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    padding: 0.08rem 0.45rem;
+  }
+
+  .rec-must-read {
+    color: var(--tk-green);
+  }
+
+  .rec-read {
+    color: var(--tk-blue);
+  }
+
+  .rec-skim {
+    color: var(--tk-yellow);
+  }
+
+  .rec-skip {
+    color: var(--tk-red);
+  }
+
+  .repro-code-weights {
+    color: var(--tk-green);
+  }
+
+  .repro-code-only {
+    color: var(--tk-cyan);
+  }
+
+  .repro-partial {
+    color: var(--tk-yellow);
+  }
+
+  .repro-none {
+    color: var(--tk-red);
+  }
+
+  .effort {
+    color: var(--faint);
+  }
+</style>

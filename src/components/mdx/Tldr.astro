@@ -1,0 +1,39 @@
+---
+interface Props {
+  label?: string;
+}
+const { label = "tldr" } = Astro.props;
+---
+
+<aside class="tldr">
+  <p class="tldr-prompt" aria-hidden="true"><span class="prompt">$</span> {label}</p>
+  <p class="tldr-body"><slot /></p>
+</aside>
+
+<style>
+  .tldr {
+    border-left: 2px solid var(--tk-green);
+    background: color-mix(in oklab, var(--tk-green) 5%, transparent);
+    margin-block: 1.4rem;
+    padding: 0.85rem 1.15rem;
+  }
+
+  .tldr-prompt {
+    margin: 0 0 0.4rem;
+    color: var(--faint);
+    font-size: 0.74rem;
+    letter-spacing: 0.04em;
+  }
+
+  .tldr-prompt .prompt {
+    color: var(--tk-green);
+    font-weight: 600;
+  }
+
+  .tldr-body {
+    margin: 0;
+    color: var(--fg);
+    font-weight: 650;
+    line-height: 1.65;
+  }
+</style>

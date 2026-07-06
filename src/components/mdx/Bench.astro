@@ -1,0 +1,117 @@
+---
+/*
+ * Benchmark table with per-column winner highlighting. `better` declares the
+ * optimum per data column ("max" | "min" | null); the winning cell is
+ * emphasized so the table states its claim at a glance. Baseline rows dim.
+ */
+interface BenchRow {
+  name: string;
+  cells: (string | number)[];
+  baseline?: boolean;
+}
+
+interface Props {
+  caption?: string;
+  columns: string[];
+  rows: BenchRow[];
+  better?: ("max" | "min" | null)[];
+}
+const { caption, columns, rows, better = [] } = Astro.props;
+
+const numeric = (value: string | number) => {
+  const parsed = typeof value === "number" ? value : Number.parseFloat(String(value).replace(/[^\d.eE+-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const winners = columns.map((_, columnIndex) => {
+  const rule = better[columnIndex];
+  if (!rule) return -1;
+  let bestRow = -1;
+  let bestValue: number | undefined;
+  rows.forEach((row, rowIndex) => {
+    const value = numeric(row.cells[columnIndex]);
+    if (value === undefined) return;
+    if (bestValue === undefined || (rule === "max" ? value > bestValue : value < bestValue)) {
+      bestValue = value;
+      bestRow = rowIndex;
+    }
+  });
+  return bestRow;
+});
+---
+
+<figure class="bench wide-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">method</th>
+        {columns.map((column) => <th scope="col">{column}</th>)}
+      </tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((row, rowIndex) => (
+          <tr class:list={{ baseline: row.baseline }}>
+            <th scope="row">{row.name}</th>
+            {row.cells.map((cell, columnIndex) => (
+              <td class:list={{ winner: winners[columnIndex] === rowIndex }}>{cell}</td>
+            ))}
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .bench {
+    margin-block: 1.4rem;
+  }
+
+  table {
+    border-collapse: collapse;
+    font-size: 0.84rem;
+    line-height: 1.5;
+    min-width: 100%;
+  }
+
+  thead th {
+    border-bottom: 1px solid var(--edge);
+    color: var(--faint);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 0.45rem 1.1rem 0.45rem 0;
+  }
+
+  tbody th {
+    font-weight: 600;
+    text-align: left;
+  }
+
+  tbody th,
+  td {
+    border-bottom: 1px solid var(--line);
+    padding: 0.45rem 1.1rem 0.45rem 0;
+    vertical-align: top;
+    white-space: nowrap;
+  }
+
+  .baseline {
+    color: var(--faint);
+  }
+
+  .winner {
+    color: var(--tk-orange);
+    font-weight: 700;
+  }
+
+  figcaption {
+    margin-top: 0.5rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+</style>

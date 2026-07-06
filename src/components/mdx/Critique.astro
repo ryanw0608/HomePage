@@ -1,0 +1,100 @@
+---
+/*
+ * Weaknesses ↔ improvements as a unified diff: `-` lines are flaws in the
+ * paper, `+` lines are concrete fixes or follow-up directions.
+ */
+interface Props {
+  weaknesses?: string[];
+  improvements?: string[];
+}
+const { weaknesses = [], improvements = [] } = Astro.props;
+---
+
+<div class="critique">
+  {
+    weaknesses.length > 0 && (
+      <section aria-label="Weaknesses">
+        <p class="critique-label">weaknesses</p>
+        <ul class="diff-list">
+          {weaknesses.map((item) => (
+            <li class="diff-minus">
+              <span class="diff-sign" aria-hidden="true">-</span>
+              {item}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+  {
+    improvements.length > 0 && (
+      <section aria-label="Possible improvements">
+        <p class="critique-label">improvements</p>
+        <ul class="diff-list">
+          {improvements.map((item) => (
+            <li class="diff-plus">
+              <span class="diff-sign" aria-hidden="true">+</span>
+              {item}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+</div>
+
+<style>
+  .critique {
+    display: grid;
+    gap: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--surface) 70%, var(--bg));
+    margin-block: 1.4rem;
+    padding: 1rem 1.1rem;
+  }
+
+  .critique-label {
+    margin: 0 0 0.5rem;
+    color: var(--faint);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .diff-list {
+    display: grid;
+    gap: 0.45rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .diff-list li {
+    display: grid;
+    grid-template-columns: 1.1rem minmax(0, 1fr);
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .diff-sign {
+    font-weight: 700;
+  }
+
+  .diff-minus .diff-sign {
+    color: var(--tk-red);
+  }
+
+  .diff-plus .diff-sign {
+    color: var(--tk-green);
+  }
+
+  .diff-minus {
+    color: color-mix(in oklab, var(--fg) 82%, var(--tk-red));
+  }
+
+  .diff-plus {
+    color: color-mix(in oklab, var(--fg) 82%, var(--tk-green));
+  }
+</style>

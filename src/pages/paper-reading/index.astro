@@ -41,11 +41,14 @@ const groups = reviewYears.map((year) => ({
                 title={paper.data.title}
                 summary={paper.data.summary}
                 datestamp={paper.data.date.toISOString().slice(0, 10)}
-                annotation={[paper.data.paperTitle, paper.data.venue, String(paper.data.year), paper.data.status]
+                annotation={[paper.data.paperTitle, paper.data.venue, String(paper.data.year)]
                   .filter(Boolean)
                   .join(" · ")}
                 tags={paper.data.tags}
                 minutes={readingTime(paper.body ?? "")}
+                lang={paper.data.language}
+                status={paper.data.status}
+                rating={paper.data.rating}
               />
             ))}
           </div>

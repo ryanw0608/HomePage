@@ -1,0 +1,89 @@
+---
+import katex from "katex";
+
+interface Formula {
+  name: string;
+  tex: string;
+  note?: string;
+}
+
+interface Props {
+  title?: string;
+  formulas: Formula[];
+}
+const { title = "formula reference", formulas } = Astro.props;
+
+const rendered = formulas.map((formula) => ({
+  ...formula,
+  html: katex.renderToString(formula.tex, { displayMode: true, throwOnError: false })
+}));
+---
+
+<aside class="formula-card" aria-label={title}>
+  <p class="card-label">{title}</p>
+  <dl>
+    {
+      rendered.map((formula) => (
+        <div class="formula-row">
+          <dt>{formula.name}</dt>
+          <dd>
+            <div class="formula-math" set:html={formula.html} />
+            {formula.note && <p class="formula-note">{formula.note}</p>}
+          </dd>
+        </div>
+      ))
+    }
+  </dl>
+</aside>
+
+<style>
+  .formula-card {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--surface) 70%, var(--bg));
+    margin-block: 1.4rem;
+    padding: 1rem 1.15rem;
+  }
+
+  .card-label {
+    margin: 0 0 0.8rem;
+    color: var(--faint);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  dl {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+  }
+
+  .formula-row {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  dt {
+    color: var(--tk-cyan);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0;
+  }
+
+  .formula-math {
+    overflow-x: auto;
+    padding-block: 0.2rem;
+  }
+
+  .formula-note {
+    margin: 0.15rem 0 0;
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.55;
+  }
+</style>
