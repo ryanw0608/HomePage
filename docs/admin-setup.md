@@ -12,7 +12,7 @@ Everything below this box is the original how-to, kept for reference. The live c
 | App callback URL | `https://cms-auth.wyz162536.workers.dev/callback` |
 | Analytics | GoatCounter account code **`yongzhewang`** → dashboard https://yongzhewang.goatcounter.com; wired in `src/lib/site.ts` `goatcounter` |
 | Agent secret | `ZHIPU_API_KEY` in repo Actions secrets (Settings → Secrets and variables → Actions). Optional vars: `GLM_MODEL` (default `glm-5.2`), `GLM_BASE_URL` |
-| Agent schedule | daily overview 19:07 UTC, weekly digest Sun 09:37 UTC, manual via Actions → Agent → Run workflow. Output arrives as a PR; merging deploys |
+| Agent schedule | daily overview 19:07 UTC, weekly digest Sun 09:37 UTC, manual via Actions → **CI** → Run workflow (the agent job is hosted inside ci.yml because this repo refuses to register new workflow files — GitHub-side issue, 2026-07-06). Output arrives as a PR; merging deploys |
 
 **Key rotation (do this if a credential ever leaks or as routine hygiene):**
 
@@ -113,8 +113,8 @@ drawn from GoatCounter's public API — the designed replacement for the mapmyvi
 
 ## Part C — GLM site agent · ~5 min
 
-The workflow (`.github/workflows/agent.yml`) runs daily (notes overview) and Sunday (weekly
-digest). It skips itself politely until the key exists.
+The agent job (hosted in `.github/workflows/ci.yml`) runs daily (notes overview) and Sunday
+(weekly digest). It skips itself politely until the key exists.
 
 1. Repo → Settings → Secrets and variables → Actions → **New repository secret**:
    - Name: `ZHIPU_API_KEY` · Value: your 智谱 coding-plan API key. (Paste it yourself — never
@@ -123,7 +123,7 @@ digest). It skips itself politely until the key exists.
    - `GLM_MODEL` — defaults to `glm-5.2`; set this if your plan uses a different model id.
    - `GLM_BASE_URL` — defaults to `https://open.bigmodel.cn/api/paas/v4`; set only if your plan
      uses a different endpoint.
-3. Test: Actions → Agent → Run workflow → mode `overview`. It should open a PR titled
+3. Test: Actions → CI → Run workflow → mode `overview`. It should open a PR titled
    `agent: refresh overview` touching only `src/data/overview.json`. Review, merge → the homepage
    gains an `$ ./agent --overview` section. Run mode `digest` the same way to get the first
    `/digest/` entry.
