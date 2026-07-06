@@ -1,0 +1,385 @@
+/* Studio chrome — Notion bones, terminal skin. Reuses the site's :root
+ * tokens from global.css (dark-first, JetBrains Mono, iris accent). */
+
+.studio-frame {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100dvh;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.studio-topbar,
+.studio-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--line);
+  min-height: 2.75rem;
+  font-size: 0.82rem;
+}
+
+.studio-statusbar {
+  border-bottom: 0;
+  border-top: 1px solid var(--line);
+  min-height: 2.1rem;
+  font-size: 0.72rem;
+  color: var(--faint);
+}
+
+.studio-crumb {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.studio-main {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  min-height: 0;
+}
+
+/* sidebar */
+
+.studio-sidebar {
+  border-right: 1px solid var(--line);
+  padding: 0.85rem 0.75rem;
+  overflow-y: auto;
+  font-size: 0.8rem;
+}
+
+.studio-sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.studio-label {
+  margin: 0.8rem 0 0.25rem;
+  color: var(--faint);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+}
+
+.studio-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.studio-tree button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  color: var(--muted);
+  font: inherit;
+  padding: 0.3rem 0.45rem;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-tree button:hover {
+  color: var(--fg);
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+}
+
+.studio-tree button.is-active {
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+}
+
+.studio-tree-empty {
+  padding: 0.3rem 0.45rem;
+}
+
+/* editor */
+
+.studio-editor {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.studio-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.studio-filename {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.studio-dirty {
+  color: var(--tk-yellow);
+  margin-left: 0.4rem;
+}
+
+.studio-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.75rem;
+}
+
+.studio-textarea {
+  flex: 1;
+  width: 100%;
+  resize: none;
+  border: 0;
+  outline: none;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  padding: 1.1rem 1.25rem 3rem;
+  tab-size: 2;
+}
+
+.studio-textarea:focus-visible {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.studio-welcome {
+  padding: 2.5rem 2rem;
+}
+
+.studio-help {
+  line-height: 2;
+  padding-left: 1.2rem;
+}
+
+/* shared bits */
+
+.studio-center {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  padding: 2rem;
+  text-align: center;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.studio-login-title {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.studio-prompt {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.studio-muted {
+  color: var(--muted);
+}
+
+.faint {
+  color: var(--faint);
+}
+
+.accent {
+  color: var(--accent);
+}
+
+.studio-error {
+  color: var(--tk-red);
+  font-size: 0.8rem;
+  max-width: 44ch;
+}
+
+.studio-btn {
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  transition: border-color 140ms ease, color 140ms ease, background 140ms ease;
+}
+
+.studio-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.studio-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.studio-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+.studio-btn-primary:hover:not(:disabled) {
+  color: var(--bg);
+  filter: brightness(1.08);
+}
+
+.studio-btn-ghost {
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.studio-link {
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-decoration: none;
+}
+
+.studio-link:hover {
+  color: var(--accent);
+}
+
+.studio-input {
+  width: 100%;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.studio-input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.studio-pat {
+  max-width: 30rem;
+  width: 100%;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.studio-pat form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.studio-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.6rem 1rem 0;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--accent) 8%, var(--surface));
+  padding: 0.55rem 0.8rem;
+  font-size: 0.78rem;
+}
+
+.studio-banner-warn {
+  background: color-mix(in oklab, var(--tk-yellow) 10%, var(--surface));
+}
+
+.studio-pill {
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+}
+
+.studio-pill-ok {
+  color: var(--tk-green);
+  border-color: color-mix(in oklab, var(--tk-green) 40%, transparent);
+}
+
+.studio-pill-bad {
+  color: var(--tk-red);
+  border-color: color-mix(in oklab, var(--tk-red) 40%, transparent);
+}
+
+.studio-pill-busy {
+  color: var(--tk-yellow);
+  border-color: color-mix(in oklab, var(--tk-yellow) 40%, transparent);
+}
+
+/* modal */
+
+.studio-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in oklab, var(--bg) 70%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.studio-modal {
+  display: grid;
+  gap: 0.8rem;
+  width: min(30rem, calc(100vw - 2rem));
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 1.1rem 1.2rem 1rem;
+}
+
+.studio-field {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.studio-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+/* mobile */
+
+@media (max-width: 720px) {
+  .studio-main {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .studio-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    max-height: 35dvh;
+  }
+}

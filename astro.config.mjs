@@ -58,7 +58,11 @@ export default defineConfig({
     mdx(),
     react(),
     sitemap({
-      filter: (page) => !unlisted.has(new URL(page).pathname)
+      filter: (page) => {
+        const { pathname } = new URL(page);
+        // Studio is a private tool page; unlisted notes are link-only.
+        return !pathname.startsWith("/HomePage/studio/") && !unlisted.has(pathname);
+      }
     })
   ],
   vite: {

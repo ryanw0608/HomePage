@@ -262,7 +262,7 @@ async function handleAi(env, request) {
 /* ------------------------------------------------------------------ entry */
 
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request, env) {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {

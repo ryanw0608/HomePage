@@ -46,9 +46,10 @@ The latest deployment succeeded after enabling GitHub Pages Source = GitHub Acti
 
 ## Suggested First Action
 
-The redesign is complete. Most sessions are about content now: open `docs/authoring.md` for the
-note-writing workflow (scaffolds, frontmatter, MDX components, Notion export, language policy).
-`docs/roadmap.md` holds the ranked list of next site improvements.
+**Active project: Studio (Notion-grade editor at `/studio/`).** P0 + P1a are live; the "Where
+work paused" section of `docs/handoff/claude-code-handoff.md` says exactly what is done, what
+is next (P1b: live preview, diff review, properties panel), and which owner-side setup steps
+are still pending. For content sessions instead, open `docs/authoring.md`.
 
 ## Authoring & Automation Surfaces
 

@@ -25,7 +25,8 @@ Everything below this box is the original how-to, kept for reference. The live c
 
 **Daily usage runbook:**
 
-- Quick edits / status flips / new entries from any device → `/studio/` (once P1 ships).
+- Quick edits / status flips / new entries from any device → `/studio/` (P1a live: GitHub
+  login, raw-MDX editing, ⌘S = commit, drafts, CI pill; block editor and preview coming).
 - Long math-heavy notes → VS Code + `npm run new:paper` / `new:note` (see `docs/authoring.md`).
 - Taxonomy dropdowns everywhere derive from `src/data/taxonomy.ts` directly — no regen step.
 - Agent PRs titled `agent: refresh …` → review the diff, merge if the summary is faithful, close if not.

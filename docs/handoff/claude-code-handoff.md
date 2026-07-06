@@ -1,6 +1,42 @@
 # Claude Code Handoff
 
-Current as of 2026-07-06 (post Terminal Luxe redesign + content system v2).
+Current as of 2026-07-07 (post Studio P0/P1a; earlier: Terminal Luxe redesign + content system v2).
+
+## Where work paused (2026-07-07, resume here)
+
+Owner said "先暂存，明天继续". The active project is **Studio** — the Notion-grade personal
+editor at `/studio/` (approved plan: `~/.claude/plans/bright-bouncing-aurora.md`).
+
+Done and pushed:
+
+- **P0**: shared frontmatter schema (`src/lib/schema/frontmatter.ts`) with 3-level
+  `visibility` (public / unlisted / private; sitemap+RSS+Pagefind+robots+notes.json all
+  leak-checked), shared templates (`src/lib/templates.mjs`), `/studio/notes.json` endpoint,
+  Sveltia `/admin` deleted.
+- **P1a**: working Studio MVP — GitHub popup login (cms-auth Worker, Decap protocol; PAT
+  fallback), sidebar note tree, raw-MDX editor, localStorage drafts (2s debounce, restore
+  banner), ⌘S commit dialog (contents API, sha-based, 409 conflict banner with
+  rebase/take-remote), CI pill polling, `+ new` scaffolding. Code: `src/studio/`
+  (App.tsx, config.ts, lib/auth.ts, lib/github.ts, studio.css) + `src/pages/studio/index.astro`.
+  Verified by an offline puppeteer smoke test with a mocked GitHub API
+  (login→tree→edit→⌘S→PUT sha/content→CI pill all pass).
+
+**Next up (P1b, then P2+):** markdown live preview styled like `.article-body`; pre-commit
+diff review; properties panel (frontmatter form validated by the shared zod schema);
+then P2 database views (table/kanban) + ⌘K, P3 BlockNote block editor + MDX⇄block converter
+(golden round-trip tests in ci.yml), P4 version history UI + Pagefind, P5 AI assist via the
+site-api Worker `/ai/chat` (already deployed code-side; Notion-style Space-to-summon).
+
+Owner-side actions pending (any order, docs/admin-setup.md):
+
+- Part B: deploy `site-api` Worker (root dir `workers/site-api`) + Cloudflare API token
+  (Account Analytics: Read) + fill `CF_ACCOUNT_ID`/`CF_API_TOKEN`/`HASH_SALT`/`ZHIPU_API_KEY`,
+  then give Claude the Worker URL to put in `src/lib/site.ts` `siteApi` — turns on the
+  first-party analytics beacon AND the live visitor map at `/stats/`. NOTE: `site.ts`
+  currently holds a placeholder (`site-api.example.workers.dev`) — replace with the real URL.
+- Part D: GitHub Student Pack → **after Pro is active** flip the repo private (order matters:
+  Pages on a private repo needs Pro). Local mirror backup task is already installed
+  ("HomePage git backup", daily 12:00, fetch --all + pull --ff-only).
 
 ## State
 
@@ -29,9 +65,15 @@ a "learner" or "former frontend engineer" in site copy.
   `<Content components={mdxComponents} />` in both `[slug].astro` pages, so notes use components
   with **zero imports**: `Tldr`, `Verdict`, `Critique`, `WhenMatrix`, `Bench`, `FormulaCard`,
   `Derivation`, `Recall`, `Callout`, `Figure`, `KeyTakeaways`.
-- `src/content.config.ts` — strict zod schemas; taxonomy enums from `src/data/taxonomy.ts` fail the
-  build on unknown keys (intended).
-- `scripts/new-entry.mjs` — `npm run new:paper` / `new:note` scaffolds.
+- `src/content.config.ts` — thin wrapper over the shared field schemas in
+  `src/lib/schema/frontmatter.ts` (+ Astro `reference()` for `related`); taxonomy enums from
+  `src/data/taxonomy.ts` fail the build on unknown keys (intended).
+- `src/studio/` — the Studio editor island (client-only React, hash routing, GitHub-as-backend);
+  mounted by `src/pages/studio/index.astro`, kept out of every public page bundle.
+- `workers/site-api/` — Cloudflare Worker: `/collect` first-party analytics sink (Analytics
+  Engine), `/stats/:metric` queries for the `/stats/` live map, `/ai/chat` GLM proxy for Studio.
+- `scripts/new-entry.mjs` — `npm run new:paper` / `new:note` scaffolds (templates shared with
+  Studio via `src/lib/templates.mjs`).
 
 ## Authoring
 
