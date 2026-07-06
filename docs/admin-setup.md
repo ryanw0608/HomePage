@@ -1,5 +1,37 @@
 # Owner Setup Guide
 
+## ✅ As-built record (completed 2026-07-06)
+
+Everything below this box is the original how-to, kept for reference. The live configuration is:
+
+| Piece | Value |
+|---|---|
+| Web editor | https://ryanw0608.github.io/HomePage/admin/ (Sveltia CMS, login with GitHub) |
+| GitHub App | "HomePage CMS", App ID 4228900, Client ID `Iv23li6YzNYlirEUYBOt`, installed on `HomePage` only, permission: Contents read/write. Manage at github.com/settings/apps |
+| OAuth broker | Cloudflare Worker **`cms-auth`** → `https://cms-auth.wyz162536.workers.dev` (repo `ryanw0608/sveltia-cms-auth`; env vars `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` (secret), `ALLOWED_DOMAINS`) |
+| App callback URL | `https://cms-auth.wyz162536.workers.dev/callback` |
+| Analytics | GoatCounter account code **`yongzhewang`** → dashboard https://yongzhewang.goatcounter.com; wired in `src/lib/site.ts` `goatcounter` |
+| Agent secret | `ZHIPU_API_KEY` in repo Actions secrets (Settings → Secrets and variables → Actions). Optional vars: `GLM_MODEL` (default `glm-5.2`), `GLM_BASE_URL` |
+| Agent schedule | daily overview 19:07 UTC, weekly digest Sun 09:37 UTC, manual via Actions → Agent → Run workflow. Output arrives as a PR; merging deploys |
+
+**Key rotation (do this if a credential ever leaks or as routine hygiene):**
+
+- GitHub App client secret → github.com/settings/apps → HomePage CMS → generate new client secret →
+  update `GITHUB_CLIENT_SECRET` in the Worker → delete the old secret.
+- Zhipu API key → regenerate in the bigmodel.cn console → update `ZHIPU_API_KEY` repo secret.
+  (Recommended once shortly after initial setup, since the original key transited chat logs.)
+- Neither rotation touches the repo; nothing redeploys except the Worker variable save.
+
+**Daily usage runbook:**
+
+- Quick edits / status flips / new entries from any device → `/admin/`.
+- Long math-heavy notes → VS Code + `npm run new:paper` / `new:note` (see `docs/authoring.md`).
+- After editing `src/data/taxonomy.ts` → `npm run gen:cms` and commit, so CMS dropdowns stay in sync.
+- Agent PRs titled `agent: refresh …` → review the diff, merge if the summary is faithful, close if not.
+- Visitor stats → `stats` link in the site status bar or https://yongzhewang.goatcounter.com.
+
+---
+
 One-time account-side steps that only Ryan can do (Claude cannot create accounts or handle
 secrets). Everything repo-side is already committed. Each part is independent — do them in any
 order; nothing breaks while a part is un-configured.

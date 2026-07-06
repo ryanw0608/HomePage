@@ -6,7 +6,7 @@ export const site = {
   // GoatCounter site code (the <code> in https://<code>.goatcounter.com).
   // Empty string disables analytics entirely — no script is emitted.
   // Setup steps: docs/admin-setup.md.
-  goatcounter: "",
+  goatcounter: "yongzhewang",
   title: "Yongzhe Wang",
   description: "Academic homepage, course notes, and paper reading notes by Yongzhe Wang.",
   url: "https://ryanw0608.github.io/HomePage/"
