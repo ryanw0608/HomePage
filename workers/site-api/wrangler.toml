@@ -1,0 +1,16 @@
+name = "site-api"
+main = "index.js"
+compatibility_date = "2026-07-01"
+
+# Deploy from the Cloudflare dashboard by importing the ryanw0608/HomePage
+# repository with root directory `workers/site-api`, or locally:
+#   cd workers/site-api && npx wrangler deploy
+#
+# Then set (Settings -> Variables and Secrets):
+#   UMAMI_API_KEY    (secret)
+#   UMAMI_WEBSITE_ID (text)
+#   ZHIPU_API_KEY    (secret)
+#   ALLOWED_ORIGIN   (text)  https://ryanw0608.github.io
+
+[vars]
+ALLOWED_ORIGIN = "https://ryanw0608.github.io"

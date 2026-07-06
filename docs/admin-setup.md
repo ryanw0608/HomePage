@@ -10,7 +10,8 @@ Everything below this box is the original how-to, kept for reference. The live c
 | GitHub App | "HomePage CMS", App ID 4228900, Client ID `Iv23li6YzNYlirEUYBOt`, installed on `HomePage` only, permission: Contents read/write. Manage at github.com/settings/apps |
 | OAuth broker | Cloudflare Worker **`cms-auth`** → `https://cms-auth.wyz162536.workers.dev` (repo `ryanw0608/sveltia-cms-auth`; env vars `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` (secret), `ALLOWED_DOMAINS`) |
 | App callback URL | `https://cms-auth.wyz162536.workers.dev/callback` |
-| Analytics | GoatCounter account code **`yongzhewang`** → dashboard https://yongzhewang.goatcounter.com; wired in `src/lib/site.ts` `goatcounter` |
+| Analytics | **Umami Cloud** (replaced GoatCounter 2026-07-07) — tracking script gated on `src/lib/site.ts` `umamiWebsiteId`; live map at `/stats/` reads the **site-api** Worker. Setup: Part B below |
+| site-api Worker | Cloudflare Worker **`site-api`** (code in this repo, `workers/site-api/`) — public read-only Umami stats proxy (`/stats/:metric`, 60s edge cache) + collaborator-gated GLM proxy for Studio (`/ai/chat`). Env: `UMAMI_API_KEY` (secret), `UMAMI_WEBSITE_ID`, `ZHIPU_API_KEY` (secret), optional `GLM_MODEL`/`GLM_BASE_URL`, `ALLOWED_ORIGIN` |
 | Agent secret | `ZHIPU_API_KEY` in repo Actions secrets (Settings → Secrets and variables → Actions). Optional vars: `GLM_MODEL` (default `glm-5.2`), `GLM_BASE_URL` (default coding-plan endpoint `api/coding/paas/v4`) |
 | Agent schedule | daily overview 23:00 UTC (09:00 Sydney), weekly digest Sat 23:00 UTC (Sun 09:00 Sydney), manual via Actions → **CI** → Run workflow (the agent job is hosted inside ci.yml because this repo refuses to register new workflow files — GitHub-side issue, 2026-07-06). Output arrives as a PR; merging deploys |
 
@@ -28,7 +29,8 @@ Everything below this box is the original how-to, kept for reference. The live c
 - Long math-heavy notes → VS Code + `npm run new:paper` / `new:note` (see `docs/authoring.md`).
 - After editing `src/data/taxonomy.ts` → `npm run gen:cms` and commit, so CMS dropdowns stay in sync.
 - Agent PRs titled `agent: refresh …` → review the diff, merge if the summary is faithful, close if not.
-- Visitor stats → `stats` link in the site status bar or https://yongzhewang.goatcounter.com.
+- Visitor stats → `stats` link in the site status bar → `/stats/` live world map (or the Umami
+  Cloud dashboard for raw drill-down).
 
 ---
 
@@ -94,20 +96,45 @@ so the CMS dropdowns stay in sync.
 
 ---
 
-## Part B — Analytics (GoatCounter) · ~10 min
+## Part B — Analytics (Umami Cloud + live visitor map) · ~15 min
 
-1. Sign up at https://www.goatcounter.com (free for personal use) — pick a code, e.g. `ryanw0608`
-   → your dashboard becomes `https://ryanw0608.goatcounter.com`.
-2. In the GoatCounter settings, allow the site `ryanw0608.github.io` and (recommended) make the
-   dashboard public — that's what the status-bar `stats` link points to, and the future custom
-   visitor map reads its public JSON.
-3. Edit `src/lib/site.ts` → `goatcounter: ""` → your code (e.g. `"ryanw0608"`). Commit and push.
-   The counter script (no cookies, ~3.5 KB) and the `stats` status-bar link appear automatically;
-   with the field empty nothing is emitted.
+The `/stats/` page (terminal dot-matrix world map, live "online now", top countries / pages /
+referrers) is already deployed. It stays in a graceful "not configured" state until these steps
+are done. Two halves: an Umami Cloud account (collects the data) and the `site-api` Worker
+(proxies the Umami API so the key never reaches the browser).
 
-Phase 2 (after data accumulates): a `/stats/` page with a terminal-style dot-matrix world map
-drawn from GoatCounter's public API — the designed replacement for the mapmyvisitors widget. See
-`docs/roadmap.md`.
+**B1. Umami Cloud account:**
+
+1. Sign up at https://umami.is (free Hobby plan — 100k events/month, more than enough).
+2. Add a website: name `HomePage`, domain `ryanw0608.github.io`. Copy the **Website ID** (a UUID,
+   shown in the website settings).
+3. Generate an **API key**: profile menu → API keys → Create key. Copy it (shown once).
+
+**B2. Deploy the site-api Worker** (same flow as the cms-auth Worker):
+
+1. dash.cloudflare.com → Workers & Pages → Create → **Import a repository** → pick
+   `ryanw0608/HomePage`.
+2. Project name: `site-api`. **Root directory: `workers/site-api`** (critical — the wrangler.toml
+   lives there). Deploy.
+3. Worker → Settings → Variables and Secrets:
+   - `UMAMI_API_KEY` (encrypt) = the API key from B1
+   - `UMAMI_WEBSITE_ID` (text) = the Website ID from B1
+   - `ZHIPU_API_KEY` (encrypt) = your 智谱 coding-plan key (powers the Studio AI assistant later;
+     can be added whenever)
+   - `ALLOWED_ORIGIN` is set in wrangler.toml already; `GLM_MODEL`/`GLM_BASE_URL` optional.
+4. Note the Worker URL, e.g. `https://site-api.wyz162536.workers.dev`.
+
+**B3. Wire the site** — edit `src/lib/site.ts`:
+
+- `umamiWebsiteId: ""` → the Website ID (turns on the tracking script — no cookies, ~2 KB).
+- `siteApi: ""` → the Worker URL from B2, no trailing slash (turns on the live map).
+
+Commit and push (or paste both values to Claude and it will do it). Within a couple of minutes of
+the deploy, visit the site once and `/stats/` should show 1 online and light up your country.
+
+**Security model:** the Umami API key and Zhipu key live only in the Worker. `/stats/*` is public
+but read-only and 60-second cached; `/ai/chat` additionally requires a GitHub token with push
+access to this repo (the same collaborator gate as content writes).
 
 ---
 

@@ -1,10 +1,12 @@
 # Roadmap
 
 > 2026-07-06: shipped since the list below was written — Sveltia CMS `/admin` (repo side),
-> GoatCounter hook (fill `site.goatcounter`), GLM site agent (overview + weekly digest via PR),
-> `/digest/` routes. Owner-side activation steps: `docs/admin-setup.md`.
-> Next custom build on the analytics track: `/stats/` terminal dot-matrix world map from
-> GoatCounter's public API (replaces the idea of a mapmyvisitors widget).
+> GLM site agent (overview + weekly digest via PR), `/digest/` routes.
+> 2026-07-07: analytics track done — Umami Cloud (replaced the GoatCounter plan) + `/stats/`
+> terminal dot-matrix live visitor world map + `site-api` Worker (Umami proxy, also hosts the
+> Studio AI proxy). Item 8 below is thereby complete. Owner-side activation: `docs/admin-setup.md`.
+> Next major project: Studio — Notion-grade block editor at `/studio/` replacing `/admin`
+> (plan: `~/.claude/plans/bright-bouncing-aurora.md`).
 
 Next optimizations, ranked by value ÷ effort for an MSc student building research credibility.
 Content comes first — none of these matter as much as writing real notes.

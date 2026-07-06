@@ -1,0 +1,405 @@
+---
+import SiteShell from "@/layouts/SiteShell.astro";
+import { site } from "@/lib/site";
+import worldDots from "@/data/world-dots.json";
+
+// Group dots per country so the client lights whole countries by toggling
+// one <g> class. Rendered at build time: the map shape needs no JavaScript.
+const groups = new Map<string, [number, number][]>();
+for (const [col, row, cc] of worldDots.dots as [number, number, string][]) {
+  if (!groups.has(cc)) groups.set(cc, []);
+  groups.get(cc)!.push([col, row]);
+}
+const countries = [...groups.entries()];
+const viewW = worldDots.cols;
+const viewH = worldDots.rows;
+---
+
+<SiteShell title="Stats" description="Live visitor map and traffic stats for this site.">
+  <section class="container stats-page" data-stats-page data-api={site.siteApi}>
+    <header class="stats-header">
+      <p class="prompt-line" aria-hidden="true">
+        <span class="prompt">$</span> <span class="cmd">./stats --live</span>
+      </p>
+      <h1>Visitors</h1>
+      <p class="stats-meta">
+        <span class="live-dot" data-live-dot aria-hidden="true"></span>
+        <span data-active-count>–</span> online now
+        <span class="sep">·</span>
+        <span data-total-visitors>–</span> visitors / 30 days
+        <span class="sep">·</span>
+        <span data-total-views>–</span> pageviews
+      </p>
+    </header>
+
+    <figure class="map-frame">
+      <svg
+        viewBox={`0 0 ${viewW} ${viewH}`}
+        role="img"
+        aria-label="Dot-matrix world map highlighting countries visitors come from"
+        data-world-map
+      >
+        {
+          countries.map(([cc, dots]) => (
+            <g data-cc={cc}>
+              {dots.map(([x, y]) => (
+                <circle cx={x + 0.5} cy={y + 0.5} r="0.42" />
+              ))}
+            </g>
+          ))
+        }
+      </svg>
+      <figcaption class="map-legend" data-map-legend>
+        <span class="legend-item"><span class="swatch sw-base" aria-hidden="true"></span>land</span>
+        <span class="legend-item"><span class="swatch sw-lit" aria-hidden="true"></span>visitors</span>
+        <span class="legend-note" data-map-note>waiting for data…</span>
+      </figcaption>
+    </figure>
+
+    <div class="stats-grid">
+      <section aria-labelledby="countries-label">
+        <p class="term-label" id="countries-label">top countries</p>
+        <ol class="stat-list" data-list-countries></ol>
+      </section>
+      <section aria-labelledby="pages-label">
+        <p class="term-label" id="pages-label">top pages</p>
+        <ol class="stat-list" data-list-pages></ol>
+      </section>
+      <section aria-labelledby="referrers-label">
+        <p class="term-label" id="referrers-label">referrers</p>
+        <ol class="stat-list" data-list-referrers></ol>
+      </section>
+    </div>
+
+    <p class="stats-foot" data-stats-foot>
+      counted by <a href="https://umami.is" rel="noopener noreferrer">umami</a> — no cookies, no fingerprinting ·
+      auto-refreshes every 60s
+    </p>
+  </section>
+</SiteShell>
+
+<script>
+  const page = document.querySelector<HTMLElement>("[data-stats-page]");
+  const api = page?.dataset.api;
+
+  const note = document.querySelector<HTMLElement>("[data-map-note]");
+
+  if (!page) {
+    // no-op
+  } else if (!api) {
+    if (note) note.textContent = "stats api not configured yet — see docs/admin-setup.md";
+  } else {
+    const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+    const countryName = (cc: string) => {
+      try {
+        return regionNames.of(cc) ?? cc;
+      } catch {
+        return cc;
+      }
+    };
+
+    const fmt = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
+
+    async function get(metric: string) {
+      const res = await fetch(`${api}/stats/${metric}`);
+      if (!res.ok) throw new Error(`${metric} ${res.status}`);
+      return res.json();
+    }
+
+    function renderList(selector: string, rows: { x: string; y: number }[], labeler?: (x: string) => string) {
+      const el = document.querySelector(selector);
+      if (!el) return;
+      el.innerHTML = "";
+      const max = rows[0]?.y || 1;
+      rows.slice(0, 8).forEach((row) => {
+        const li = document.createElement("li");
+        const bar = document.createElement("span");
+        bar.className = "row-bar";
+        bar.style.width = `${Math.max(4, (row.y / max) * 100)}%`;
+        const label = document.createElement("span");
+        label.className = "row-label";
+        label.textContent = labeler ? labeler(row.x) : row.x || "(direct)";
+        const count = document.createElement("span");
+        count.className = "row-count";
+        count.textContent = fmt(row.y);
+        li.append(bar, label, count);
+        el.append(li);
+      });
+      if (rows.length === 0) {
+        const li = document.createElement("li");
+        li.className = "row-empty";
+        li.textContent = "nothing yet";
+        el.append(li);
+      }
+    }
+
+    async function refreshMain() {
+      try {
+        const [summary, countries, pages, referrers] = await Promise.all([
+          get("summary"),
+          get("countries"),
+          get("pages"),
+          get("referrers")
+        ]);
+
+        const visitors = summary?.visitors?.value ?? summary?.visitors ?? 0;
+        const views = summary?.pageviews?.value ?? summary?.pageviews ?? 0;
+        const elV = document.querySelector("[data-total-visitors]");
+        const elP = document.querySelector("[data-total-views]");
+        if (elV) elV.textContent = fmt(visitors);
+        if (elP) elP.textContent = fmt(views);
+
+        const rows: { x: string; y: number }[] = Array.isArray(countries) ? countries : [];
+        const max = rows[0]?.y || 1;
+        document.querySelectorAll<SVGGElement>("[data-cc]").forEach((g) => {
+          g.classList.remove("lit-1", "lit-2", "lit-3");
+        });
+        rows.forEach((row) => {
+          const g = document.querySelector<SVGGElement>(`[data-cc="${row.x}"]`);
+          if (!g) return;
+          const ratio = row.y / max;
+          g.classList.add(ratio > 0.66 ? "lit-3" : ratio > 0.25 ? "lit-2" : "lit-1");
+          g.querySelector("title")?.remove();
+          const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+          title.textContent = `${countryName(row.x)} — ${row.y} ${row.y === 1 ? "visitor" : "visitors"}`;
+          g.prepend(title);
+        });
+
+        if (note) {
+          note.textContent = `${rows.length} ${rows.length === 1 ? "country" : "countries"} · last 30 days`;
+        }
+
+        renderList("[data-list-countries]", rows, countryName);
+        renderList("[data-list-pages]", Array.isArray(pages) ? pages : []);
+        renderList(
+          "[data-list-referrers]",
+          Array.isArray(referrers) ? referrers : [],
+          (x) => x || "(direct)"
+        );
+      } catch {
+        if (note) note.textContent = "stats temporarily unavailable";
+      }
+    }
+
+    async function refreshActive() {
+      try {
+        const active = await get("active");
+        const count = active?.visitors ?? active?.[0]?.x ?? active?.[0]?.y ?? 0;
+        const el = document.querySelector("[data-active-count]");
+        if (el) el.textContent = String(count);
+        document.querySelector("[data-live-dot]")?.classList.toggle("is-live", count > 0);
+      } catch {
+        // keep last value
+      }
+    }
+
+    refreshMain();
+    refreshActive();
+    setInterval(refreshMain, 60000);
+    setInterval(refreshActive, 10000);
+  }
+</script>
+
+<style>
+  .stats-page {
+    display: grid;
+    gap: 1.6rem;
+    padding-block: clamp(2rem, 5vw, 3.25rem) 1rem;
+  }
+
+  .stats-header {
+    display: grid;
+    gap: 0;
+  }
+
+  h1 {
+    margin: 0.9rem 0 0;
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+  }
+
+  h1::before {
+    content: "# " / "";
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .stats-meta {
+    margin: 0.9rem 0 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .stats-meta .sep {
+    color: var(--faint);
+    margin-inline: 0.5rem;
+  }
+
+  .live-dot {
+    display: inline-block;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: var(--faint);
+    margin-right: 0.45rem;
+    vertical-align: 6%;
+  }
+
+  .live-dot.is-live {
+    background: var(--tk-green);
+    animation: live-pulse 2s ease-out infinite;
+  }
+
+  @keyframes live-pulse {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--tk-green) 45%, transparent);
+    }
+
+    70% {
+      box-shadow: 0 0 0 7px transparent;
+    }
+
+    100% {
+      box-shadow: 0 0 0 0 transparent;
+    }
+  }
+
+  .map-frame {
+    margin: 0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--surface) 55%, var(--bg));
+    padding: 1rem 1rem 0.75rem;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  svg circle {
+    fill: color-mix(in oklab, var(--fg) 14%, transparent);
+    transition: fill 400ms ease;
+  }
+
+  svg g.lit-1 circle {
+    fill: color-mix(in oklab, var(--accent) 45%, transparent);
+  }
+
+  svg g.lit-2 circle {
+    fill: color-mix(in oklab, var(--accent) 72%, transparent);
+  }
+
+  svg g.lit-3 circle {
+    fill: var(--accent);
+  }
+
+  .map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 1.2rem;
+    margin-top: 0.8rem;
+    color: var(--faint);
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .swatch {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+  }
+
+  .sw-base {
+    background: color-mix(in oklab, var(--fg) 14%, transparent);
+  }
+
+  .sw-lit {
+    background: var(--accent);
+  }
+
+  .legend-note {
+    margin-left: auto;
+  }
+
+  .stats-grid {
+    display: grid;
+    gap: 1.6rem;
+  }
+
+  .stat-list {
+    display: grid;
+    gap: 0.35rem;
+    list-style: none;
+    margin: 0.7rem 0 0;
+    padding: 0;
+  }
+
+  .stat-list :global(li) {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.32rem 0.55rem;
+    font-size: 0.82rem;
+    overflow: hidden;
+    border-radius: 3px;
+  }
+
+  .stat-list :global(.row-bar) {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: color-mix(in oklab, var(--accent) 12%, transparent);
+    border-radius: 3px;
+  }
+
+  .stat-list :global(.row-label) {
+    position: relative;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .stat-list :global(.row-count) {
+    position: relative;
+    color: var(--fg);
+    font-weight: 600;
+  }
+
+  .stat-list :global(.row-empty) {
+    color: var(--faint);
+  }
+
+  .stats-foot {
+    margin: 0;
+    color: var(--faint);
+    font-size: 0.72rem;
+  }
+
+  .stats-foot a {
+    color: inherit;
+  }
+
+  @media (min-width: 900px) {
+    .stats-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .live-dot.is-live {
+      animation: none;
+    }
+  }
+</style>

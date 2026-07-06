@@ -3,10 +3,12 @@ export const site = {
   secondaryName: "Wang Yongzhe",
   // Terminal prompt identity used in the header breadcrumb and boot sequence.
   handle: "ryan@wang",
-  // GoatCounter site code (the <code> in https://<code>.goatcounter.com).
-  // Empty string disables analytics entirely — no script is emitted.
+  // Umami Cloud website id — empty string disables the tracking script.
   // Setup steps: docs/admin-setup.md.
-  goatcounter: "yongzhewang",
+  umamiWebsiteId: "",
+  // site-api Worker base URL (stats proxy + Studio AI proxy).
+  // Empty string leaves /stats/ in its unconfigured state.
+  siteApi: "",
   title: "Yongzhe Wang",
   description: "Academic homepage, course notes, and paper reading notes by Yongzhe Wang.",
   url: "https://ryanw0608.github.io/HomePage/"
