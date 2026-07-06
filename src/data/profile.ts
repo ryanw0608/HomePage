@@ -1,5 +1,7 @@
 export const profile = {
   name: "Yongzhe Wang",
+  preferredName: "Ryan",
+  displayName: "Yongzhe (Ryan) Wang",
   secondaryName: "Wang Yongzhe",
   role: "Master's student in computer science, University of Sydney",
   location: "Sydney, Australia",

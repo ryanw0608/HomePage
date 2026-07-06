@@ -78,7 +78,7 @@ const paperCount = publicEntries(await getCollection("paper-reading")).length;
     <header class="term-bar no-print">
       <nav class="container bar-inner" aria-label="Primary navigation">
         <p class="crumb" aria-label="Current path">
-          <a class="host" href={href()} aria-label={`${site.name} home`}>yongzhe@wang</a><span
+          <a class="host" href={href()} aria-label={`${site.name} home`}>{site.handle}</a><span
             class="sep">:</span><a class="tilde" href={href()} aria-hidden="true" tabindex="-1">~</a>{
             crumbs.map((crumb) => (
               <>

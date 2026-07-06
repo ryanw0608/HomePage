@@ -1,6 +1,8 @@
 export const site = {
   name: "Yongzhe Wang",
   secondaryName: "Wang Yongzhe",
+  // Terminal prompt identity used in the header breadcrumb and boot sequence.
+  handle: "ryan@wang",
   title: "Yongzhe Wang",
   description: "Academic homepage, course notes, and paper reading notes by Yongzhe Wang.",
   url: "https://ryanw0608.github.io/HomePage/"

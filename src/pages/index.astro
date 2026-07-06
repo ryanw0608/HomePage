@@ -39,7 +39,7 @@ const latestWriting = [
   <div class="container home">
     <header class="home-hero rise" style="--rise-order: 0;">
       <p class="prompt-line" aria-hidden="true"><span class="prompt">$</span> <span class="cmd">whoami</span></p>
-      <h1 class="caret">{profile.name}</h1>
+      <h1 class="caret">{profile.displayName}</h1>
       <p class="hero-meta">
         {profile.secondaryName} · MSc computer science · University of Sydney · {profile.location}
       </p>
@@ -117,7 +117,7 @@ const latestWriting = [
       "@context": "https://schema.org",
       "@type": "Person",
       name: profile.name,
-      alternateName: profile.secondaryName,
+      alternateName: [profile.secondaryName, `${profile.preferredName} Wang`],
       affiliation: {
         "@type": "Organization",
         name: profile.lab.name,
