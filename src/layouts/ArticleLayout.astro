@@ -45,7 +45,7 @@ const filePath = `${relPath}.md`;
 ---
 
 <SiteShell title={title} description={description} lang={lang}>
-  <article class="container article-grid">
+  <article class="article-container article-grid">
     <header class="article-header">
       <p class="prompt-line" aria-hidden="true">
         <span class="prompt">$</span> <span class="cmd">cat {filePath}</span>
@@ -134,6 +134,22 @@ const filePath = `${relPath}.md`;
 </script>
 
 <style>
+  /*
+   * Adaptive reading width. --article-measure steps in lockstep with the
+   * type-scale steps in global.css, so the column grows physically on large
+   * screens while line length stays in the readable 70-80 mono-character
+   * band:
+   *   <920px       single column, full width
+   *   920-1359px   rail + content, 44rem measure @16px
+   *   1360-1439px  rail + content + toc, 47rem @16px
+   *   1440-1779px  same grid, 50rem @17px
+   *   >=1780px     same grid, 53rem @18px
+   */
+  .article-container {
+    width: min(1400px, calc(100% - 2.5rem));
+    margin-inline: auto;
+  }
+
   .article-grid {
     display: grid;
     grid-template-areas:
@@ -147,7 +163,7 @@ const filePath = `${relPath}.md`;
 
   .article-header {
     grid-area: header;
-    max-width: 68ch;
+    max-width: var(--article-measure, 44rem);
   }
 
   .article-rail {
@@ -156,7 +172,7 @@ const filePath = `${relPath}.md`;
 
   .article-content {
     grid-area: content;
-    max-width: 68ch;
+    max-width: var(--article-measure, 44rem);
   }
 
   .article-toc-panel {
@@ -283,18 +299,43 @@ const filePath = `${relPath}.md`;
     }
   }
 
-  @media (min-width: 1240px) {
+  @media (min-width: 1360px) {
     .article-grid {
       grid-template-areas:
         "rail header toc"
         "rail content toc";
-      grid-template-columns: 15rem minmax(0, 1fr) 13.5rem;
+      grid-template-columns: 15rem minmax(0, 1fr) 14rem;
+      column-gap: 3rem;
     }
 
     .article-toc-panel {
       display: block;
       grid-area: toc;
-      padding-left: 1.25rem;
+      padding-left: 1rem;
+    }
+  }
+
+  /* Measure steps mirror the type-scale steps in global.css: line length
+     stays ~74-78 mono characters at every size. */
+  .article-grid {
+    --article-measure: 44rem;
+  }
+
+  @media (min-width: 1360px) {
+    .article-grid {
+      --article-measure: 47rem;
+    }
+  }
+
+  @media (min-width: 1440px) {
+    .article-grid {
+      --article-measure: 50rem;
+    }
+  }
+
+  @media (min-width: 1780px) {
+    .article-grid {
+      --article-measure: 53rem;
     }
   }
 </style>

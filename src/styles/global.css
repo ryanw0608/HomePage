@@ -194,7 +194,7 @@ a {
  * leading, 68ch measure, ligatures off in prose (kept in code).
  */
 .article-body {
-  max-width: min(68ch, 100%);
+  max-width: 100%;
   font-size: 1rem;
   line-height: 1.75;
   font-feature-settings: "calt" 0;
@@ -203,6 +203,23 @@ a {
 
 .article-body:lang(zh-CN) {
   line-height: 1.9;
+}
+
+/*
+ * Adaptive type scale: the article measure is capped in ch (ArticleLayout),
+ * so stepping the font up on large viewports widens the physical column
+ * while line length stays in the readable band.
+ */
+@media (min-width: 1440px) {
+  .article-body {
+    font-size: 1.0625rem;
+  }
+}
+
+@media (min-width: 1780px) {
+  .article-body {
+    font-size: 1.125rem;
+  }
 }
 
 .article-body :where(p, ul, ol, blockquote, pre, table, figure) {
