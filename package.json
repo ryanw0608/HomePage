@@ -10,7 +10,8 @@
     "check": "astro check",
     "verify": "npm run build",
     "new:paper": "node scripts/new-entry.mjs paper",
-    "new:note": "node scripts/new-entry.mjs course"
+    "new:note": "node scripts/new-entry.mjs course",
+    "gen:cms": "node scripts/gen-cms-options.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",
