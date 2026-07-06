@@ -43,7 +43,13 @@ jobs:
       - run: npm run build
 
   agent:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    # Trigger paths: cron, manual dispatch, or a push whose commit message
+    # carries an [agent:overview] / [agent:digest] marker — the push path is
+    # the reliable one while this repo's Actions trigger index is broken.
+    if: >-
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && (contains(github.event.head_commit.message, '[agent:overview]') || contains(github.event.head_commit.message, '[agent:digest]')))
     runs-on: ubuntu-latest
     env:
       ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
@@ -71,6 +77,8 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.event.schedule }}" = "37 9 * * 0" ]; then
+            echo "mode=digest" >> "$GITHUB_OUTPUT"
+          elif [ "${{ contains(github.event.head_commit.message, '[agent:digest]') }}" = "true" ]; then
             echo "mode=digest" >> "$GITHUB_OUTPUT"
           else
             echo "mode=overview" >> "$GITHUB_OUTPUT"
