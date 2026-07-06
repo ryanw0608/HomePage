@@ -2,8 +2,21 @@ import type { CollectionEntry } from "astro:content";
 
 import { site } from "@/lib/site";
 
-export function publicEntries<T extends { data: { draft?: boolean } }>(entries: T[]): T[] {
-  return import.meta.env.PROD ? entries.filter((entry) => !entry.data.draft) : entries;
+type VisibilityData = { draft?: boolean; visibility?: "public" | "unlisted" | "private" };
+
+// Everything that gets BUILT: public + unlisted. Dev shows drafts too.
+export function publicEntries<T extends { data: VisibilityData }>(entries: T[]): T[] {
+  return import.meta.env.PROD
+    ? entries.filter((entry) => !entry.data.draft && entry.data.visibility !== "private")
+    : entries;
+}
+
+// Everything that gets LISTED (indexes, RSS, counts, prev/next, related):
+// public only — unlisted pages are reachable by URL but never advertised.
+export function listedEntries<T extends { data: VisibilityData }>(entries: T[]): T[] {
+  return import.meta.env.PROD
+    ? publicEntries(entries).filter((entry) => entry.data.visibility !== "unlisted")
+    : entries;
 }
 
 export function byDateDesc<T extends { data: { date: Date } }>(a: T, b: T): number {

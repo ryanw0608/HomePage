@@ -25,6 +25,9 @@ interface Props {
   readingMinutes?: number;
   backHref?: string;
   backLabel?: string;
+  // visibility: "unlisted" pages are built but kept out of search engines
+  // and the site's own Pagefind index.
+  unlisted?: boolean;
 }
 
 const {
@@ -36,7 +39,8 @@ const {
   kicker,
   readingMinutes,
   backHref = import.meta.env.BASE_URL,
-  backLabel = "Back"
+  backLabel = "Back",
+  unlisted = false
 } = Astro.props;
 
 const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
@@ -44,7 +48,7 @@ const relPath = Astro.url.pathname.replace(import.meta.env.BASE_URL, "").replace
 const filePath = `${relPath}.md`;
 ---
 
-<SiteShell title={title} description={description} lang={lang}>
+<SiteShell title={title} description={description} lang={lang} noindex={unlisted}>
   <article class="article-container article-grid">
     <header class="article-header">
       <p class="prompt-line" aria-hidden="true">
@@ -75,7 +79,7 @@ const filePath = `${relPath}.md`;
           </details>
         )
       }
-      <div class="article-body" data-article-body data-pagefind-body lang={lang}>
+      <div class="article-body" data-article-body data-pagefind-body={unlisted ? undefined : ""} lang={lang}>
         <slot />
       </div>
       <slot name="after-body" />

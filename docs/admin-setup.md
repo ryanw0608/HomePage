@@ -6,7 +6,7 @@ Everything below this box is the original how-to, kept for reference. The live c
 
 | Piece | Value |
 |---|---|
-| Web editor | https://ryanw0608.github.io/HomePage/admin/ (Sveltia CMS, login with GitHub) |
+| Web editor | **Studio** at `/studio/` (in construction, replaces Sveltia). Sveltia `/admin` retired 2026-07-07; the GitHub App + cms-auth Worker below stay — Studio reuses them for login |
 | GitHub App | "HomePage CMS", App ID 4228900, Client ID `Iv23li6YzNYlirEUYBOt`, installed on `HomePage` only, permission: Contents read/write. Manage at github.com/settings/apps |
 | OAuth broker | Cloudflare Worker **`cms-auth`** → `https://cms-auth.wyz162536.workers.dev` (repo `ryanw0608/sveltia-cms-auth`; env vars `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` (secret), `ALLOWED_DOMAINS`) |
 | App callback URL | `https://cms-auth.wyz162536.workers.dev/callback` |
@@ -25,9 +25,9 @@ Everything below this box is the original how-to, kept for reference. The live c
 
 **Daily usage runbook:**
 
-- Quick edits / status flips / new entries from any device → `/admin/`.
+- Quick edits / status flips / new entries from any device → `/studio/` (once P1 ships).
 - Long math-heavy notes → VS Code + `npm run new:paper` / `new:note` (see `docs/authoring.md`).
-- After editing `src/data/taxonomy.ts` → `npm run gen:cms` and commit, so CMS dropdowns stay in sync.
+- Taxonomy dropdowns everywhere derive from `src/data/taxonomy.ts` directly — no regen step.
 - Agent PRs titled `agent: refresh …` → review the diff, merge if the summary is faithful, close if not.
 - Visitor stats → `stats` link in the site status bar → `/stats/` live world map. To exclude your
   own devices, run `localStorage.setItem("yw-notrack", "1")` once in each browser's console.
@@ -40,10 +40,12 @@ order; nothing breaks while a part is un-configured.
 
 ---
 
-## Part A — Web editor (`/admin`, Sveltia CMS) · ~30 min
+## Part A — Web editor (`/admin`, Sveltia CMS) · ~30 min · **RETIRED 2026-07-07**
 
-The admin page is already live at `https://ryanw0608.github.io/HomePage/admin/` but its login
-button won't work until the OAuth broker exists.
+> Sveltia was removed in Studio P0 (`public/admin/`, `scripts/gen-cms-options.mjs`, `npm run
+> gen:cms` all deleted). Keep the GitHub App (A1) and the cms-auth Worker (A2) — Studio's login
+> uses exactly the same OAuth flow. The steps below are kept only as the as-built record of that
+> App/Worker setup.
 
 **A1. Create a GitHub App** (github.com → Settings → Developer settings → GitHub Apps → New —
 preferred over a classic OAuth App; Sveltia supports both):
@@ -73,26 +75,15 @@ preferred over a classic OAuth App; Sveltia supports both):
 4. Note the Worker URL (`https://<something>.workers.dev`) and put it into the OAuth App's
    callback URL (A1): `https://<something>.workers.dev/callback`.
 
-**A3. Point the CMS at the Worker:** edit `public/admin/config.yml` → `backend.base_url:` replace
-`https://REPLACE-WITH-YOUR-WORKER.workers.dev` with your Worker URL. Commit and push.
+(Steps A3/A4 configured and validated the Sveltia editor itself; they are gone along with it.
+Studio's equivalent acceptance test — a byte-clean "save without changes" commit — ships with
+Studio P1.)
 
-**A4. Round-trip acceptance test (do this before trusting the editor):**
-
-1. Open `/HomePage/admin/`, log in with GitHub.
-2. Open the existing entry *Reading: Attention Is All You Need*, change nothing, press Save.
-3. Check the commit diff on GitHub: it must be empty or whitespace-only. `<Bench>`, `<Critique>`,
-   `$$…$$` must be byte-identical (the body widget is in raw mode for exactly this reason).
-4. Then: create a throwaway entry, upload one image, confirm CI goes green, delete the entry.
-
-**Security model (why others can't write):** the page is static; writes go straight to the GitHub
-API with the *logged-in user's* token. GitHub refuses (403) any write from a non-collaborator of
-`ryanw0608/HomePage`. The Worker only exchanges the OAuth code for a token — it cannot grant
-permissions. If the Client Secret ever leaks: regenerate it in the OAuth App and update the Worker
-variable; repo permissions remain the real gate.
-
-Day-to-day rules: heavy long notes still belong in VS Code/Obsidian; commit desktop work before
-editing the same file from the web CMS; after changing `src/data/taxonomy.ts` run `npm run gen:cms`
-so the CMS dropdowns stay in sync.
+**Security model (why others can't write, unchanged for Studio):** the editor page is static;
+writes go straight to the GitHub API with the *logged-in user's* token. GitHub refuses (403) any
+write from a non-collaborator of `ryanw0608/HomePage`. The Worker only exchanges the OAuth code
+for a token — it cannot grant permissions. If the Client Secret ever leaks: regenerate it in the
+GitHub App and update the Worker variable; repo permissions remain the real gate.
 
 ---
 
@@ -200,5 +191,4 @@ lands. Repo privacy protects the *source*; the field controls what the *website*
 ```bash
 npm run agent:overview   # run the overview agent locally (needs ZHIPU_API_KEY in env)
 npm run agent:digest     # run the weekly digest locally
-npm run gen:cms          # re-sync CMS dropdowns after editing taxonomy.ts
 ```

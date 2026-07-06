@@ -9,11 +9,11 @@ import LearningMapPreview from "@/components/LearningMapPreview.astro";
 import { profile } from "@/data/profile";
 import { courses } from "@/data/taxonomy";
 import SiteShell from "@/layouts/SiteShell.astro";
-import { byDateDesc, entryPath, publicEntries, readingTime } from "@/lib/content";
+import { byDateDesc, entryPath, listedEntries, readingTime } from "@/lib/content";
 
 const base = import.meta.env.BASE_URL;
-const allCourseNotes = publicEntries(await getCollection("course-notes")).sort(byDateDesc);
-const allPaperReadings = publicEntries(await getCollection("paper-reading")).sort(byDateDesc);
+const allCourseNotes = listedEntries(await getCollection("course-notes")).sort(byDateDesc);
+const allPaperReadings = listedEntries(await getCollection("paper-reading")).sort(byDateDesc);
 const entryCount = allCourseNotes.length + allPaperReadings.length;
 
 const latestWriting = [

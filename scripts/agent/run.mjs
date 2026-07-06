@@ -22,6 +22,8 @@ function loadNotes() {
       if (!/\.(md|mdx)$/.test(file)) continue;
       const raw = readFileSync(path.join(dir, file), "utf8");
       if (/^draft:\s*true\s*$/m.test(raw)) continue;
+      // The agent only ever summarizes fully public notes.
+      if (/^visibility:\s*["']?(private|unlisted)["']?\s*$/m.test(raw)) continue;
       notes.push({ collection, slug: file.replace(/\.(md|mdx)$/, ""), raw });
     }
   }

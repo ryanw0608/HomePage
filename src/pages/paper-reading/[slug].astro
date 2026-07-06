@@ -45,6 +45,7 @@ const hasVerdict = Boolean(paper.data.rating || paper.data.recommendation || pap
   ]}
   backHref={`${import.meta.env.BASE_URL}paper-reading/`}
   backLabel="Paper reading"
+  unlisted={paper.data.visibility === "unlisted"}
 >
   {
     hasVerdict && (

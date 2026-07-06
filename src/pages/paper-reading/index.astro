@@ -3,9 +3,9 @@ import { getCollection } from "astro:content";
 
 import EntryRow from "@/components/EntryRow.astro";
 import SiteShell from "@/layouts/SiteShell.astro";
-import { byDateDesc, entryPath, publicEntries, readingTime } from "@/lib/content";
+import { byDateDesc, entryPath, listedEntries, readingTime } from "@/lib/content";
 
-const papers = publicEntries(await getCollection("paper-reading")).sort(byDateDesc);
+const papers = listedEntries(await getCollection("paper-reading")).sort(byDateDesc);
 
 const reviewYears = [...new Set(papers.map((paper) => paper.data.date.getFullYear()))];
 const groups = reviewYears.map((year) => ({

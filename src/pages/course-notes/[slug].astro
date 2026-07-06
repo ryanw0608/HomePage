@@ -5,7 +5,7 @@ import CourseNav from "@/components/CourseNav.astro";
 import { mdxComponents } from "@/components/mdx";
 import ArticleLayout from "@/layouts/ArticleLayout.astro";
 import { courses, tags } from "@/data/taxonomy";
-import { byDateDesc, entryPath, entrySlug, publicEntries, readingTime } from "@/lib/content";
+import { byDateDesc, entryPath, entrySlug, listedEntries, publicEntries, readingTime } from "@/lib/content";
 import { htmlLang } from "@/lib/site";
 
 export async function getStaticPaths() {
@@ -23,7 +23,8 @@ const lang = htmlLang(note.data.language, note.data.primaryLanguage);
 const tagLabels = note.data.tags.map((tag) => tags[tag].label).join(", ");
 
 // Prev/next within the same course: explicit `order` first, then date.
-const courseNotes = publicEntries(await getCollection("course-notes"))
+// Listed only — unlisted notes never appear in another page's navigation.
+const courseNotes = listedEntries(await getCollection("course-notes"))
   .filter((entry) => entry.data.course === note.data.course)
   .sort((a, b) => {
     const orderA = a.data.order ?? Number.POSITIVE_INFINITY;
@@ -33,11 +34,11 @@ const courseNotes = publicEntries(await getCollection("course-notes"))
   });
 const position = courseNotes.findIndex((entry) => entry.id === note.id);
 const prevNote = position > 0 ? courseNotes[position - 1] : undefined;
-const nextNote = position < courseNotes.length - 1 ? courseNotes[position + 1] : undefined;
+const nextNote = position >= 0 && position < courseNotes.length - 1 ? courseNotes[position + 1] : undefined;
 
 const kicker = [
   `Course note · ${courses[note.data.course].label}`,
-  courseNotes.length > 1 ? `part ${position + 1} of ${courseNotes.length}` : undefined
+  position >= 0 && courseNotes.length > 1 ? `part ${position + 1} of ${courseNotes.length}` : undefined
 ]
   .filter(Boolean)
   .join(" · ");
@@ -59,13 +60,19 @@ const kicker = [
   ]}
   backHref={`${import.meta.env.BASE_URL}course-notes/`}
   backLabel="Course notes"
+  unlisted={note.data.visibility === "unlisted"}
 >
   <Content components={mdxComponents} />
-  <CourseNav
-    slot="after-body"
-    position={position + 1}
-    total={courseNotes.length}
-    prev={prevNote && { title: prevNote.data.title, href: entryPath("course-notes", prevNote) }}
-    next={nextNote && { title: nextNote.data.title, href: entryPath("course-notes", nextNote) }}
-  />
+  {
+    /* Unlisted notes sit outside the listed sequence (position -1): no nav. */
+    position >= 0 && (
+      <CourseNav
+        slot="after-body"
+        position={position + 1}
+        total={courseNotes.length}
+        prev={prevNote && { title: prevNote.data.title, href: entryPath("course-notes", prevNote) }}
+        next={nextNote && { title: nextNote.data.title, href: entryPath("course-notes", nextNote) }}
+      />
+    )
+  }
 </ArticleLayout>

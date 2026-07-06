@@ -11,7 +11,6 @@
     "verify": "npm run build",
     "new:paper": "node scripts/new-entry.mjs paper",
     "new:note": "node scripts/new-entry.mjs course",
-    "gen:cms": "node scripts/gen-cms-options.mjs",
     "agent:overview": "node scripts/agent/run.mjs --overview",
     "agent:digest": "node scripts/agent/run.mjs --digest"
   },

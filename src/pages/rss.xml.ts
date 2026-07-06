@@ -1,12 +1,12 @@
 import rss from "@astrojs/rss";
 import { getCollection } from "astro:content";
 
-import { absoluteEntryUrl, byDateDesc, publicEntries } from "@/lib/content";
+import { absoluteEntryUrl, byDateDesc, listedEntries } from "@/lib/content";
 import { site } from "@/lib/site";
 
 export async function GET() {
-  const courseNotes = publicEntries(await getCollection("course-notes"));
-  const paperReadings = publicEntries(await getCollection("paper-reading"));
+  const courseNotes = listedEntries(await getCollection("course-notes"));
+  const paperReadings = listedEntries(await getCollection("paper-reading"));
 
   const items = [
     ...courseNotes.map((entry) => ({ collection: "course-notes" as const, entry })),

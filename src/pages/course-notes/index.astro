@@ -4,9 +4,9 @@ import { getCollection } from "astro:content";
 import EntryRow from "@/components/EntryRow.astro";
 import { courses } from "@/data/taxonomy";
 import SiteShell from "@/layouts/SiteShell.astro";
-import { byDateDesc, entryPath, publicEntries, readingTime } from "@/lib/content";
+import { byDateDesc, entryPath, listedEntries, readingTime } from "@/lib/content";
 
-const notes = publicEntries(await getCollection("course-notes")).sort(byDateDesc);
+const notes = listedEntries(await getCollection("course-notes")).sort(byDateDesc);
 
 const courseIds = [...new Set(notes.map((note) => note.data.course))];
 const groups = courseIds.map((courseId) => ({

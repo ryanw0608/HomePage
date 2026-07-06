@@ -4,13 +4,17 @@ How to write and publish course notes and paper-reading notes on this site.
 
 Three authoring surfaces, one source of truth (git-versioned MDX):
 
-1. **Web editor** — `https://ryanw0608.github.io/HomePage/admin/` (Sveltia CMS, GitHub login,
-   works on the phone). Best for: creating entries with correct frontmatter, flipping paper
-   status, fixing a tldr, uploading images. Body editing is raw MDX. Setup: `docs/admin-setup.md`.
+1. **Studio** — `https://ryanw0608.github.io/HomePage/studio/` (Notion-grade block editor,
+   GitHub login, works on the phone; under construction — replaces the retired Sveltia `/admin`).
+   Every save is a git commit: full history on GitHub, mirrored locally by the daily backup task.
 2. **Editor + git** — VS Code/Obsidian with the `npm run new:*` scaffolds. Best for: the long,
    math-heavy deep dives.
 3. **Notion** — capture inbox only, never authoritative. Promote captures via the scaffold
    (checklist below).
+
+Per-note visibility (frontmatter): `draft: true` = work-in-progress, never built;
+`visibility: "unlisted"` = built but reachable by URL only (no indexes/RSS/search/robots);
+`visibility: "private"` = never built. Default is `public`.
 
 ## Quickstart
 

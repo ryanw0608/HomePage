@@ -4,16 +4,17 @@ import { getCollection } from "astro:content";
 
 import CommandPalette from "@/components/CommandPalette.astro";
 import ThemeToggle from "@/components/ThemeToggle.astro";
-import { publicEntries } from "@/lib/content";
+import { listedEntries } from "@/lib/content";
 import { site } from "@/lib/site";
 
 interface Props {
   title?: string;
   description?: string;
   lang?: "en" | "zh-CN";
+  noindex?: boolean;
 }
 
-const { title = site.title, description = site.description, lang = "en" } = Astro.props;
+const { title = site.title, description = site.description, lang = "en", noindex = false } = Astro.props;
 const pageTitle = title === site.title ? title : `${title} | ${site.title}`;
 const base = import.meta.env.BASE_URL;
 const href = (pathname = "") => `${base}${pathname.replace(/^\/+/, "")}`;
@@ -36,8 +37,8 @@ const navItems = [
   { label: "about", pathname: "about/" }
 ];
 
-const noteCount = publicEntries(await getCollection("course-notes")).length;
-const paperCount = publicEntries(await getCollection("paper-reading")).length;
+const noteCount = listedEntries(await getCollection("course-notes")).length;
+const paperCount = listedEntries(await getCollection("paper-reading")).length;
 ---
 
 <!doctype html>
@@ -49,6 +50,7 @@ const paperCount = publicEntries(await getCollection("paper-reading")).length;
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
     <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" type="image/svg+xml" href={href("favicon.svg")} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
