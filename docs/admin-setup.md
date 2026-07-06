@@ -11,7 +11,7 @@ Everything below this box is the original how-to, kept for reference. The live c
 | OAuth broker | Cloudflare Worker **`cms-auth`** → `https://cms-auth.wyz162536.workers.dev` (repo `ryanw0608/sveltia-cms-auth`; env vars `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` (secret), `ALLOWED_DOMAINS`) |
 | App callback URL | `https://cms-auth.wyz162536.workers.dev/callback` |
 | Analytics | GoatCounter account code **`yongzhewang`** → dashboard https://yongzhewang.goatcounter.com; wired in `src/lib/site.ts` `goatcounter` |
-| Agent secret | `ZHIPU_API_KEY` in repo Actions secrets (Settings → Secrets and variables → Actions). Optional vars: `GLM_MODEL` (default `glm-5.2`), `GLM_BASE_URL` |
+| Agent secret | `ZHIPU_API_KEY` in repo Actions secrets (Settings → Secrets and variables → Actions). Optional vars: `GLM_MODEL` (default `glm-5.2`), `GLM_BASE_URL` (default coding-plan endpoint `api/coding/paas/v4`) |
 | Agent schedule | daily overview 19:07 UTC, weekly digest Sun 09:37 UTC, manual via Actions → **CI** → Run workflow (the agent job is hosted inside ci.yml because this repo refuses to register new workflow files — GitHub-side issue, 2026-07-06). Output arrives as a PR; merging deploys |
 
 **Key rotation (do this if a credential ever leaks or as routine hygiene):**
@@ -121,8 +121,8 @@ The agent job (hosted in `.github/workflows/ci.yml`) runs daily (notes overview)
      share it in chat.)
 2. Optional repository **variables** (same page, Variables tab):
    - `GLM_MODEL` — defaults to `glm-5.2`; set this if your plan uses a different model id.
-   - `GLM_BASE_URL` — defaults to `https://open.bigmodel.cn/api/paas/v4`; set only if your plan
-     uses a different endpoint.
+   - `GLM_BASE_URL` — defaults to `https://open.bigmodel.cn/api/coding/paas/v4` (the GLM
+     Coding Plan endpoint per docs.bigmodel.cn); set only if your plan uses a different one.
 3. Test: Actions → CI → Run workflow → mode `overview`. It should open a PR titled
    `agent: refresh overview` touching only `src/data/overview.json`. Review, merge → the homepage
    gains an `$ ./agent --overview` section. Run mode `digest` the same way to get the first

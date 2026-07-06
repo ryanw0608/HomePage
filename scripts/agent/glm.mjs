@@ -4,7 +4,9 @@
  * Env:
  *   ZHIPU_API_KEY  (required — set in GitHub Actions secrets, never committed)
  *   GLM_MODEL      (optional, default glm-5.2)
- *   GLM_BASE_URL   (optional, default https://open.bigmodel.cn/api/paas/v4)
+ *   GLM_BASE_URL   (optional, default https://open.bigmodel.cn/api/coding/paas/v4 —
+ *                   the GLM Coding Plan endpoint; plan keys are invalid on the
+ *                   regular api/paas/v4 endpoint)
  */
 export async function chat(messages, { temperature = 0.4 } = {}) {
   const key = process.env.ZHIPU_API_KEY;
@@ -12,7 +14,7 @@ export async function chat(messages, { temperature = 0.4 } = {}) {
     throw new Error("ZHIPU_API_KEY is not set");
   }
 
-  const base = (process.env.GLM_BASE_URL ?? "https://open.bigmodel.cn/api/paas/v4").replace(/\/$/, "");
+  const base = (process.env.GLM_BASE_URL ?? "https://open.bigmodel.cn/api/coding/paas/v4").replace(/\/$/, "");
   const model = process.env.GLM_MODEL ?? "glm-5.2";
 
   const res = await fetch(`${base}/chat/completions`, {
