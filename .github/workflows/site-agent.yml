@@ -1,5 +1,5 @@
 # GLM site agent: daily notes overview + weekly digest, delivered as PRs.
-name: Agent
+name: Site Agent
 
 on:
   schedule:
