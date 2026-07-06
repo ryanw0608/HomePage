@@ -86,7 +86,24 @@ jobs:
 
       - name: Run agent
         if: env.ZHIPU_API_KEY != ''
-        run: node scripts/agent/run.mjs --${{ steps.mode.outputs.mode }}
+        id: run_agent
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node scripts/agent/run.mjs --${{ steps.mode.outputs.mode }} 2>&1 | tee /tmp/agent.log
+
+      - name: Report failure as commit comment
+        if: env.ZHIPU_API_KEY != '' && steps.run_agent.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAIL=$(tail -c 1200 /tmp/agent.log)
+          gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments"             -f body="Agent run failed. Log tail:
+
+\`\`\`
+${TAIL}
+\`\`\`"
+          exit 1
 
       - name: Open pull request when output changed
         if: env.ZHIPU_API_KEY != ''
