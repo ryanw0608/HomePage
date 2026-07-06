@@ -3,11 +3,9 @@ export const site = {
   secondaryName: "Wang Yongzhe",
   // Terminal prompt identity used in the header breadcrumb and boot sequence.
   handle: "ryan@wang",
-  // Umami Cloud website id — empty string disables the tracking script.
-  // Setup steps: docs/admin-setup.md.
-  umamiWebsiteId: "",
-  // site-api Worker base URL (stats proxy + Studio AI proxy).
-  // Empty string leaves /stats/ in its unconfigured state.
+  // site-api Worker base URL (first-party analytics + Studio AI proxy).
+  // Empty string disables the traffic beacon and leaves /stats/ in its
+  // unconfigured state. Setup steps: docs/admin-setup.md Part B.
   siteApi: "",
   title: "Yongzhe Wang",
   description: "Academic homepage, course notes, and paper reading notes by Yongzhe Wang.",

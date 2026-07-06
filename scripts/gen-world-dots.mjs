@@ -6,7 +6,7 @@
  *
  * Rasterizes country polygons onto a lat/lon grid and writes
  * src/data/world-dots.json: { cols, rows, dots: [[col, row, "AU"], ...] }.
- * Country codes are ISO 3166-1 alpha-2 (what Umami reports).
+ * Country codes are ISO 3166-1 alpha-2 (what Cloudflare's request.cf.country reports).
  *
  * Sources (fetched at generation time only; nothing runs at build/site time):
  *   - countries GeoJSON (ISO_A3 ids): johan/world.geo.json

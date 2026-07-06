@@ -57,10 +57,11 @@ note-writing workflow (scaffolds, frontmatter, MDX components, Notion export, la
 - Site agent: `agent` job in `.github/workflows/ci.yml` + `scripts/agent/` — GLM (Zhipu API) refreshes
   `src/data/overview.json` daily and writes `/digest/` weekly, always via reviewed PRs, always
   derived from committed notes only. Requires `ZHIPU_API_KEY` Actions secret.
-- Analytics: Umami Cloud + live visitor world map at `/stats/` (terminal dot-matrix, real-time
-  online count). Tracking script gated on `site.umamiWebsiteId`; the map reads the `site-api`
-  Cloudflare Worker (`workers/site-api/`, Umami proxy + Studio AI proxy) via `site.siteApi`.
-  Owner setup: `docs/admin-setup.md` Part B.
+- Analytics: fully first-party + live visitor world map at `/stats/` (terminal dot-matrix,
+  real-time online count). An inline beacon in `SiteShell.astro` (gated on `site.siteApi`) posts
+  to the `site-api` Cloudflare Worker (`workers/site-api/`), which stores events in Cloudflare
+  Analytics Engine and serves the map's queries; the same Worker hosts the Studio AI proxy.
+  No cookies; daily-salted visitor hash. Owner setup: `docs/admin-setup.md` Part B.
 
 ## Content System Rules
 

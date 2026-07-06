@@ -7,10 +7,15 @@ compatibility_date = "2026-07-01"
 #   cd workers/site-api && npx wrangler deploy
 #
 # Then set (Settings -> Variables and Secrets):
-#   UMAMI_API_KEY    (secret)
-#   UMAMI_WEBSITE_ID (text)
-#   ZHIPU_API_KEY    (secret)
-#   ALLOWED_ORIGIN   (text)  https://ryanw0608.github.io
+#   CF_ACCOUNT_ID  (text)    Cloudflare account id
+#   CF_API_TOKEN   (secret)  API token with "Account Analytics: Read"
+#   HASH_SALT      (secret)  any random string (salts the daily visitor hash)
+#   ZHIPU_API_KEY  (secret)  GLM coding-plan key (Studio AI; optional until then)
 
 [vars]
 ALLOWED_ORIGIN = "https://ryanw0608.github.io"
+
+# First-party traffic storage (free tier: ~100k writes/day, 90-day retention).
+[[analytics_engine_datasets]]
+binding = "TRAFFIC"
+dataset = "homepage_traffic"

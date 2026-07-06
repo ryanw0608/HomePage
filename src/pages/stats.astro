@@ -72,8 +72,7 @@ const viewH = worldDots.rows;
     </div>
 
     <p class="stats-foot" data-stats-foot>
-      counted by <a href="https://umami.is" rel="noopener noreferrer">umami</a> — no cookies, no fingerprinting ·
-      auto-refreshes every 60s
+      first-party analytics on the edge — no cookies, no fingerprinting · auto-refreshes every 60s
     </p>
   </section>
 </SiteShell>
@@ -142,8 +141,8 @@ const viewH = worldDots.rows;
           get("referrers")
         ]);
 
-        const visitors = summary?.visitors?.value ?? summary?.visitors ?? 0;
-        const views = summary?.pageviews?.value ?? summary?.pageviews ?? 0;
+        const visitors = summary?.visitors ?? 0;
+        const views = summary?.pageviews ?? 0;
         const elV = document.querySelector("[data-total-visitors]");
         const elP = document.querySelector("[data-total-views]");
         if (elV) elV.textContent = fmt(visitors);
@@ -184,7 +183,7 @@ const viewH = worldDots.rows;
     async function refreshActive() {
       try {
         const active = await get("active");
-        const count = active?.visitors ?? active?.[0]?.x ?? active?.[0]?.y ?? 0;
+        const count = active?.visitors ?? 0;
         const el = document.querySelector("[data-active-count]");
         if (el) el.textContent = String(count);
         document.querySelector("[data-live-dot]")?.classList.toggle("is-live", count > 0);

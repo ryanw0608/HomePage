@@ -2,9 +2,10 @@
 
 > 2026-07-06: shipped since the list below was written — Sveltia CMS `/admin` (repo side),
 > GLM site agent (overview + weekly digest via PR), `/digest/` routes.
-> 2026-07-07: analytics track done — Umami Cloud (replaced the GoatCounter plan) + `/stats/`
-> terminal dot-matrix live visitor world map + `site-api` Worker (Umami proxy, also hosts the
-> Studio AI proxy). Item 8 below is thereby complete. Owner-side activation: `docs/admin-setup.md`.
+> 2026-07-07: analytics track done — fully first-party pipeline (site beacon → `site-api` Worker
+> → Cloudflare Analytics Engine; Umami Cloud was evaluated but its API is Pro-paywalled) +
+> `/stats/` terminal dot-matrix live visitor world map. The Worker also hosts the Studio AI
+> proxy. Item 8 below is thereby complete. Owner-side activation: `docs/admin-setup.md`.
 > Next major project: Studio — Notion-grade block editor at `/studio/` replacing `/admin`
 > (plan: `~/.claude/plans/bright-bouncing-aurora.md`).
 

@@ -10,8 +10,8 @@ Everything below this box is the original how-to, kept for reference. The live c
 | GitHub App | "HomePage CMS", App ID 4228900, Client ID `Iv23li6YzNYlirEUYBOt`, installed on `HomePage` only, permission: Contents read/write. Manage at github.com/settings/apps |
 | OAuth broker | Cloudflare Worker **`cms-auth`** → `https://cms-auth.wyz162536.workers.dev` (repo `ryanw0608/sveltia-cms-auth`; env vars `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` (secret), `ALLOWED_DOMAINS`) |
 | App callback URL | `https://cms-auth.wyz162536.workers.dev/callback` |
-| Analytics | **Umami Cloud** (replaced GoatCounter 2026-07-07) — tracking script gated on `src/lib/site.ts` `umamiWebsiteId`; live map at `/stats/` reads the **site-api** Worker. Setup: Part B below |
-| site-api Worker | Cloudflare Worker **`site-api`** (code in this repo, `workers/site-api/`) — public read-only Umami stats proxy (`/stats/:metric`, 60s edge cache) + collaborator-gated GLM proxy for Studio (`/ai/chat`). Env: `UMAMI_API_KEY` (secret), `UMAMI_WEBSITE_ID`, `ZHIPU_API_KEY` (secret), optional `GLM_MODEL`/`GLM_BASE_URL`, `ALLOWED_ORIGIN` |
+| Analytics | **First-party** (2026-07-07; Umami Cloud was evaluated but its API is Pro-paywalled) — an inline beacon in `SiteShell.astro` (gated on `src/lib/site.ts` `siteApi`) posts to the **site-api** Worker, which stores events in Cloudflare **Analytics Engine** (dataset `homepage_traffic`, no cookies, daily-salted visitor hash). Live map at `/stats/` reads the same Worker. Setup: Part B below |
+| site-api Worker | Cloudflare Worker **`site-api`** (code in this repo, `workers/site-api/`) — `/collect` beacon sink → Analytics Engine; `/stats/:metric` public read-only queries (60s edge cache); `/ai/chat` collaborator-gated GLM proxy for Studio. Env: `CF_ACCOUNT_ID`, `CF_API_TOKEN` (secret, Account Analytics: Read), `HASH_SALT` (secret), `ZHIPU_API_KEY` (secret), optional `GLM_MODEL`/`GLM_BASE_URL`; `ALLOWED_ORIGIN` set in wrangler.toml |
 | Agent secret | `ZHIPU_API_KEY` in repo Actions secrets (Settings → Secrets and variables → Actions). Optional vars: `GLM_MODEL` (default `glm-5.2`), `GLM_BASE_URL` (default coding-plan endpoint `api/coding/paas/v4`) |
 | Agent schedule | daily overview 23:00 UTC (09:00 Sydney), weekly digest Sat 23:00 UTC (Sun 09:00 Sydney), manual via Actions → **CI** → Run workflow (the agent job is hosted inside ci.yml because this repo refuses to register new workflow files — GitHub-side issue, 2026-07-06). Output arrives as a PR; merging deploys |
 
@@ -29,8 +29,8 @@ Everything below this box is the original how-to, kept for reference. The live c
 - Long math-heavy notes → VS Code + `npm run new:paper` / `new:note` (see `docs/authoring.md`).
 - After editing `src/data/taxonomy.ts` → `npm run gen:cms` and commit, so CMS dropdowns stay in sync.
 - Agent PRs titled `agent: refresh …` → review the diff, merge if the summary is faithful, close if not.
-- Visitor stats → `stats` link in the site status bar → `/stats/` live world map (or the Umami
-  Cloud dashboard for raw drill-down).
+- Visitor stats → `stats` link in the site status bar → `/stats/` live world map. To exclude your
+  own devices, run `localStorage.setItem("yw-notrack", "1")` once in each browser's console.
 
 ---
 
@@ -96,45 +96,53 @@ so the CMS dropdowns stay in sync.
 
 ---
 
-## Part B — Analytics (Umami Cloud + live visitor map) · ~15 min
+## Part B — Analytics (first-party, Cloudflare Analytics Engine) · ~15 min
 
 The `/stats/` page (terminal dot-matrix world map, live "online now", top countries / pages /
-referrers) is already deployed. It stays in a graceful "not configured" state until these steps
-are done. Two halves: an Umami Cloud account (collects the data) and the `site-api` Worker
-(proxies the Umami API so the key never reaches the browser).
+referrers) is already deployed and stays in a graceful "not configured" state until these steps
+are done. The whole pipeline is first-party: the site sends a tiny beacon to the `site-api`
+Worker, the Worker stores events in Cloudflare Analytics Engine (free: ~100k writes/day, 90-day
+retention) and answers the map's queries. No third-party analytics account needed.
+(History: Umami Cloud was the original plan, but its API is paywalled behind Pro — the account
+created for it can be deleted.)
 
-**B1. Umami Cloud account:**
-
-1. Sign up at https://umami.is (free Hobby plan — 100k events/month, more than enough).
-2. Add a website: name `HomePage`, domain `ryanw0608.github.io`. Copy the **Website ID** (a UUID,
-   shown in the website settings).
-3. Generate an **API key**: profile menu → API keys → Create key. Copy it (shown once).
-
-**B2. Deploy the site-api Worker** (same flow as the cms-auth Worker):
+**B1. Deploy the site-api Worker** (same flow as the cms-auth Worker):
 
 1. dash.cloudflare.com → Workers & Pages → Create → **Import a repository** → pick
    `ryanw0608/HomePage`.
 2. Project name: `site-api`. **Root directory: `workers/site-api`** (critical — the wrangler.toml
-   lives there). Deploy.
-3. Worker → Settings → Variables and Secrets:
-   - `UMAMI_API_KEY` (encrypt) = the API key from B1
-   - `UMAMI_WEBSITE_ID` (text) = the Website ID from B1
-   - `ZHIPU_API_KEY` (encrypt) = your 智谱 coding-plan key (powers the Studio AI assistant later;
-     can be added whenever)
-   - `ALLOWED_ORIGIN` is set in wrangler.toml already; `GLM_MODEL`/`GLM_BASE_URL` optional.
-4. Note the Worker URL, e.g. `https://site-api.wyz162536.workers.dev`.
+   with the Analytics Engine binding lives there). Deploy.
+3. Note the Worker URL, e.g. `https://site-api.wyz162536.workers.dev`.
 
-**B3. Wire the site** — edit `src/lib/site.ts`:
+**B2. Create a Cloudflare API token** (lets the Worker query its own analytics data):
 
-- `umamiWebsiteId: ""` → the Website ID (turns on the tracking script — no cookies, ~2 KB).
-- `siteApi: ""` → the Worker URL from B2, no trailing slash (turns on the live map).
+1. dash.cloudflare.com → top-right profile → **My Profile → API Tokens → Create Token →
+   Custom token**.
+2. Name `site-api-analytics`; Permissions: **Account · Account Analytics · Read** (that one row,
+   nothing else); Account Resources: your account. Create and copy the token (shown once).
+3. Also note your **Account ID** (Workers & Pages overview page, right-hand column — a 32-char
+   hex string).
 
-Commit and push (or paste both values to Claude and it will do it). Within a couple of minutes of
-the deploy, visit the site once and `/stats/` should show 1 online and light up your country.
+**B3. Fill the Worker variables** (Worker → Settings → Variables and Secrets):
 
-**Security model:** the Umami API key and Zhipu key live only in the Worker. `/stats/*` is public
-but read-only and 60-second cached; `/ai/chat` additionally requires a GitHub token with push
-access to this repo (the same collaborator gate as content writes).
+- `CF_ACCOUNT_ID` (text) = the Account ID from B2
+- `CF_API_TOKEN` (encrypt) = the token from B2
+- `HASH_SALT` (encrypt) = any random string you make up (salts the anonymous visitor hash)
+- `ZHIPU_API_KEY` (encrypt) = 智谱 coding-plan key — powers the Studio AI assistant later; can be
+  added whenever
+
+**B4. Wire the site:** edit `src/lib/site.ts` → `siteApi: ""` → the Worker URL from B1 (no
+trailing slash), commit and push — or paste the URL to Claude. This single field turns on both
+the beacon and the live map. Visit the site once after deploy; within a minute or two `/stats/`
+should show 1 online and light up your country.
+
+**Privacy / security model:** no cookies, no fingerprinting — a visitor is a salted SHA-256 of
+ip+ua that rotates daily (the Plausible/GoatCounter scheme); raw IPs are never stored. The API
+token can only *read analytics* and lives only in the Worker. `/collect` accepts only beacons
+with this site's Origin and drops bot user-agents; `/stats/*` is public read-only and cached
+(60 s; the live "online now" count 10 s); `/ai/chat` requires a GitHub token with push access to this repo (the same collaborator
+gate as content writes). To not count yourself, run `localStorage.setItem("yw-notrack", "1")` in
+each of your browsers' consoles once.
 
 ---
 
@@ -158,6 +166,32 @@ The agent job (hosted in `.github/workflows/ci.yml`) runs daily (notes overview)
 **Guarantees:** the agent only summarizes committed notes (prompts forbid invention), its output
 arrives as a PR you review (merging is what deploys), and a red CI can never publish. If a PR looks
 wrong, close it — nothing happened.
+
+---
+
+## Part D — History safety & privacy (decided 2026-07-07)
+
+**Local backup (installed, nothing to do):** a Windows scheduled task **"HomePage git backup"**
+runs daily at 12:00 (or next wake) on this PC: `git fetch --all --prune` (mirrors the full GitHub
+history locally even if the working tree is dirty) then `git pull --ff-only` (fast-forwards the
+working tree when safe). Every note therefore exists in at least three places: GitHub (full
+history), this PC's git clone (full history), and the deployed site. Manage the task in Task
+Scheduler if needed.
+
+**Private repo migration (owner steps, do in this order):**
+
+1. Apply for the GitHub Student Developer Pack at https://education.github.com/pack with your
+   USYD email / enrollment proof (free; grants GitHub Pro; approval takes hours to a few days).
+2. **Only after Pro is active**: repo → Settings → General → Danger Zone → Change visibility →
+   Private. (Flipping before Pro would disable GitHub Pages — Pages on private repos is a Pro
+   feature. The site URL and deployment stay exactly the same afterwards.)
+3. Note the CI budget change: private repos get 2000 free Actions minutes/month (builds are ~2
+   min each + the daily agent run — comfortably within budget, but visible under Settings →
+   Billing if ever curious).
+
+Content visibility on the site itself is a separate, per-note `visibility` frontmatter field
+(`public` / `unlisted` / `private`) introduced with Studio P0 — see `docs/authoring.md` once it
+lands. Repo privacy protects the *source*; the field controls what the *website* shows.
 
 ---
 

@@ -56,13 +56,52 @@ const paperCount = publicEntries(await getCollection("paper-reading")).length;
     <meta name="twitter:card" content="summary" />
     <link rel="alternate" type="application/rss+xml" href={href("rss.xml")} title={site.title} />
     {
-      site.umamiWebsiteId && (
-        <script
-          is:inline
-          defer
-          src="https://cloud.umami.is/script.js"
-          data-website-id={site.umamiWebsiteId}
-        />
+      site.siteApi && (
+        <script is:inline define:vars={{ collectApi: site.siteApi }}>
+          // First-party, cookie-free traffic beacon (workers/site-api). Opt
+          // out on a device via localStorage.setItem("yw-notrack", "1").
+          (() => {
+            if (navigator.webdriver) return;
+            try {
+              if (localStorage.getItem("yw-notrack") === "1") return;
+            } catch {
+              /* storage blocked: still count the view */
+            }
+            let sid = "";
+            try {
+              sid = sessionStorage.getItem("yw-sid") || "";
+              if (!sid) {
+                sid = crypto.randomUUID();
+                sessionStorage.setItem("yw-sid", sid);
+              }
+            } catch {
+              sid = String(Math.random()).slice(2);
+            }
+            const send = (type) => {
+              const body = JSON.stringify({
+                type,
+                path: location.pathname,
+                referrer: document.referrer,
+                sid
+              });
+              try {
+                navigator.sendBeacon(`${collectApi}/collect`, body);
+              } catch {
+                /* beacon blocked */
+              }
+            };
+            // Don't count speculative prerenders; wait for real activation.
+            if (document.prerendering) {
+              document.addEventListener("prerenderingchange", () => send("view"), { once: true });
+            } else {
+              send("view");
+            }
+            // Keep the "online now" signal alive while the tab is visible.
+            setInterval(() => {
+              if (document.visibilityState === "visible") send("ping");
+            }, 60000);
+          })();
+        </script>
       )
     }
     <script is:inline>
