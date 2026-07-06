@@ -3,6 +3,10 @@ export const site = {
   secondaryName: "Wang Yongzhe",
   // Terminal prompt identity used in the header breadcrumb and boot sequence.
   handle: "ryan@wang",
+  // GoatCounter site code (the <code> in https://<code>.goatcounter.com).
+  // Empty string disables analytics entirely — no script is emitted.
+  // Setup steps: docs/admin-setup.md.
+  goatcounter: "",
   title: "Yongzhe Wang",
   description: "Academic homepage, course notes, and paper reading notes by Yongzhe Wang.",
   url: "https://ryanw0608.github.io/HomePage/"

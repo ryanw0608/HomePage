@@ -55,6 +55,16 @@ const paperCount = publicEntries(await getCollection("paper-reading")).length;
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary" />
     <link rel="alternate" type="application/rss+xml" href={href("rss.xml")} title={site.title} />
+    {
+      site.goatcounter && (
+        <script
+          is:inline
+          async
+          data-goatcounter={`https://${site.goatcounter}.goatcounter.com/count`}
+          src="https://gc.zgo.at/count.js"
+        />
+      )
+    }
     <script is:inline>
       (() => {
         const root = document.documentElement;
@@ -118,6 +128,11 @@ const paperCount = publicEntries(await getCollection("paper-reading")).length;
         <div class="status-right">
           <a href={href("rss.xml")}>rss</a>
           <a href="https://github.com/ryanw0608" rel="noopener noreferrer">github</a>
+          {
+            site.goatcounter && (
+              <a href={`https://${site.goatcounter}.goatcounter.com`} rel="noopener noreferrer">stats</a>
+            )
+          }
           <button class="k-chip" type="button" data-palette-open hidden aria-label="Open command palette">
             &#8984;K
           </button>

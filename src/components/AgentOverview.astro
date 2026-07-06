@@ -1,0 +1,117 @@
+---
+/*
+ * Agent-maintained notes overview. Rendered only when the site agent has
+ * produced real data (src/data/overview.json is refreshed by
+ * scripts/agent/run.mjs via reviewed pull requests). Hidden entirely when
+ * empty — no fake density.
+ */
+import overviewData from "@/data/overview.json";
+
+interface OverviewArea {
+  id: string;
+  label: string;
+  coverage: string;
+  gap: string;
+}
+
+interface Overview {
+  updatedAt: string | null;
+  model: string | null;
+  summary: string;
+  areas: OverviewArea[];
+}
+
+const overview = overviewData as Overview;
+const hasData = Array.isArray(overview.areas) && overview.areas.length > 0;
+---
+
+{
+  hasData && (
+    <section class="agent-overview rise" aria-labelledby="overview-title" style="--rise-order: 5;">
+      <h2 class="sr-only" id="overview-title">Notes overview</h2>
+      <p class="prompt-line" aria-hidden="true">
+        <span class="prompt">$</span> <span class="cmd">./agent --overview</span>
+      </p>
+      {overview.summary && <p class="overview-summary">{overview.summary}</p>}
+      <dl class="overview-list">
+        {overview.areas.map((area) => (
+          <div class="overview-item">
+            <dt>{area.label || area.id}</dt>
+            <dd>
+              <span class="coverage">{area.coverage}</span>
+              {area.gap && <span class="gap"> · next: {area.gap}</span>}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <p class="overview-stamp">
+        generated {overview.updatedAt}{overview.model ? ` by ${overview.model}` : ""} from the committed notes
+      </p>
+    </section>
+  )
+}
+
+<style>
+  .agent-overview {
+    display: grid;
+    gap: 1.1rem;
+  }
+
+  .overview-summary {
+    margin: 0;
+    max-width: 64ch;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+
+  .overview-list {
+    display: grid;
+    gap: 0;
+    margin: 0;
+  }
+
+  .overview-item {
+    display: grid;
+    gap: 0.25rem;
+    border-top: 1px solid var(--line);
+    padding-block: 0.85rem;
+  }
+
+  .overview-item:first-child {
+    border-top: 0;
+    padding-top: 0.1rem;
+  }
+
+  dt {
+    color: var(--fg);
+    font-size: 0.92rem;
+    font-weight: 650;
+  }
+
+  dd {
+    margin: 0;
+    max-width: 66ch;
+    color: var(--muted);
+    font-size: 0.86rem;
+    line-height: 1.6;
+  }
+
+  .gap {
+    color: var(--tk-orange);
+  }
+
+  .overview-stamp {
+    margin: 0;
+    color: var(--faint);
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+  }
+
+  @media (min-width: 640px) {
+    .overview-item {
+      grid-template-columns: 15rem minmax(0, 1fr);
+      column-gap: 1.5rem;
+    }
+  }
+</style>

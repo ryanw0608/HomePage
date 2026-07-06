@@ -105,7 +105,24 @@ const paperReading = defineCollection({
   })
 });
 
+// Agent-written weekly digests: derived summaries of the real notes,
+// authored by scripts/agent/run.mjs and merged via reviewed pull requests.
+const digest = defineCollection({
+  loader: glob({
+    pattern: "content/digest/*.{md,mdx}",
+    base: "./src",
+    generateId: contentId("digest")
+  }),
+  schema: z.object({
+    title: z.string().min(1),
+    date: z.coerce.date(),
+    summary: z.string().min(1),
+    model: z.string().optional()
+  })
+});
+
 export const collections = {
   "course-notes": courseNotes,
-  "paper-reading": paperReading
+  "paper-reading": paperReading,
+  digest
 };
