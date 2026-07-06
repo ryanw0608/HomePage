@@ -14,8 +14,9 @@ export async function chat(messages, { temperature = 0.4 } = {}) {
     throw new Error("ZHIPU_API_KEY is not set");
   }
 
-  const base = (process.env.GLM_BASE_URL ?? "https://open.bigmodel.cn/api/coding/paas/v4").replace(/\/$/, "");
-  const model = process.env.GLM_MODEL ?? "glm-5.2";
+  // `||` not `??`: GitHub Actions injects unset vars as EMPTY STRINGS.
+  const base = (process.env.GLM_BASE_URL || "https://open.bigmodel.cn/api/coding/paas/v4").replace(/\/$/, "");
+  const model = process.env.GLM_MODEL || "glm-5.2";
 
   const res = await fetch(`${base}/chat/completions`, {
     method: "POST",
