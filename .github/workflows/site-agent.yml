@@ -78,3 +78,4 @@ jobs:
             --body "Automated ${MODE} update derived from the committed notes (model: \${GLM_MODEL:-glm-5.2}). Review before merging — merging deploys." \
             --base master \
             --head "$BRANCH"
+            
