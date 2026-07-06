@@ -11,13 +11,21 @@ order; nothing breaks while a part is un-configured.
 The admin page is already live at `https://ryanw0608.github.io/HomePage/admin/` but its login
 button won't work until the OAuth broker exists.
 
-**A1. Create a GitHub OAuth App** (github.com → Settings → Developer settings → OAuth Apps → New):
+**A1. Create a GitHub App** (github.com → Settings → Developer settings → GitHub Apps → New —
+preferred over a classic OAuth App; Sveltia supports both):
 
-- Application name: `HomePage CMS`
-- Homepage URL: `https://ryanw0608.github.io/HomePage/`
-- Authorization callback URL: `https://YOUR-WORKER.workers.dev/callback` — placeholder for now;
-  come back and paste the real Worker URL after A2.
-- Save the **Client ID**; generate and save a **Client Secret** (shown once).
+- App name: `HomePage CMS`; Homepage URL: `https://ryanw0608.github.io/HomePage/`
+- Callback URL: `https://YOUR-WORKER.workers.dev/callback` — placeholder; paste the real Worker
+  URL after A2.
+- **Uncheck "Expire user authorization tokens"** (otherwise CMS logins expire every 8 h).
+- Leave "Request user authorization during installation" and "Device Flow" unchecked.
+- **Webhook: uncheck "Active"** (not used; the form demands a URL if left on).
+- Permissions → Repository permissions → **Contents: Read and write** (Metadata auto-sets to
+  read-only). Nothing else.
+- "Where can this GitHub App be installed?" → **Only on this account**. Create.
+- After creation: copy the **Client ID**, generate + save a **Client Secret** (shown once).
+- **Install the app** (required for repo access): app settings → left sidebar → Install App →
+  @ryanw0608 → *Only select repositories* → `HomePage`.
 
 **A2. Deploy the OAuth broker** (free Cloudflare Worker):
 
