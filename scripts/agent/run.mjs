@@ -44,8 +44,10 @@ if (notes.length === 0) {
 }
 
 const areasSource = readFileSync("src/data/taxonomy.ts", "utf8");
+// glm-5.2 has a 1M-token context window — feed notes whole (cap only as a
+// pathological-file guard).
 const notesBlob = notes
-  .map((note) => `=== ${note.collection}/${note.slug} ===\n${note.raw.slice(0, 6000)}`)
+  .map((note) => `=== ${note.collection}/${note.slug} ===\n${note.raw.slice(0, 200000)}`)
   .join("\n\n");
 
 if (mode === "overview") {

@@ -24,7 +24,9 @@ export async function chat(messages, { temperature = 0.4 } = {}) {
       "content-type": "application/json",
       authorization: `Bearer ${key}`
     },
-    body: JSON.stringify({ model, temperature, messages })
+    // glm-5.2: 1M context window; thinking enabled for best quality
+    // (single-user plan — no need to economize).
+    body: JSON.stringify({ model, temperature, messages, thinking: { type: "enabled" } })
   });
 
   if (!res.ok) {
