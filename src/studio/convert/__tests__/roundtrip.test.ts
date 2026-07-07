@@ -123,11 +123,33 @@ describe("byte-clean round-trip (P3.2 real-block converter)", () => {
     expect(out).toBe(text);
   });
 
-  it("falls back to rawMdx for a list/table but stays byte-identical", () => {
-    const text = "- one\n- two\n\n| a | b |\n| - | - |\n| 1 | 2 |\n";
+  it("parses a simple list as per-item blocks, byte-identical", () => {
+    const text = "- one\n- two\n- three\n";
+    const doc = loadDocument(text);
+    expect(doc.blocks.map((b) => b.type)).toEqual(["bulletListItem", "bulletListItem", "bulletListItem"]);
+    expect(roundTrip(text)).toBe(text);
+  });
+
+  it("keeps a table as rawMdx but stays byte-identical", () => {
+    const text = "| a | b |\n| - | - |\n| 1 | 2 |\n";
     const doc = loadDocument(text);
     expect(doc.blocks.some((b) => b.type === "rawMdx")).toBe(true);
     expect(roundTrip(text)).toBe(text);
+  });
+
+  it("keeps a nested/loose list as one rawMdx card", () => {
+    const text = "- one\n  - nested\n- two\n";
+    const doc = loadDocument(text);
+    expect(doc.blocks.every((b) => b.type !== "bulletListItem")).toBe(true);
+    expect(roundTrip(text)).toBe(text);
+  });
+
+  it("edits one list item as a minimal diff, siblings verbatim", () => {
+    const text = "- keep one\n- edit me\n- keep three\n";
+    const doc = loadDocument(text);
+    (doc.blocks[1] as { content: unknown }).content = [{ type: "text", text: "edited", styles: {} }] as never;
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    expect(out).toBe("- keep one\n- edited\n- keep three\n");
   });
 
   it("round-trips a frontmatter-only note", () => {

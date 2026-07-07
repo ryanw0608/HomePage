@@ -140,23 +140,58 @@ function reasonFor(type: string): RawReason {
   return FALLBACK_REASON[type] ?? "parse-error";
 }
 
+/* A simple list = every item is one paragraph (no nesting, no loose blocks).
+ * Only then do we split it into per-item blocks (each with its own source
+ * slice for byte-identity); otherwise the whole list stays one rawMdx card. */
+function simpleListItems(node: MdastNode): MdastNode[] | null {
+  if (node.type !== "list") return null;
+  const items = node.children ?? [];
+  if (items.length === 0) return null;
+  const ok = items.every(
+    (it) => it.type === "listItem" && (it.children ?? []).length === 1 && (it.children ?? [])[0].type === "paragraph"
+  );
+  return ok ? items : null;
+}
+
 export function parseBodyToSegments(body: string): ParsedBody {
   const root = parseBody(body) as MdastNode;
   const children = root.children ?? [];
   const segments: Segment[] = [];
   let cursor = 0;
+  let counter = 0;
 
-  children.forEach((node, index) => {
+  const push = (block: ConvBlock, gapBefore: string, source: string) => {
+    const id = `seg-${counter++}`;
+    segments.push({ id, block: { id, ...block }, pristine: clone({ id, ...block }), gapBefore, source });
+  };
+
+  for (const node of children) {
+    const items = simpleListItems(node);
+    if (items) {
+      const ordered = Boolean((node as { ordered?: boolean }).ordered);
+      const listType = ordered ? "numberedListItem" : "bulletListItem";
+      for (const item of items) {
+        const start = item.position?.start.offset ?? cursor;
+        const end = item.position?.end.offset ?? cursor;
+        const para = (item.children ?? [])[0];
+        let block: ConvBlock;
+        try {
+          block = { type: listType, content: inlineFromMdast(para.children ?? []) };
+        } catch {
+          block = rawMdxBlock(body.slice(start, end), "container-multiblock");
+        }
+        push(block, body.slice(cursor, start), body.slice(start, end));
+        cursor = end;
+      }
+      continue;
+    }
+
     const start = node.position?.start.offset ?? cursor;
     const end = node.position?.end.offset ?? cursor;
-    const gapBefore = body.slice(cursor, start);
     const source = body.slice(start, end);
+    push(mapNode(node) ?? rawMdxBlock(source, reasonFor(node.type)), body.slice(cursor, start), source);
     cursor = end;
-
-    const block = mapNode(node) ?? rawMdxBlock(source, reasonFor(node.type));
-    const id = `seg-${index}`;
-    segments.push({ id, block: { id, ...block }, pristine: clone({ id, ...block }), gapBefore, source });
-  });
+  }
 
   return { segments, tail: body.slice(cursor) };
 }

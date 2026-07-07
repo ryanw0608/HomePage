@@ -141,8 +141,13 @@ function isEmptyParagraph(block: ConvBlock): boolean {
   return block.type === "paragraph" && contentText(block.content).length === 0;
 }
 
+function isListItem(block: ConvBlock): boolean {
+  return block.type === "bulletListItem" || block.type === "numberedListItem";
+}
+
 export function serializeBody(blocks: ConvBlock[], prov: ProvMap, tail: string): string {
   let out = "";
+  let prev: ConvBlock | null = null;
   for (const block of blocks) {
     const entry = block.id ? prov.get(block.id) : undefined;
     let piece: string;
@@ -155,13 +160,15 @@ export function serializeBody(blocks: ConvBlock[], prov: ProvMap, tail: string):
     } else {
       piece = houseStyle(block); // brand-new block
     }
-    // Guarantee a blank-line boundary between blocks whenever neither side
-    // provides one — otherwise an inserted/edited block (whose stored glue is
-    // "" or a relative gap) would jam into its neighbour and merge on reparse.
+    // Guarantee separation between blocks whenever neither side provides one —
+    // otherwise an inserted/edited block (whose stored glue is "" or a relative
+    // gap) would jam into its neighbour. Adjacent list items take a single
+    // newline; everything else takes a blank line.
     if (out !== "" && !/\n\s*$/.test(out) && !/^\n/.test(piece)) {
-      out += "\n\n";
+      out += prev && isListItem(prev) && isListItem(block) ? "\n" : "\n\n";
     }
     out += piece;
+    prev = block;
   }
   return out + tail;
 }
