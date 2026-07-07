@@ -9,6 +9,7 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } fro
 import { SLUG_RE, courseTemplate, paperTemplate } from "@/lib/templates.mjs";
 import Preview from "@/studio/Preview";
 import PropertiesPanel from "@/studio/PropertiesPanel";
+import SplitPane from "@/studio/SplitPane";
 
 // BlockNote is heavy (ProseMirror + Mantine); load it only when a note is
 // opened in block mode so the login/tree paint stays instant.
@@ -544,6 +545,21 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [view, setView] = useState<ViewPrefs>(() => loadViewPrefs());
   const lastDraftAt = useRef(0);
+  const sourceRef = useRef<HTMLTextAreaElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+  const scrollLock = useRef(0);
+
+  // Proportional source↔preview sync. The short time lock swallows the echo
+  // scroll event fired by programmatically setting the other pane's scrollTop.
+  const syncScroll = useCallback((from: HTMLElement | null, to: HTMLElement | null) => {
+    if (!from || !to) return;
+    const now = Date.now();
+    if (now - scrollLock.current < 50) return;
+    scrollLock.current = now;
+    const fromMax = from.scrollHeight - from.clientHeight;
+    const toMax = to.scrollHeight - to.clientHeight;
+    to.scrollTop = fromMax > 0 ? (from.scrollTop / fromMax) * toMax : 0;
+  }, []);
 
   const dirty = remote !== null && text !== remote.text;
   const collection = collectionOf(path);
@@ -804,17 +820,35 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
           <Suspense fallback={<CenteredNote text="loading block editor…" />}>
             <BlockEditor onChange={setText} text={text} />
           </Suspense>
+        ) : view.preview ? (
+          <SplitPane
+            left={
+              <textarea
+                aria-label={`MDX source of ${filename}`}
+                className="studio-textarea"
+                onChange={(event) => setText(event.target.value)}
+                onScroll={() => syncScroll(sourceRef.current, previewRef.current)}
+                ref={sourceRef}
+                spellCheck={false}
+                value={text}
+              />
+            }
+            right={
+              <Preview
+                onScroll={() => syncScroll(previewRef.current, sourceRef.current)}
+                scrollRef={previewRef}
+                text={text}
+              />
+            }
+          />
         ) : (
-          <div className={`studio-panes${view.preview ? " with-preview" : ""}`}>
-            <textarea
-              aria-label={`MDX source of ${filename}`}
-              className="studio-textarea"
-              onChange={(event) => setText(event.target.value)}
-              spellCheck={false}
-              value={text}
-            />
-            {view.preview && <Preview text={text} />}
-          </div>
+          <textarea
+            aria-label={`MDX source of ${filename}`}
+            className="studio-textarea"
+            onChange={(event) => setText(event.target.value)}
+            spellCheck={false}
+            value={text}
+          />
         )}
         {view.props && <PropertiesPanel collection={collection} onChange={setText} text={text} />}
       </div>

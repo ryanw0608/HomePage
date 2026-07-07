@@ -378,22 +378,73 @@
   min-width: 0;
 }
 
-.studio-panes {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+/* raw mode: draggable source | preview split */
+
+.studio-split {
+  display: flex;
   flex: 1;
   min-width: 0;
   min-height: 0;
 }
 
-.studio-panes.with-preview {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+.studio-split.is-dragging {
+  user-select: none;
+  cursor: col-resize;
+}
+
+.studio-split-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.studio-split-pane > * {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.studio-split-grow {
+  flex: 1 1 0;
+}
+
+.studio-split-divider {
+  flex: 0 0 7px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--line);
+  cursor: col-resize;
+  touch-action: none;
+  transition: background 120ms ease;
+}
+
+.studio-split-divider:hover,
+.studio-split-divider:focus-visible,
+.studio-split.is-dragging .studio-split-divider {
+  background: color-mix(in oklab, var(--accent) 55%, transparent);
+  outline: none;
+}
+
+.studio-split-grip {
+  width: 2px;
+  height: 28px;
+  border-radius: 2px;
+  background: var(--faint);
+  transition: background 120ms ease;
+}
+
+.studio-split-divider:hover .studio-split-grip,
+.studio-split.is-dragging .studio-split-grip {
+  background: var(--bg);
 }
 
 .studio-preview-pane {
-  border-left: 1px solid var(--line);
   overflow-y: auto;
   min-width: 0;
+  height: 100%;
   background: color-mix(in oklab, var(--surface) 35%, var(--bg));
 }
 
@@ -620,12 +671,25 @@
 
 @media (max-width: 900px) {
   /* narrow screens: preview replaces the source pane instead of splitting */
-  .studio-panes.with-preview {
-    grid-template-columns: minmax(0, 1fr);
+  /* narrow screens: stack source over preview instead of side-by-side */
+  .studio-split {
+    flex-direction: column;
   }
 
-  .studio-panes.with-preview .studio-textarea {
-    display: none;
+  .studio-split-divider {
+    flex-basis: 7px;
+    width: 100%;
+    cursor: row-resize;
+  }
+
+  .studio-split-grip {
+    width: 28px;
+    height: 2px;
+  }
+
+  .studio-split-pane {
+    flex-basis: auto !important;
+    min-height: 8rem;
   }
 
   .studio-props {

@@ -4,11 +4,18 @@
  * Debounced ~250ms; on a mid-keystroke syntax error the last good render
  * stays visible and the error is shown in a slim banner.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type Ref, type UIEventHandler } from "react";
 
 import { renderPreview, splitFrontmatter } from "@/studio/lib/mdx";
 
-export default function Preview({ text }: { text: string }) {
+interface Props {
+  text: string;
+  /** Attached to the scroll container so raw mode can sync-scroll source↔preview. */
+  scrollRef?: Ref<HTMLDivElement>;
+  onScroll?: UIEventHandler<HTMLDivElement>;
+}
+
+export default function Preview({ text, scrollRef, onScroll }: Props) {
   const [html, setHtml] = useState("");
   const [error, setError] = useState<string | null>(null);
   const seq = useRef(0);
@@ -32,7 +39,7 @@ export default function Preview({ text }: { text: string }) {
   }, [text]);
 
   return (
-    <div className="studio-preview-pane">
+    <div className="studio-preview-pane" onScroll={onScroll} ref={scrollRef}>
       {error && (
         <p className="studio-preview-error" title={error}>
           preview paused — mdx syntax: {error}
