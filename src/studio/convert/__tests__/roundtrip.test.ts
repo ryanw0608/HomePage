@@ -138,6 +138,30 @@ describe("byte-clean round-trip (P3.2 real-block converter)", () => {
     expect(data.improvements).toEqual(["c"]);
   });
 
+  it("round-trips a leaf list item that carries a soft newline (Shift+Enter)", () => {
+    // edit-in-place fields are auto-grow textareas: an item can now contain \n.
+    const doc = loadDocument('<Critique weaknesses={["a"]} improvements={["c"]} />\n');
+    doc.blocks[0].props = {
+      name: "Critique",
+      dataJson: JSON.stringify({ weaknesses: ["line one\nline two"], improvements: ["c"] })
+    };
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    const data = JSON.parse((loadDocument(out).blocks[0].props as { dataJson: string }).dataJson);
+    expect(data.weaknesses).toEqual(["line one\nline two"]);
+  });
+
+  it("round-trips a leaf scalar string prop containing a newline via expression form", () => {
+    // jsxAttr must not emit a raw newline inside a quoted attribute (lossy on
+    // reparse) — it falls back to the JSON-escaped {"…"} form.
+    const doc = loadDocument("<Figure src=\"a.png\" />\n");
+    expect(doc.blocks[0].type).toBe("mdxLeaf");
+    doc.blocks[0].props = { name: "Figure", dataJson: JSON.stringify({ src: "a.png", caption: "top\nbottom" }) };
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    expect(out).not.toMatch(/caption="top\nbottom"/);
+    const data = JSON.parse((loadDocument(out).blocks[0].props as { dataJson: string }).dataJson);
+    expect(data.caption).toBe("top\nbottom");
+  });
+
   it("keeps a multi-paragraph Callout as rawMdx (not silently flattened)", () => {
     const text = "<Callout>\n  First para.\n\n  Second para.\n</Callout>\n";
     const doc = loadDocument(text);

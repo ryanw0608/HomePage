@@ -131,7 +131,10 @@ function printLeafComponent(name: string, props: Record<string, unknown>): strin
  * {"…"} (JSON-escaped, lossless) whenever the value has both quote kinds OR an
  * & or < that would otherwise be decoded as an entity on reparse. */
 function jsxAttr(value: string): string {
-  const ambiguous = value.includes("&") || value.includes("<");
+  // A raw newline in a quoted JSX attribute reparses lossily (whitespace
+  // collapses), so any control char also forces the JSON-escaped expression
+  // form. Edit-in-place fields can now carry soft newlines (Shift+Enter).
+  const ambiguous = value.includes("&") || value.includes("<") || /[\u0000-\u001F]/.test(value);
   if (!ambiguous && !value.includes('"')) return `"${value}"`;
   if (!ambiguous && !value.includes("'")) return `'${value}'`;
   return `{${JSON.stringify(value)}}`;

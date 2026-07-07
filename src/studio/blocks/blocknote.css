@@ -210,58 +210,160 @@
   position: relative;
 }
 
-.studio-leaf-bar {
-  position: absolute;
-  top: 0.35rem;
-  right: 0.35rem;
-  z-index: 2;
-  display: flex;
-  gap: 0.4rem;
-  opacity: 0;
-  transition: opacity 120ms ease;
+/* edit-in-place inputs: look like the rendered text, edit directly */
+
+.studio-edit-input,
+.studio-edit-area {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  padding: 0;
+  margin: 0;
 }
 
-.studio-leaf:hover .studio-leaf-bar,
-.studio-leaf:focus-within .studio-leaf-bar {
-  opacity: 1;
+.studio-edit-area {
+  resize: none;
+  overflow: hidden;
+  display: block;
 }
 
-.studio-leaf-fields {
-  display: grid;
-  gap: 0.6rem;
-  margin-bottom: 0.7rem;
-  padding: 0.8rem;
-  border: 1px solid var(--edge);
-  border-radius: 6px;
-  background: color-mix(in oklab, var(--surface) 40%, var(--bg));
-}
-
-.studio-leaf-field {
-  display: grid;
-  gap: 0.25rem;
-  font-size: 0.72rem;
+.studio-edit-input::placeholder,
+.studio-edit-area::placeholder {
   color: var(--faint);
 }
 
-.studio-leaf-bool {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
+.studio-edit-input:focus,
+.studio-edit-area:focus {
+  box-shadow: 0 1px 0 color-mix(in oklab, var(--accent) 45%, transparent);
 }
 
-.studio-leaf-records {
-  display: grid;
-  gap: 0.4rem;
+/* the diff-list / matrix / takeaways items hold a wrapping field per row */
+.studio-leaf .diff-list li,
+.studio-leaf .when-matrix li,
+.studio-leaf .takeaways li {
+  align-items: baseline;
 }
 
-.studio-leaf-record {
-  display: flex;
-  gap: 0.4rem;
-  align-items: center;
+.studio-leaf .diff-list .studio-edit-area,
+.studio-leaf .when-matrix .studio-edit-area,
+.studio-leaf .takeaways .studio-edit-area,
+.studio-leaf li .studio-edit-input {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.studio-leaf-record .studio-input {
+.studio-recall-item {
+  position: relative;
+  border-top: 1px solid var(--line);
+  padding-block: 0.6rem;
+}
+
+.studio-recall-item:first-of-type {
+  border-top: 0;
+}
+
+.studio-recall-q {
+  color: var(--fg);
+  font-size: 0.92rem;
+  font-weight: 550;
+  line-height: 1.55;
+}
+
+.studio-recall-a {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.65;
+  padding-left: 1.1rem;
+  border-left: 2px solid var(--line);
+  margin-top: 0.4rem;
+}
+
+.studio-leaf-x {
+  position: absolute;
+  top: 0.4rem;
+  right: 0;
+  border: 0;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+  font-size: 0.72rem;
+  opacity: 0;
+}
+
+.studio-leaf-x:hover {
+  color: var(--tk-red);
+}
+
+.studio-recall-item:hover .studio-leaf-x,
+.formula-row:hover .studio-leaf-x,
+.derivation li:hover .studio-leaf-x {
+  opacity: 1;
+}
+
+.studio-leaf-add {
+  margin-top: 0.5rem;
+  border: 1px dashed var(--edge);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--faint);
+  font: inherit;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+
+.studio-leaf-add:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.studio-tex-field {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.studio-tex-src {
   flex: 1;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.studio-tex-preview {
+  flex-shrink: 0;
+}
+
+.studio-figure-edit {
+  border: 1px dashed var(--edge);
+  border-radius: 6px;
+  padding: 0.7rem 0.9rem;
+}
+
+.studio-figure-src,
+.studio-figure-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.studio-field-tag {
+  color: var(--faint);
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.formula-row .studio-leaf-x,
+.derivation li .studio-leaf-x {
+  position: static;
+  opacity: 0;
+  margin-left: 0.4rem;
 }
 
 .studio-slash-glyph {
@@ -338,9 +440,9 @@
 .studio-rawmdx-src {
   display: block;
   width: 100%;
-  min-height: 6rem;
-  max-height: 22rem;
-  resize: vertical;
+  min-height: 4rem;
+  overflow: hidden;
+  resize: none;
   border: 1px solid var(--edge);
   border-radius: 6px;
   outline: none;

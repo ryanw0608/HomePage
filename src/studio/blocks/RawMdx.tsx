@@ -6,7 +6,7 @@
  * editing) replace this for the common components in P3.3.
  */
 import { createReactBlockSpec } from "@blocknote/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { renderPreview } from "@/studio/lib/mdx";
 import "@/studio/preview/components.css";
@@ -35,6 +35,15 @@ function RawMdxCard({
   const [html, setHtml] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [showSource, setShowSource] = useState(false);
+  const srcRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-grow the source box to fit the whole draft — no fixed height/scroll.
+  useEffect(() => {
+    const el = srcRef.current;
+    if (!el || !showSource) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [source, showSource]);
 
   useEffect(() => {
     let alive = true;
@@ -72,6 +81,7 @@ function RawMdxCard({
           aria-label="raw mdx source"
           className="studio-rawmdx-src"
           onChange={(event) => onEdit(event.target.value)}
+          ref={srcRef}
           spellCheck={false}
           value={source}
         />
