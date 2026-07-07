@@ -59,6 +59,27 @@ describe("edited-block serialization safety", () => {
     expect(nodes[0].type).toBe("code");
   });
 
+  it("an edited Callout body starting with a block marker stays a callout", () => {
+    for (const body of ["- dash note", "1. first step", "> 90% of cases", "# top", "+ plus"]) {
+      const doc = loadDocument('<Callout type="note">\n  original\n</Callout>\n');
+      expect(doc.blocks[0].type).toBe("callout");
+      doc.blocks[0].content = [{ type: "text", text: body, styles: {} }] as never;
+      const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+      const doc2 = loadDocument(out);
+      expect(doc2.blocks[0].type).toBe("callout"); // did NOT downgrade to rawMdx
+    }
+  });
+
+  it("an edited Callout title with an HTML entity survives verbatim", () => {
+    for (const title of ["Q&amp;A", "R&D copy &copy; x", "a &lt; b"]) {
+      const doc = loadDocument("<Callout>\n  body\n</Callout>\n");
+      doc.blocks[0].props = { type: "note", title };
+      const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+      const doc2 = loadDocument(out);
+      expect((doc2.blocks[0].props as { title: string }).title).toBe(title);
+    }
+  });
+
   it("a link href with a space survives round-trip", () => {
     const doc = loadDocument("link me\n");
     const p = doc.blocks[0] as ConvBlock;

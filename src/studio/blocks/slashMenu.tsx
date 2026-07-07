@@ -21,9 +21,18 @@ const KEEP_ORDER = [
   "Code Block"
 ];
 
-/* Replace the current (empty) block with `block`, or insert after it. */
+/* Replace the current (empty) trigger block with `block`, or insert after a
+ * non-empty one — mirrors BlockNote's native insertOrUpdateBlock so a `/`
+ * insert doesn't strand an empty paragraph above the component. */
 function insertBlock(editor: BlockNoteEditor<never, never, never>, block: PartialBlock<never, never, never>) {
   const cursor = editor.getTextCursorPosition();
+  const current = cursor.block as { content?: unknown };
+  const isEmpty = Array.isArray(current.content) && current.content.length === 0;
+  if (isEmpty) {
+    const updated = editor.updateBlock(cursor.block, block);
+    editor.setTextCursorPosition(updated as never, "start");
+    return;
+  }
   const inserted = editor.insertBlocks([block], cursor.block, "after");
   if (inserted[0]) editor.setTextCursorPosition(inserted[0] as never, "start");
 }

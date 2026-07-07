@@ -72,13 +72,13 @@ function houseStyle(block: ConvBlock): string {
     case "tldr": {
       const label = String((block.props as { label?: string })?.label ?? "tldr");
       const attrs = label && label !== "tldr" ? ` label=${jsxAttr(label)}` : "";
-      return `<Tldr${attrs}>\n  ${inline()}\n</Tldr>`;
+      return `<Tldr${attrs}>\n  ${componentBody(inline())}\n</Tldr>`;
     }
     case "callout": {
       const props = (block.props ?? {}) as { type?: string; title?: string };
       const type = props.type && props.type !== "note" ? ` type=${jsxAttr(props.type)}` : "";
       const title = props.title ? ` title=${jsxAttr(props.title)}` : "";
-      return `<Callout${type}${title}>\n  ${inline()}\n</Callout>`;
+      return `<Callout${type}${title}>\n  ${componentBody(inline())}\n</Callout>`;
     }
     case "mdxLeaf": {
       const p = (block.props ?? {}) as { name?: string; dataJson?: string };
@@ -118,13 +118,23 @@ function printLeafComponent(name: string, props: Record<string, unknown>): strin
   return `<${name}${attrs.length ? " " + attrs.join(" ") : ""} />`;
 }
 
-/* Quote a JSX string attribute. JSX string literals have no escapes, so flip
- * to single quotes when the value has a double quote; if it has BOTH quote
- * kinds, use an expression attribute {"…"} (JSON-escaped) — lossless. */
+/* Quote a JSX string attribute. JSX string literals have no escapes and MDX
+ * decodes character references inside them, so use an expression attribute
+ * {"…"} (JSON-escaped, lossless) whenever the value has both quote kinds OR an
+ * & or < that would otherwise be decoded as an entity on reparse. */
 function jsxAttr(value: string): string {
-  if (!value.includes('"')) return `"${value}"`;
-  if (!value.includes("'")) return `'${value}'`;
+  const ambiguous = value.includes("&") || value.includes("<");
+  if (!ambiguous && !value.includes('"')) return `"${value}"`;
+  if (!ambiguous && !value.includes("'")) return `'${value}'`;
   return `{${JSON.stringify(value)}}`;
+}
+
+/* House-style a component's inline body so it reparses as ONE paragraph:
+ * escape a leading block marker (#, -, >, …) and indent soft-wrap lines to the
+ * content column. A genuine blank line (multi-paragraph) still can't be a
+ * single-inline component and correctly falls back to a rawMdx card. */
+function componentBody(inlineMd: string): string {
+  return escapeBlockStart(inlineMd).replace(/\n(?!\n)/g, "\n  ");
 }
 
 function isEmptyParagraph(block: ConvBlock): boolean {
