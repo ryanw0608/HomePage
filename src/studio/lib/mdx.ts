@@ -2,10 +2,12 @@
  * Browser-side MDX handling for Studio:
  *  - frontmatter split/join that round-trips untouched files byte-identically
  *  - a preview renderer: the site's own markdown pipeline (gfm + math/KaTeX)
- *    with MDX component tags rendered as framed placeholders instead of
- *    being compiled (real component rendering is the published site's job).
+ *    that renders the REAL 11 MDX components (faithful browser ports in
+ *    src/studio/preview/), falling back to a framed placeholder only for
+ *    unknown components or non-literal props.
  */
 import rehypeKatex from "rehype-katex";
+import rehypeRaw from "rehype-raw";
 import rehypeStringify from "rehype-stringify";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -13,6 +15,9 @@ import remarkMdx from "remark-mdx";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
+
+import { isContainer, isKnownComponent, renderComponent } from "@/studio/preview/components";
+import { readProps } from "@/studio/preview/jsxProps";
 
 export interface SplitNote {
   hasFrontmatter: boolean;
@@ -40,22 +45,37 @@ export function joinFrontmatter(frontmatter: string, body: string): string {
 interface MdastNode {
   type: string;
   name?: string | null;
+  value?: string;
   children?: MdastNode[];
   data?: Record<string, unknown>;
 }
 
 /*
- * Preview-only mdast transform:
+ * Preview mdast transform (recursive):
  *  - drop imports/exports and {expressions} (incl. comments)
- *  - capitalized JSX components -> framed .studio-jsx placeholder that still
- *    renders its children (Tldr/Callout prose stays readable)
+ *  - a capitalized JSX component whose props are literal-evaluable is rendered
+ *    to the REAL component HTML (container children rendered first); unknown
+ *    components or non-literal props fall back to a framed placeholder
  *  - lowercase tags (<br/>, <b>…) -> unwrap to their children
  */
-function stripMdxForPreview() {
-  return (tree: MdastNode) => walk(tree);
+function renderComponents(frontmatter: Record<string, unknown>) {
+  return (tree: MdastNode) => transform(tree, frontmatter);
 }
 
-function walk(node: MdastNode): void {
+function placeholder(child: MdastNode, name: string): MdastNode {
+  transform(child, {});
+  child.data = {
+    hName: child.type === "mdxJsxFlowElement" ? "div" : "span",
+    hProperties: {
+      className: ["studio-jsx"],
+      dataName: name,
+      ...((child.children?.length ?? 0) === 0 ? { dataEmpty: "" } : {})
+    }
+  };
+  return child;
+}
+
+function transform(node: MdastNode, frontmatter: Record<string, unknown>): void {
   if (!node.children) return;
   node.children = node.children.flatMap((child): MdastNode[] => {
     if (
@@ -66,22 +86,46 @@ function walk(node: MdastNode): void {
       return [];
     }
     if (child.type === "mdxJsxFlowElement" || child.type === "mdxJsxTextElement") {
-      walk(child);
       const name = child.name ?? "";
-      if (!/^[A-Z]/.test(name)) return child.children ?? [];
-      child.data = {
-        hName: child.type === "mdxJsxFlowElement" ? "div" : "span",
-        hProperties: {
-          className: ["studio-jsx"],
-          dataName: name,
-          ...((child.children?.length ?? 0) === 0 ? { dataEmpty: "" } : {})
-        }
-      };
-      return [child];
+      if (!/^[A-Z]/.test(name)) {
+        transform(child, frontmatter);
+        return child.children ?? [];
+      }
+      let props: Record<string, unknown> | null = null;
+      try {
+        props = readProps(child, frontmatter);
+      } catch {
+        props = null;
+      }
+      if (props && isKnownComponent(name)) {
+        const childrenHtml = isContainer(name) ? renderChildrenHtml(child.children ?? [], frontmatter) : "";
+        const html = renderComponent(name, props, childrenHtml);
+        if (html != null) return [{ type: "html", value: html } as MdastNode];
+      }
+      return [placeholder(child, name)];
     }
-    walk(child);
+    transform(child, frontmatter);
     return [child];
   });
+}
+
+/* Render a container's children (mdast) to HTML via a synchronous sub-pipeline
+ * that itself renders nested components. Cloned so the main tree is untouched. */
+function renderChildrenHtml(children: MdastNode[], frontmatter: Record<string, unknown>): string {
+  try {
+    const clone = structuredClone(children);
+    const proc = unified()
+      .use(renderComponents, frontmatter)
+      .use(remarkRehype, { allowDangerousHtml: true })
+      .use(rehypeRaw)
+      .use(scrubUrls)
+      .use(rehypeKatex)
+      .use(rehypeStringify);
+    const hast = proc.runSync({ type: "root", children: clone } as never);
+    return proc.stringify(hast as never);
+  } catch {
+    return "";
+  }
 }
 
 interface HastNode {
@@ -116,23 +160,30 @@ function walkHast(node: HastNode): void {
   node.children?.forEach(walkHast);
 }
 
-const processor = unified()
-  .use(remarkParse)
-  .use(remarkMdx)
-  .use(remarkGfm)
-  .use(remarkMath)
-  .use(stripMdxForPreview)
-  .use(remarkRehype)
-  .use(scrubUrls)
-  // Default options: KaTeX parse errors render as annotated source text
-  // instead of throwing, which is exactly right mid-keystroke.
-  .use(rehypeKatex)
-  .use(rehypeStringify);
+function buildProcessor(frontmatter: Record<string, unknown>) {
+  return unified()
+    .use(remarkParse)
+    .use(remarkMdx)
+    .use(remarkGfm)
+    .use(remarkMath)
+    .use(renderComponents, frontmatter)
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeRaw)
+    .use(scrubUrls)
+    // Default options: KaTeX parse errors render as annotated source text
+    // instead of throwing, which is exactly right mid-keystroke.
+    .use(rehypeKatex)
+    .use(rehypeStringify);
+}
 
-/* Renders the MDX BODY (no frontmatter) to preview HTML. Throws on MDX
+/* Renders the MDX BODY (no frontmatter) to preview HTML. `frontmatter` lets
+ * `items={frontmatter.takeaways}`-style bindings resolve. Throws on MDX
  * syntax errors (mid-keystroke unclosed tags) — callers keep the last good
  * render and surface the message. */
-export async function renderPreview(mdxBody: string): Promise<string> {
-  const file = await processor.process(mdxBody);
+export async function renderPreview(
+  mdxBody: string,
+  frontmatter: Record<string, unknown> = {}
+): Promise<string> {
+  const file = await buildProcessor(frontmatter).process(mdxBody);
   return String(file);
 }

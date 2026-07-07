@@ -1,0 +1,150 @@
+/*
+ * MDX component styles for the Studio preview, ported from the .astro scoped
+ * styles. Scoped under .mdx-preview so they never collide with the published
+ * pages (which keep their own Astro-scoped styles). Applied wherever Studio
+ * renders MDX to HTML (raw-mode preview + rawMdx cards).
+ */
+
+/* Callout */
+.mdx-preview .callout {
+  --callout-color: var(--tk-cyan);
+  border-left: 2px solid var(--callout-color);
+  background: color-mix(in oklab, var(--callout-color) 6%, transparent);
+  margin-block: 1.4rem;
+  padding: 0.85rem 1.15rem;
+}
+.mdx-preview .callout-insight { --callout-color: var(--tk-green); }
+.mdx-preview .callout-warning { --callout-color: var(--tk-yellow); }
+.mdx-preview .callout-question { --callout-color: var(--tk-magenta); }
+.mdx-preview .callout-exam { --callout-color: var(--tk-orange); }
+.mdx-preview .callout-definition { --callout-color: var(--tk-blue); }
+.mdx-preview .callout-label {
+  margin: 0 0 0.35rem;
+  color: var(--callout-color);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.mdx-preview .callout p { margin-block: 0.5rem; font-size: 0.92rem; }
+.mdx-preview .callout p:last-child { margin-bottom: 0; }
+
+/* Tldr */
+.mdx-preview .tldr {
+  border-left: 2px solid var(--tk-green);
+  background: color-mix(in oklab, var(--tk-green) 5%, transparent);
+  margin-block: 1.4rem;
+  padding: 0.85rem 1.15rem;
+}
+.mdx-preview .tldr-prompt { margin: 0 0 0.4rem; color: var(--faint); font-size: 0.74rem; letter-spacing: 0.04em; }
+.mdx-preview .tldr-prompt .prompt { color: var(--tk-green); font-weight: 600; }
+.mdx-preview .tldr-body { margin: 0; color: var(--fg); font-weight: 650; line-height: 1.65; }
+.mdx-preview .tldr-body p { margin: 0; }
+
+/* Critique */
+.mdx-preview .critique {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--surface) 70%, var(--bg));
+  margin-block: 1.4rem;
+  padding: 1rem 1.1rem;
+}
+.mdx-preview .critique-label {
+  margin: 0 0 0.5rem;
+  color: var(--faint);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.mdx-preview .diff-list { display: grid; gap: 0.45rem; list-style: none; margin: 0; padding: 0; }
+.mdx-preview .diff-list li { display: grid; grid-template-columns: 1.1rem minmax(0, 1fr); font-size: 0.9rem; line-height: 1.6; }
+.mdx-preview .diff-sign { font-weight: 700; }
+.mdx-preview .diff-minus .diff-sign { color: var(--tk-red); }
+.mdx-preview .diff-plus .diff-sign { color: var(--tk-green); }
+.mdx-preview .diff-minus { color: color-mix(in oklab, var(--fg) 82%, var(--tk-red)); }
+.mdx-preview .diff-plus { color: color-mix(in oklab, var(--fg) 82%, var(--tk-green)); }
+
+/* WhenMatrix */
+.mdx-preview .when-matrix { display: grid; gap: 1rem; margin-block: 1.4rem; }
+.mdx-preview .when-matrix section { border: 1px solid var(--line); border-radius: 6px; padding: 0.9rem 1.05rem; }
+.mdx-preview .matrix-label { margin: 0 0 0.55rem; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; }
+.mdx-preview .label-helps { color: var(--tk-green); }
+.mdx-preview .label-hurts { color: var(--tk-red); }
+.mdx-preview .when-matrix ul { display: grid; gap: 0.45rem; list-style: none; margin: 0; padding: 0; }
+.mdx-preview .when-matrix li { display: grid; grid-template-columns: 1.2rem minmax(0, 1fr); font-size: 0.9rem; line-height: 1.6; }
+.mdx-preview .mark { font-weight: 700; }
+.mdx-preview .mark-helps { color: var(--tk-green); }
+.mdx-preview .mark-hurts { color: var(--tk-red); }
+@media (min-width: 720px) {
+  .mdx-preview .when-matrix { grid-template-columns: 1fr 1fr; }
+}
+
+/* KeyTakeaways */
+.mdx-preview .takeaways { border-block: 1px solid var(--line); margin-block: 1.6rem; padding-block: 0.4rem 1.1rem; }
+.mdx-preview .takeaways ul { margin-bottom: 0; }
+
+/* Bench */
+.mdx-preview .bench { margin-block: 1.4rem; overflow-x: auto; }
+.mdx-preview .bench table { border-collapse: collapse; font-size: 0.84rem; line-height: 1.5; min-width: 100%; }
+.mdx-preview .bench thead th {
+  border-bottom: 1px solid var(--edge);
+  color: var(--faint);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 0.45rem 1.1rem 0.45rem 0;
+}
+.mdx-preview .bench tbody th { font-weight: 600; text-align: left; }
+.mdx-preview .bench tbody th,
+.mdx-preview .bench td {
+  border-bottom: 1px solid var(--line);
+  padding: 0.45rem 1.1rem 0.45rem 0;
+  vertical-align: top;
+  white-space: nowrap;
+}
+.mdx-preview .bench .baseline { color: var(--faint); }
+.mdx-preview .bench .winner { color: var(--tk-orange); font-weight: 700; }
+.mdx-preview .bench figcaption { margin-top: 0.5rem; color: var(--muted); font-size: 0.8rem; }
+
+/* FormulaCard */
+.mdx-preview .formula-card {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--surface) 70%, var(--bg));
+  margin-block: 1.4rem;
+  padding: 1rem 1.15rem;
+}
+.mdx-preview .card-label { margin: 0 0 0.8rem; color: var(--faint); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; }
+.mdx-preview .formula-card dl { display: grid; gap: 1rem; margin: 0; }
+.mdx-preview .formula-row { display: grid; gap: 0.2rem; min-width: 0; }
+.mdx-preview .formula-card dt { color: var(--tk-cyan); font-size: 0.8rem; font-weight: 600; }
+.mdx-preview .formula-card dd { margin: 0; min-width: 0; }
+.mdx-preview .formula-math { max-width: 100%; overflow-x: auto; padding-block: 0.2rem; }
+.mdx-preview .formula-note { margin: 0.15rem 0 0; color: var(--muted); font-size: 0.82rem; line-height: 1.55; }
+
+/* Derivation */
+.mdx-preview .derivation { border: 1px solid var(--line); border-radius: 6px; margin-block: 1.4rem; padding: 0.85rem 1.15rem; }
+.mdx-preview .derivation summary { cursor: pointer; color: var(--faint); font-size: 0.74rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; }
+.mdx-preview .derivation ol { display: grid; gap: 0.9rem; margin: 0.9rem 0 0.2rem; padding-left: 1.6rem; }
+.mdx-preview .derivation li { min-width: 0; }
+.mdx-preview .derivation li::marker { color: var(--faint); font-size: 0.85rem; }
+.mdx-preview .step-text { margin: 0; font-size: 0.92rem; line-height: 1.65; }
+.mdx-preview .step-math { max-width: 100%; overflow-x: auto; padding-block: 0.2rem; }
+
+/* Recall */
+.mdx-preview .recall { border: 1px solid var(--line); border-radius: 6px; margin-block: 1.4rem; padding: 0.9rem 1.15rem; }
+.mdx-preview .recall-label { margin: 0 0 0.6rem; color: var(--faint); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; }
+.mdx-preview .recall details { border-top: 1px solid var(--line); padding-block: 0.6rem; }
+.mdx-preview .recall details:first-of-type { border-top: 0; }
+.mdx-preview .recall summary { cursor: pointer; color: var(--fg); font-size: 0.92rem; font-weight: 550; line-height: 1.55; }
+.mdx-preview .recall summary::marker { color: var(--tk-magenta); }
+.mdx-preview .recall details p { margin: 0.55rem 0 0.1rem; color: var(--muted); font-size: 0.9rem; line-height: 1.65; padding-left: 1.1rem; border-left: 2px solid var(--line); }
+
+/* Figure */
+.mdx-preview figure { margin: 1.5rem 0; }
+.mdx-preview figure img { display: block; max-width: 100%; height: auto; }
+.mdx-preview figure figcaption { margin-top: 0.5rem; color: var(--muted); font-size: 0.9375rem; }

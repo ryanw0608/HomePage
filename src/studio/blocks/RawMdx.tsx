@@ -9,6 +9,7 @@ import { createReactBlockSpec } from "@blocknote/react";
 import { useEffect, useState } from "react";
 
 import { renderPreview } from "@/studio/lib/mdx";
+import "@/studio/preview/components.css";
 
 const REASON_LABEL: Record<string, string> = {
   "whole-doc": "whole note",
@@ -66,7 +67,7 @@ function RawMdxCard({
       {error ? (
         <p className="studio-rawmdx-error">mdx: {error}</p>
       ) : (
-        <div className="studio-rawmdx-preview article-body" dangerouslySetInnerHTML={{ __html: html }} />
+        <div className="studio-rawmdx-preview mdx-preview article-body" dangerouslySetInnerHTML={{ __html: html }} />
       )}
     </div>
   );
