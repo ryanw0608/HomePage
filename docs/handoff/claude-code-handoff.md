@@ -56,6 +56,27 @@ mining pass. Owner chose the fuller feature set over the scope-guardian's cut li
   / zh↔en translate / summarize / generate tldr / expand-to-skeleton, rendered as an
   accept/reject **suggestion diff** (never silent rewrite), "faithful, don't fabricate" prompt.
 
+**Later owner requests (2026-07-07, folded in):**
+- **Export** (P-Export): per-note export to **Markdown / HTML / PDF**, output must be clean and
+  correct. MD = the committed source (or a rendered variant); HTML = the built article HTML
+  (self-contained, inlined CSS); PDF = print-stylesheet via the browser. Client-only, no server.
+- **Insert page / page embed** (P3.3-adjacent): a "link to note" block + an inline `@`-note-link
+  (both serialize to a plain relative markdown link, lossless). "Subpages" in our flat file
+  model = a build-time child/index block listing related notes. No nested-page DB.
+- **Heading levels 1–6** (P3.2): the heading block supports H1–H6 (the design already specced
+  "extend level to 1–6, style 1–3"); H4–H6 round-trip as `####`/`#####`/`######` and get a
+  small styled treatment. Fixes "need an H4".
+- **Performance** (cross-cutting NFR): notes with many images / multiple page-embeds / long
+  bodies must stay smooth. Rules threaded through P3: lazy-load images (`loading="lazy"`,
+  intrinsic sizing), lazy-render embeds/mermaid (IntersectionObserver, only when scrolled into
+  view), debounce the converter/preview, and consider block virtualization if a note exceeds a
+  large block count. Public pages stay JS-light (enhancement-only).
+- **Note-page aesthetic refinement** (P-Polish): the published article pages (and the shared
+  `.article-body` the block editor reuses) get a dedicated typography/rhythm/detail pass —
+  higher-craft within Terminal-Luxe (fix the cramped author meta-rail wrap, refine vertical
+  rhythm, hierarchy, and component detailing). Since the editor shares `.article-body`, this
+  lifts both surfaces at once.
+
 **Rejected for good (architecture conflict — do not revisit):** realtime multi-user collab
 (Yjs/CRDT sync server), server-side full-text/attachment search, semantic-RAG AI Q&A, comment
 threads + notifications, RBAC/roles/approval workflow, share links with per-link perms/expiry,
