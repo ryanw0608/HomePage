@@ -37,14 +37,23 @@
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-mono);
-  padding-block: 1.4rem 4rem;
+  padding-block: 2rem 6rem;
+  /* Comfortable Notion-grade document column, centered, with room for the
+     hover drag handle + block controls in the left gutter. */
+  padding-inline: max(1.5rem, calc((100% - 46rem) / 2));
 }
 
-/* Center a comfortable document column so wide screens don't left-hug the
-   content; matches the published .article-body measure (WYSIWYG ~= shipped). */
 .studio-blocknote .bn-block-group {
-  max-width: 72ch;
-  margin-inline: auto;
+  max-width: none;
+}
+
+/* Slightly airier line rhythm for prose blocks (matches the reading pages). */
+.studio-blocknote .bn-block-content {
+  line-height: 1.7;
+}
+
+.studio-blocknote .bn-block-content[data-content-type="heading"] {
+  margin-top: 1.6rem;
 }
 
 /* Themed, unobtrusive scrollbars for the editor + properties rail. */
@@ -79,67 +88,92 @@
   cursor: default;
 }
 
-/* rawMdx escape-hatch card: source textarea + live preview */
+/* rawMdx escape-hatch card: render-first, source behind a toggle. The card
+   is quiet by default (no loud border) so a rendered component reads as
+   part of the document, with a subtle hover affordance for the source. */
 
 .studio-rawmdx {
-  border: 1px dashed color-mix(in oklab, var(--accent) 45%, transparent);
+  position: relative;
+  margin-block: 0.5rem;
   border-radius: 6px;
-  overflow: hidden;
-  margin-block: 0.4rem;
 }
 
-.studio-rawmdx-head {
+.studio-rawmdx-bar {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  z-index: 2;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.4rem 0.7rem;
-  background: color-mix(in oklab, var(--surface) 60%, var(--bg));
-  border-bottom: 1px solid var(--line);
+  gap: 0.4rem;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.studio-rawmdx:hover .studio-rawmdx-bar,
+.studio-rawmdx:focus-within .studio-rawmdx-bar {
+  opacity: 1;
 }
 
 .studio-rawmdx-chip {
-  color: var(--accent);
-  font-size: 0.7rem;
-  letter-spacing: 0.04em;
+  color: var(--faint);
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--surface) 80%, var(--bg));
 }
 
-.studio-rawmdx-hint {
-  color: var(--faint);
-  font-size: 0.68rem;
+.studio-rawmdx-toggle {
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--surface) 80%, var(--bg));
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.64rem;
+  letter-spacing: 0.03em;
+  padding: 0.1rem 0.45rem;
+  cursor: pointer;
+}
+
+.studio-rawmdx-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .studio-rawmdx-src {
   display: block;
   width: 100%;
-  min-height: 8rem;
-  max-height: 24rem;
+  min-height: 6rem;
+  max-height: 22rem;
   resize: vertical;
-  border: 0;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
   outline: none;
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-mono);
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   line-height: 1.7;
   padding: 0.7rem 0.9rem;
+  margin-bottom: 0.5rem;
   tab-size: 2;
 }
 
 .studio-rawmdx-src:focus-visible {
-  box-shadow: inset 2px 0 0 var(--accent);
+  border-color: var(--accent);
 }
 
-.studio-rawmdx-preview {
-  border-top: 1px solid var(--line);
-  padding: 0.9rem 1rem 1.1rem;
-  background: color-mix(in oklab, var(--surface) 30%, var(--bg));
+.studio-rawmdx-render {
+  border-radius: 6px;
 }
 
 .studio-rawmdx-error {
   margin: 0;
   padding: 0.5rem 0.9rem;
-  border-top: 1px solid var(--line);
+  border: 1px solid color-mix(in oklab, var(--tk-yellow) 30%, var(--line));
+  border-radius: 6px;
   color: var(--tk-yellow);
   font-size: 0.76rem;
 }
