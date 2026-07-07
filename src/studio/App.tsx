@@ -7,8 +7,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { SLUG_RE, courseTemplate, paperTemplate } from "@/lib/templates.mjs";
+import Preview from "@/studio/Preview";
+import PropertiesPanel from "@/studio/PropertiesPanel";
 import { REPO_SLUG, STUDIO, type StudioCollection } from "@/studio/config";
 import { getStoredToken, loginWithPopup, storeToken } from "@/studio/lib/auth";
+import { diffLines, diffStats, foldSameRuns } from "@/studio/lib/diff";
 import {
   GhConflictError,
   GhError,
@@ -502,6 +505,27 @@ function NewNoteDialog(props: { token: string; onClose: () => void; onCreated: (
 
 type ConflictState = null | { remote: FileContent };
 
+interface ViewPrefs {
+  preview: boolean;
+  props: boolean;
+}
+
+function loadViewPrefs(): ViewPrefs {
+  try {
+    const raw = window.localStorage.getItem("studio:view");
+    if (raw) return { preview: true, props: true, ...JSON.parse(raw) };
+  } catch {
+    /* defaults below */
+  }
+  // Live preview and properties on by default on wide screens.
+  const wide = window.matchMedia("(min-width: 1100px)").matches;
+  return { preview: wide, props: wide };
+}
+
+function collectionOf(path: string): StudioCollection {
+  return path.includes("/paper-reading/") ? "paper-reading" : "course-notes";
+}
+
 function Editor(props: { token: string; path: string; onCommitted: (commitSha: string) => void }) {
   const { token, path } = props;
   const [remote, setRemote] = useState<FileContent | null>(null);
@@ -512,15 +536,29 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
   const [commitOpen, setCommitOpen] = useState(false);
   const [conflict, setConflict] = useState<ConflictState>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [view, setView] = useState<ViewPrefs>(() => loadViewPrefs());
   const lastDraftAt = useRef(0);
 
   const dirty = remote !== null && text !== remote.text;
+  const collection = collectionOf(path);
 
-  // Always-fresh snapshot so unmount/pagehide flushes never see stale state.
+  const toggleView = useCallback((key: keyof ViewPrefs) => {
+    setView((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try {
+        window.localStorage.setItem("studio:view", JSON.stringify(next));
+      } catch {
+        /* session-only prefs */
+      }
+      return next;
+    });
+  }, []);
+
+  // Always-fresh snapshot (written during render, so a macrotask scheduled
+  // right after a state update reads the new value) — used by the unmount/
+  // pagehide flush and by ⌘S after it blurs a focused field.
   const latest = useRef({ path, text, baseSha: "", dirty });
-  useEffect(() => {
-    latest.current = { path, text, baseSha: remote?.sha ?? "", dirty };
-  });
+  latest.current = { path, text, baseSha: remote?.sha ?? "", dirty };
 
   useEffect(() => {
     let cancelled = false;
@@ -578,17 +616,24 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
     };
   }, []);
 
-  // ⌘S / Ctrl+S = commit.
+  // ⌘S / Ctrl+S = commit. Blur the active element first so a focused
+  // Properties-panel field (which commits on blur) is flushed into `text`
+  // before the diff dialog reads it; the timeout lets that state settle.
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        if (dirty && !committing) setCommitOpen(true);
+        if (committing) return;
+        const active = document.activeElement as HTMLElement | null;
+        active?.blur?.();
+        window.setTimeout(() => {
+          if (latest.current.dirty) setCommitOpen(true);
+        }, 0);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dirty, committing]);
+  }, [committing]);
 
   const commit = useCallback(
     async (message: string) => {
@@ -641,6 +686,22 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
         </p>
         <div className="studio-editor-actions">
           {savedAt && dirty && <span className="faint">draft saved {new Date(savedAt).toLocaleTimeString()}</span>}
+          <button
+            aria-pressed={view.preview}
+            className={`studio-btn studio-btn-ghost${view.preview ? " is-on" : ""}`}
+            onClick={() => toggleView("preview")}
+            type="button"
+          >
+            preview
+          </button>
+          <button
+            aria-pressed={view.props}
+            className={`studio-btn studio-btn-ghost${view.props ? " is-on" : ""}`}
+            onClick={() => toggleView("props")}
+            type="button"
+          >
+            properties
+          </button>
           <button
             className="studio-btn studio-btn-primary"
             disabled={!dirty || committing}
@@ -710,18 +771,26 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
         </div>
       )}
 
-      <textarea
-        aria-label={`MDX source of ${filename}`}
-        className="studio-textarea"
-        onChange={(event) => setText(event.target.value)}
-        spellCheck={false}
-        value={text}
-      />
+      <div className="studio-editor-body">
+        <div className={`studio-panes${view.preview ? " with-preview" : ""}`}>
+          <textarea
+            aria-label={`MDX source of ${filename}`}
+            className="studio-textarea"
+            onChange={(event) => setText(event.target.value)}
+            spellCheck={false}
+            value={text}
+          />
+          {view.preview && <Preview text={text} />}
+        </div>
+        {view.props && <PropertiesPanel collection={collection} onChange={setText} text={text} />}
+      </div>
 
       {commitOpen && (
         <CommitDialog
           busy={committing}
           defaultMessage={`studio: update ${filename.replace(/\.(md|mdx)$/, "")}`}
+          newText={text}
+          oldText={remote.text}
           onCancel={() => setCommitOpen(false)}
           onCommit={commit}
         />
@@ -733,16 +802,45 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
 function CommitDialog(props: {
   defaultMessage: string;
   busy: boolean;
+  oldText: string;
+  newText: string;
   onCommit: (message: string) => void;
   onCancel: () => void;
 }) {
   const [message, setMessage] = useState(props.defaultMessage);
+  const diff = useMemo(() => diffLines(props.oldText, props.newText), [props.oldText, props.newText]);
+  const stats = diff ? diffStats(diff) : null;
+  const rows = useMemo(() => (diff ? foldSameRuns(diff) : []), [diff]);
   return (
     <div aria-modal className="studio-modal-backdrop" role="dialog">
-      <div className="studio-modal">
+      <div className="studio-modal studio-modal-wide">
         <p className="studio-prompt">
-          <span className="accent">$</span> git commit -m
+          <span className="accent">$</span> git diff · review before commit
+          {stats && (
+            <span className="studio-diff-stats">
+              <span className="diff-add">+{stats.added}</span> <span className="diff-del">−{stats.removed}</span>
+            </span>
+          )}
         </p>
+        <div className="studio-diff" tabIndex={0}>
+          {diff === null ? (
+            <p className="studio-muted">diff too large to render — committing is still safe.</p>
+          ) : (
+            <pre>
+              {rows.map((row, index) =>
+                row.kind === "fold" ? (
+                  <span className="diff-fold" key={index}>{`  ··· ${row.hidden} unchanged lines ···\n`}</span>
+                ) : (
+                  <span className={`diff-${row.kind}`} key={index}>
+                    {row.kind === "add" ? "+ " : row.kind === "del" ? "- " : "  "}
+                    {row.text}
+                    {"\n"}
+                  </span>
+                )
+              )}
+            </pre>
+          )}
+        </div>
         <input
           autoFocus
           className="studio-input"

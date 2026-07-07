@@ -369,7 +369,246 @@
   gap: 0.6rem;
 }
 
+/* editor panes: source | preview, plus the properties rail */
+
+.studio-editor-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.studio-panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.studio-panes.with-preview {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.studio-preview-pane {
+  border-left: 1px solid var(--line);
+  overflow-y: auto;
+  min-width: 0;
+  background: color-mix(in oklab, var(--surface) 35%, var(--bg));
+}
+
+.studio-preview {
+  padding: 1.1rem 1.4rem 3rem;
+}
+
+.studio-preview-error {
+  position: sticky;
+  top: 0;
+  margin: 0;
+  padding: 0.35rem 1.4rem;
+  background: color-mix(in oklab, var(--tk-yellow) 12%, var(--bg));
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* MDX component placeholder frames inside the preview */
+
+.studio-preview :global(.studio-jsx),
+.studio-preview .studio-jsx {
+  display: block;
+  border: 1px dashed color-mix(in oklab, var(--accent) 45%, transparent);
+  border-radius: 6px;
+  padding: 0.6rem 0.85rem 0.65rem;
+  margin-block: 1rem;
+}
+
+.studio-preview .studio-jsx::before {
+  content: "<" attr(data-name) ">";
+  display: block;
+  color: var(--accent);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem;
+}
+
+.studio-preview .studio-jsx[data-empty]::before {
+  content: "<" attr(data-name) " ⋯ />";
+  margin-bottom: 0;
+}
+
+.studio-preview span.studio-jsx {
+  display: inline-block;
+  padding: 0 0.35rem;
+  margin-block: 0;
+}
+
+.studio-preview span.studio-jsx::before {
+  display: inline;
+  margin-right: 0.3rem;
+}
+
+/* properties rail */
+
+.studio-props {
+  width: 19.5rem;
+  flex-shrink: 0;
+  border-left: 1px solid var(--line);
+  overflow-y: auto;
+  padding: 0.9rem 1rem 2rem;
+  display: grid;
+  gap: 0.65rem;
+  align-content: start;
+  font-size: 0.78rem;
+}
+
+.studio-props-ok {
+  color: var(--tk-green);
+  font-weight: 400;
+  margin-left: 0.4rem;
+}
+
+.studio-props-bad {
+  color: var(--tk-red);
+  font-weight: 400;
+  margin-left: 0.4rem;
+}
+
+.studio-field-label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.6rem;
+  color: var(--faint);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+}
+
+.studio-field-error {
+  color: var(--tk-red);
+}
+
+.studio-field.has-error .studio-input {
+  border-color: color-mix(in oklab, var(--tk-red) 55%, transparent);
+}
+
+.studio-input-area {
+  resize: vertical;
+  min-height: 2.4rem;
+  line-height: 1.5;
+}
+
+.studio-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.studio-switch input {
+  accent-color: var(--accent);
+}
+
+.studio-chiprow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.studio-chip {
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.7rem;
+  padding: 0.12rem 0.55rem;
+  cursor: pointer;
+}
+
+.studio-chip.is-on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+}
+
+.studio-btn-ghost.is-on {
+  color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+}
+
+/* commit diff */
+
+.studio-modal-wide {
+  width: min(52rem, calc(100vw - 2rem));
+}
+
+.studio-diff {
+  max-height: 45dvh;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.studio-diff pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.studio-diff-stats {
+  margin-left: 0.6rem;
+}
+
+.diff-add {
+  color: var(--tk-green);
+}
+
+.diff-del {
+  color: var(--tk-red);
+}
+
+.diff-same {
+  color: var(--muted);
+}
+
+.diff-fold {
+  color: var(--faint);
+}
+
 /* mobile */
+
+@media (max-width: 1100px) {
+  .studio-props {
+    width: 16rem;
+  }
+}
+
+@media (max-width: 900px) {
+  /* narrow screens: preview replaces the source pane instead of splitting */
+  .studio-panes.with-preview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .studio-panes.with-preview .studio-textarea {
+    display: none;
+  }
+
+  .studio-props {
+    position: fixed;
+    inset: 2.75rem 0 2.1rem auto;
+    z-index: 50;
+    width: min(20rem, 88vw);
+    background: var(--bg);
+    border-left: 1px solid var(--edge);
+    box-shadow: -12px 0 32px rgb(0 0 0 / 0.35);
+  }
+}
 
 @media (max-width: 720px) {
   .studio-main {
