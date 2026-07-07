@@ -7,3 +7,5 @@ pagefind/
 .env.*
 !.env.example
 .worktrees/
+src/studio/convert/__tests__/probe*.ts
+src/studio/**/*probe*
