@@ -22,6 +22,7 @@ export interface RawMdxProps {
 }
 
 export interface ConvBlock {
+  id?: string;
   type: string;
   props?: Record<string, unknown>;
   content?: unknown;

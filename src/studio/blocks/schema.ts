@@ -3,15 +3,21 @@
  * progresses; each block registers here AND ships a converter (de)serializer
  * + golden test, or it doesn't merge (the block-registration discipline).
  */
-import { BlockNoteSchema, defaultBlockSpecs } from "@blocknote/core";
+import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs } from "@blocknote/core";
 
+import { InlineMath } from "./InlineMath";
 import { RawMdxBlock } from "./RawMdx";
 
+// The default heading block already supports levels 1–6 and toggle headings.
 export const studioSchema = BlockNoteSchema.create({
   blockSpecs: {
     ...defaultBlockSpecs,
     // createReactBlockSpec returns a factory in BlockNote 0.51 — call it.
     rawMdx: RawMdxBlock()
+  },
+  inlineContentSpecs: {
+    ...defaultInlineContentSpecs,
+    inlineMath: InlineMath
   }
 });
 

@@ -1,66 +1,51 @@
 /*
  * The converter orchestrator — the ONLY module BlockEditor imports from the
- * convert layer. Deliberately free of React/BlockNote so the golden
- * round-trip suite can exercise it in plain node.
+ * convert layer. Free of React/BlockNote so the golden suite runs in node.
  *
- * P3.1 (this file's current scope): the whole note body loads as a single
- * rawMdx block whose source IS the verbatim body, so round-trip is
- * byte-identical by construction. P3.2 replaces loadDocument's body handling
- * with real per-node block parsing + provenance-based source slicing; the
- * serializer's per-block dispatch and the no-op short-circuit stay.
+ * loadDocument parses the body into real blocks with byte-exact provenance;
+ * serializeDocument reconstructs the note, emitting each unchanged block's
+ * verbatim slice (byte-identical round-trip) and house-styling only edits.
+ * If the parse can't reproduce the body exactly, it degrades to a single
+ * whole-doc rawMdx block — never lossy structured editing.
  */
 import { joinDocument, splitDocument } from "./frontmatter";
+import { parseBodyToSegments } from "./parse";
 import { rawMdxBlock, type ConvBlock } from "./rawmdx";
+import { blockKey, serializeBody, type ProvMap } from "./serialize";
 
 export interface LoadedDoc {
   blocks: ConvBlock[];
-  /** Verbatim frontmatter fence region (re-prepended on save). */
+  prov: ProvMap;
+  tail: string;
   fmRegion: string;
   originalText: string;
-  /** loadDocument(text) then serialize === text. When false the caller must
-   *  keep the whole-doc rawMdx fallback rather than offer structured editing. */
   selfCheckOk: boolean;
 }
 
-function isEmptyContent(content: unknown): boolean {
-  if (content == null) return true;
-  if (Array.isArray(content)) {
-    return content.every((node) => {
-      const text = (node as { text?: unknown })?.text;
-      return typeof text !== "string" || text.length === 0;
-    });
-  }
-  return false;
+export function serializeDocument(blocks: ConvBlock[], prov: ProvMap, tail: string, fmRegion: string): string {
+  return joinDocument(fmRegion, serializeBody(blocks, prov, tail));
 }
 
-/** One block -> its exact MDX source. */
-export function blockToSource(block: ConvBlock): string {
-  if (block.type === "rawMdx") return String(block.props?.source ?? "");
-  // BlockNote always keeps a trailing empty paragraph; it must contribute no
-  // bytes so a no-op save stays byte-identical.
-  if (block.type === "paragraph" && isEmptyContent(block.content)) return "";
-  // A block with no P3.1 serializer (e.g. the user typed fresh content in
-  // block mode before P3.2). Throw so the caller keeps the last-good text
-  // instead of silently dropping or corrupting bytes.
-  throw new Error(`no serializer for block type "${block.type}" yet`);
-}
-
-export function serializeBody(blocks: ConvBlock[]): string {
-  return blocks.map(blockToSource).join("");
-}
-
-export function serializeDocument(blocks: ConvBlock[], fmRegion: string): string {
-  return joinDocument(fmRegion, serializeBody(blocks));
+export function wholeDocFallback(text: string): LoadedDoc {
+  const { fmRegion, body } = splitDocument(text);
+  const id = "seg-0";
+  const block: ConvBlock = { id, ...rawMdxBlock(body, "whole-doc") };
+  const prov: ProvMap = new Map([[id, { gapBefore: "", source: body, pristineKey: blockKey(block) }]]);
+  return { blocks: [block], prov, tail: "", fmRegion, originalText: text, selfCheckOk: true };
 }
 
 export function loadDocument(text: string): LoadedDoc {
   const { fmRegion, body } = splitDocument(text);
-  const blocks: ConvBlock[] = [rawMdxBlock(body, "whole-doc")];
-  let selfCheckOk = false;
   try {
-    selfCheckOk = serializeDocument(blocks, fmRegion) === text;
+    const { segments, tail } = parseBodyToSegments(body);
+    const blocks = segments.map((s) => s.block);
+    const prov: ProvMap = new Map(
+      segments.map((s) => [s.id, { gapBefore: s.gapBefore, source: s.source, pristineKey: blockKey(s.pristine) }])
+    );
+    const selfCheckOk = serializeBody(blocks, prov, tail) === body;
+    if (!selfCheckOk) return wholeDocFallback(text);
+    return { blocks, prov, tail, fmRegion, originalText: text, selfCheckOk: true };
   } catch {
-    selfCheckOk = false;
+    return wholeDocFallback(text);
   }
-  return { blocks, fmRegion, originalText: text, selfCheckOk };
 }
