@@ -20,6 +20,7 @@ import { diffLines, diffStats, foldSameRuns } from "@/studio/lib/diff";
 import {
   GhConflictError,
   GhError,
+  deleteFile,
   fetchChecks,
   fetchViewer,
   listDir,
@@ -30,6 +31,7 @@ import {
   type RepoEntry,
   type Viewer
 } from "@/studio/lib/github";
+import { noteUrl } from "@/studio/blocks/noteUrl";
 
 import "@/studio/studio.css";
 
@@ -243,6 +245,7 @@ interface NoteRow {
   collection: StudioCollection;
   name: string;
   path: string;
+  sha: string;
 }
 
 function Workbench({ token, viewer, onLogout }: { token: string; viewer: Viewer; onLogout: () => void }) {
@@ -259,7 +262,7 @@ function Workbench({ token, viewer, onLogout }: { token: string; viewer: Viewer;
           const rows = await listDir(token, `${STUDIO.contentRoot}/${collection}`);
           return rows
             .filter((row: RepoEntry) => row.type === "file" && /\.(md|mdx)$/.test(row.name))
-            .map((row) => ({ collection, name: row.name, path: row.path }));
+            .map((row) => ({ collection, name: row.name, path: row.path, sha: row.sha }));
         })
       );
       setNotes(lists.flat());
@@ -375,6 +378,66 @@ function Welcome({ notes }: { notes: NoteRow[] | null }) {
 
 /* --------------------------------------------------------------- sidebar */
 
+const COLLAPSE_KEY = "studio:sidebar-collapsed";
+
+function loadCollapsed(): Record<string, boolean> {
+  try {
+    return JSON.parse(window.localStorage.getItem(COLLAPSE_KEY) ?? "{}") as Record<string, boolean>;
+  } catch {
+    return {};
+  }
+}
+
+type NoteAction = "open" | "copy-link" | "duplicate" | "rename" | "delete";
+
+function ContextMenu(props: {
+  x: number;
+  y: number;
+  onClose: () => void;
+  onPick: (action: NoteAction) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) props.onClose();
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && props.onClose();
+    document.addEventListener("mousedown", onDown, true);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown, true);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [props]);
+  // Keep the menu on-screen near the cursor.
+  const style = { left: Math.min(props.x, window.innerWidth - 190), top: Math.min(props.y, window.innerHeight - 210) };
+  const items: { action: NoteAction; label: string; glyph: string; danger?: boolean }[] = [
+    { action: "open", label: "Open", glyph: "↵" },
+    { action: "copy-link", label: "Copy link", glyph: "⌘" },
+    { action: "duplicate", label: "Duplicate", glyph: "⧉" },
+    { action: "rename", label: "Rename…", glyph: "✎" },
+    { action: "delete", label: "Delete…", glyph: "✕", danger: true }
+  ];
+  return (
+    <div className="studio-ctx" ref={ref} role="menu" style={style}>
+      {items.map((it) => (
+        <button
+          className={`studio-ctx-item${it.danger ? " is-danger" : ""}`}
+          key={it.action}
+          onClick={() => props.onPick(it.action)}
+          role="menuitem"
+          type="button"
+        >
+          <span aria-hidden="true" className="studio-ctx-glyph">
+            {it.glyph}
+          </span>
+          {it.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Sidebar(props: {
   token: string;
   notes: NoteRow[] | null;
@@ -383,12 +446,103 @@ function Sidebar(props: {
   onNew: () => void;
 }) {
   const [creating, setCreating] = useState(false);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(loadCollapsed);
+  const [menu, setMenu] = useState<{ note: NoteRow; x: number; y: number } | null>(null);
+  const [dialog, setDialog] = useState<{ mode: "rename" | "delete"; note: NoteRow } | null>(null);
+  const [pending, setPending] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
   const grouped = useMemo(() => {
     const map = new Map<StudioCollection, NoteRow[]>();
     for (const collection of STUDIO.collections) map.set(collection, []);
     for (const note of props.notes ?? []) map.get(note.collection)?.push(note);
     return map;
   }, [props.notes]);
+
+  const toggle = (c: string) =>
+    setCollapsed((prev) => {
+      const next = { ...prev, [c]: !prev[c] };
+      window.localStorage.setItem(COLLAPSE_KEY, JSON.stringify(next));
+      return next;
+    });
+
+  const copyLink = (note: NoteRow) => {
+    const url = noteUrl(note.path);
+    if (url) navigator.clipboard?.writeText(url).catch(() => undefined);
+  };
+
+  // A free "<slug>-copy[-n].mdx" path in the same collection.
+  const freeCopyPath = (note: NoteRow): string => {
+    const dir = note.path.slice(0, note.path.lastIndexOf("/"));
+    const base = note.name.replace(/\.mdx?$/, "");
+    const ext = note.name.slice(base.length);
+    const taken = new Set((props.notes ?? []).map((n) => n.path));
+    let candidate = `${dir}/${base}-copy${ext}`;
+    let n = 2;
+    while (taken.has(candidate)) candidate = `${dir}/${base}-copy-${n++}${ext}`;
+    return candidate;
+  };
+
+  const duplicate = async (note: NoteRow) => {
+    setPending(note.path);
+    setActionError(null);
+    try {
+      const src = await readFile(props.token, note.path);
+      const dest = freeCopyPath(note);
+      await saveFile(props.token, dest, src.text, `studio: duplicate ${note.collection}/${note.name}`);
+      props.onNew();
+      navigateTo(dest);
+    } catch (err) {
+      setActionError(String((err as Error)?.message ?? err));
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const rename = async (note: NoteRow, newSlug: string) => {
+    const dir = note.path.slice(0, note.path.lastIndexOf("/"));
+    const ext = note.name.slice(note.name.replace(/\.mdx?$/, "").length);
+    const dest = `${dir}/${newSlug}${ext}`;
+    if (dest === note.path) return setDialog(null);
+    setPending(note.path);
+    setActionError(null);
+    try {
+      const src = await readFile(props.token, note.path);
+      await saveFile(props.token, dest, src.text, `studio: rename ${note.name} -> ${newSlug}${ext}`);
+      await deleteFile(props.token, note.path, note.sha, `studio: rename ${note.name} -> ${newSlug}${ext} (remove old)`);
+      setDialog(null);
+      props.onNew();
+      if (props.activePath === note.path) navigateTo(dest);
+    } catch (err) {
+      setActionError(String((err as Error)?.message ?? err));
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const remove = async (note: NoteRow) => {
+    setPending(note.path);
+    setActionError(null);
+    try {
+      await deleteFile(props.token, note.path, note.sha, `studio: delete ${note.collection}/${note.name}`);
+      setDialog(null);
+      props.onNew();
+      if (props.activePath === note.path) navigateTo(null);
+    } catch (err) {
+      setActionError(String((err as Error)?.message ?? err));
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const onPick = (action: NoteAction, note: NoteRow) => {
+    setMenu(null);
+    if (action === "open") navigateTo(note.path);
+    else if (action === "copy-link") copyLink(note);
+    else if (action === "duplicate") void duplicate(note);
+    else if (action === "rename") setDialog({ mode: "rename", note });
+    else if (action === "delete") setDialog({ mode: "delete", note });
+  };
 
   return (
     <nav aria-label="notes" className="studio-sidebar">
@@ -400,25 +554,77 @@ function Sidebar(props: {
       </div>
       {props.error && <p className="studio-error">tree: {props.error}</p>}
       {!props.notes && !props.error && <p className="studio-muted">loading…</p>}
-      {[...grouped.entries()].map(([collection, rows]) => (
-        <section key={collection}>
-          <p className="studio-label">{collection}/</p>
-          <ul className="studio-tree">
-            {rows.map((note) => (
-              <li key={note.path}>
-                <button
-                  className={note.path === props.activePath ? "is-active" : undefined}
-                  onClick={() => navigateTo(note.path)}
-                  type="button"
-                >
-                  {note.name}
-                </button>
-              </li>
-            ))}
-            {rows.length === 0 && <li className="studio-muted studio-tree-empty">(empty)</li>}
-          </ul>
-        </section>
-      ))}
+      {actionError && <p className="studio-error">{actionError}</p>}
+      {[...grouped.entries()].map(([collection, rows]) => {
+        const isCollapsed = !!collapsed[collection];
+        return (
+          <section className="studio-folder" key={collection}>
+            <button
+              aria-expanded={!isCollapsed}
+              className="studio-folder-head"
+              onClick={() => toggle(collection)}
+              type="button"
+            >
+              <span className={`studio-chevron${isCollapsed ? " is-collapsed" : ""}`} aria-hidden="true">
+                ▾
+              </span>
+              <span className="studio-folder-name">{collection}/</span>
+              <span className="studio-folder-count">{rows.length || ""}</span>
+            </button>
+            <div className={`studio-tree-wrap${isCollapsed ? " is-collapsed" : ""}`}>
+              <ul className="studio-tree">
+                {rows.map((note) => (
+                  <li key={note.path}>
+                    <button
+                      className={`studio-tree-row${note.path === props.activePath ? " is-active" : ""}${pending === note.path ? " is-pending" : ""}`}
+                      onClick={() => navigateTo(note.path)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setMenu({ note, x: e.clientX, y: e.clientY });
+                      }}
+                      type="button"
+                    >
+                      <span className="studio-tree-name">{note.name}</span>
+                      <span
+                        aria-label={`actions for ${note.name}`}
+                        className="studio-tree-more"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                          setMenu({ note, x: r.right, y: r.bottom });
+                        }}
+                        role="button"
+                        tabIndex={-1}
+                      >
+                        ⋯
+                      </span>
+                    </button>
+                  </li>
+                ))}
+                {rows.length === 0 && <li className="studio-muted studio-tree-empty">(empty)</li>}
+              </ul>
+            </div>
+          </section>
+        );
+      })}
+      {menu && <ContextMenu onClose={() => setMenu(null)} onPick={(a) => onPick(a, menu.note)} x={menu.x} y={menu.y} />}
+      {dialog?.mode === "rename" && (
+        <RenameDialog
+          busy={pending === dialog.note.path}
+          note={dialog.note}
+          onClose={() => setDialog(null)}
+          onSubmit={(slug) => void rename(dialog.note, slug)}
+        />
+      )}
+      {dialog?.mode === "delete" && (
+        <ConfirmDialog
+          busy={pending === dialog.note.path}
+          message={`Delete ${dialog.note.collection}/${dialog.note.name}? This removes the file on ${STUDIO.branch} (recoverable from git history).`}
+          onCancel={() => setDialog(null)}
+          onConfirm={() => void remove(dialog.note)}
+          title="delete note"
+        />
+      )}
       {creating && (
         <NewNoteDialog
           onClose={() => setCreating(false)}
@@ -431,6 +637,70 @@ function Sidebar(props: {
         />
       )}
     </nav>
+  );
+}
+
+function RenameDialog(props: { note: NoteRow; busy: boolean; onClose: () => void; onSubmit: (slug: string) => void }) {
+  const [slug, setSlug] = useState(props.note.name.replace(/\.mdx?$/, ""));
+  const [error, setError] = useState<string | null>(null);
+  const submit = () => {
+    if (!SLUG_RE.test(slug)) return setError("slug must be ascii kebab-case (e.g. eagle-3-deep-dive)");
+    props.onSubmit(slug);
+  };
+  return (
+    <div aria-modal className="studio-modal-backdrop" role="dialog">
+      <div className="studio-modal">
+        <p className="studio-prompt">
+          <span className="accent">$</span> studio rename
+        </p>
+        <label className="studio-field">
+          new slug
+          <input
+            autoFocus
+            className="studio-input"
+            onChange={(e) => setSlug(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && submit()}
+            value={slug}
+          />
+        </label>
+        {error && <p className="studio-error">{error}</p>}
+        <div className="studio-modal-actions">
+          <button className="studio-btn studio-btn-ghost" disabled={props.busy} onClick={props.onClose} type="button">
+            cancel
+          </button>
+          <button className="studio-btn" disabled={props.busy} onClick={submit} type="button">
+            {props.busy ? "renaming…" : "rename"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmDialog(props: {
+  title: string;
+  message: string;
+  busy: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div aria-modal className="studio-modal-backdrop" role="dialog">
+      <div className="studio-modal">
+        <p className="studio-prompt">
+          <span className="accent">$</span> {props.title}
+        </p>
+        <p className="studio-muted">{props.message}</p>
+        <div className="studio-modal-actions">
+          <button className="studio-btn studio-btn-ghost" disabled={props.busy} onClick={props.onCancel} type="button">
+            cancel
+          </button>
+          <button className="studio-btn studio-btn-danger" disabled={props.busy} onClick={props.onConfirm} type="button">
+            {props.busy ? "deleting…" : "delete"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

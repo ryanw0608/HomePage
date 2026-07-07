@@ -145,6 +145,19 @@ export async function saveFile(
   return { sha: out.content.sha, commitSha: out.commit.sha, htmlUrl: out.commit.html_url };
 }
 
+/** Delete a file (git rm on `branch`). The blob sha is required by the API. */
+export async function deleteFile(token: string, path: string, sha: string, message: string): Promise<string> {
+  const out = await gh<{ commit: { sha: string } }>(
+    token,
+    `/repos/${REPO_SLUG}/contents/${encodePath(path)}`,
+    {
+      method: "DELETE",
+      body: JSON.stringify({ message, sha, branch: STUDIO.branch })
+    }
+  );
+  return out.commit.sha;
+}
+
 export interface CheckSummary {
   status: "queued" | "in_progress" | "completed";
   conclusion: string | null;

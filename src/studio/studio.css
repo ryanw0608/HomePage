@@ -109,6 +109,189 @@
   padding: 0.3rem 0.45rem;
 }
 
+/* collapsible collection folders */
+.studio-folder {
+  margin-top: 0.5rem;
+}
+
+.studio-folder-head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 0.25rem 0.3rem;
+  cursor: pointer;
+  color: var(--faint);
+  font: inherit;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  border-radius: 4px;
+}
+
+.studio-folder-head:hover {
+  color: var(--muted);
+  background: color-mix(in oklab, var(--surface) 60%, transparent);
+}
+
+.studio-chevron {
+  display: inline-block;
+  font-size: 0.6rem;
+  transition: transform 160ms ease;
+  transform: rotate(0deg);
+}
+
+.studio-chevron.is-collapsed {
+  transform: rotate(-90deg);
+}
+
+.studio-folder-name {
+  flex: 1;
+  text-align: left;
+}
+
+.studio-folder-count {
+  color: var(--edge);
+  font-variant-numeric: tabular-nums;
+}
+
+/* grid-rows 1fr->0fr gives a smooth height collapse without measuring */
+.studio-tree-wrap {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 180ms ease, opacity 180ms ease;
+  opacity: 1;
+}
+
+.studio-tree-wrap > .studio-tree {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.studio-tree-wrap.is-collapsed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+/* note row: name + hover-revealed "⋯" actions trigger */
+.studio-tree .studio-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.studio-tree-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-tree-more {
+  flex-shrink: 0;
+  padding: 0 0.2rem;
+  border-radius: 3px;
+  color: var(--faint);
+  opacity: 0;
+  transition: opacity 120ms ease, color 120ms ease;
+}
+
+.studio-tree-row:hover .studio-tree-more,
+.studio-tree-row.is-active .studio-tree-more {
+  opacity: 1;
+}
+
+.studio-tree-more:hover {
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 16%, transparent);
+}
+
+.studio-tree-row.is-pending {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* right-click / "⋯" context menu */
+.studio-ctx {
+  position: fixed;
+  z-index: 60;
+  min-width: 172px;
+  padding: 0.3rem;
+  background: var(--surface);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  box-shadow: 0 12px 34px rgb(0 0 0 / 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  animation: studio-ctx-in 120ms ease;
+}
+
+@keyframes studio-ctx-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.studio-ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 5px;
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.34rem 0.5rem;
+  cursor: pointer;
+}
+
+.studio-ctx-item:hover {
+  background: color-mix(in oklab, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+
+.studio-ctx-item.is-danger:hover {
+  background: color-mix(in oklab, var(--tk-red) 16%, transparent);
+  color: var(--tk-red);
+}
+
+.studio-ctx-glyph {
+  width: 1.1em;
+  text-align: center;
+  color: var(--faint);
+}
+
+.studio-ctx-item:hover .studio-ctx-glyph {
+  color: inherit;
+}
+
+.studio-btn-danger {
+  border-color: color-mix(in oklab, var(--tk-red) 45%, transparent);
+  color: var(--tk-red);
+}
+
+.studio-btn-danger:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--tk-red) 16%, transparent);
+  border-color: var(--tk-red);
+  color: var(--tk-red);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-chevron,
+  .studio-tree-wrap,
+  .studio-tree-more,
+  .studio-ctx {
+    transition: none;
+    animation: none;
+  }
+}
+
 /* editor */
 
 .studio-editor {
