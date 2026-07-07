@@ -59,7 +59,10 @@ function componentItems(editor: BlockNoteEditor<never, never, never>): DefaultRe
     ...leaf("Critique", "weaknesses ↔ improvements", ["critique", "weakness"], editor),
     ...leaf("WhenMatrix", "helps when / hurts when", ["whenmatrix", "helps", "hurts"], editor),
     ...leaf("KeyTakeaways", "bulleted takeaways", ["keytakeaways", "takeaways"], editor),
-    ...leaf("Recall", "active-recall Q/A", ["recall", "qa"], editor)
+    ...leaf("Recall", "active-recall Q/A", ["recall", "qa"], editor),
+    ...leaf("Figure", "image with caption", ["figure", "image", "img"], editor),
+    ...leaf("FormulaCard", "reference formulas (KaTeX)", ["formulacard", "formula"], editor),
+    ...leaf("Derivation", "collapsible numbered steps", ["derivation", "steps", "proof"], editor)
   ];
 }
 

@@ -99,6 +99,29 @@ describe("byte-clean round-trip (P3.2 real-block converter)", () => {
     expect(doc.selfCheckOk).toBe(true);
   });
 
+  it("parses Figure/FormulaCard/Derivation as mdxLeaf and round-trips edits", () => {
+    const cases = [
+      '<Figure src="/m/a.png" alt="a" caption="cap" />\n',
+      '<FormulaCard formulas={[{ name: "attn", tex: "QK^T" }]} />\n',
+      '<Derivation title="d" steps={[{ text: "step", math: "x=1" }]} />\n'
+    ];
+    for (const text of cases) {
+      const doc = loadDocument(text);
+      expect(doc.blocks[0].type).toBe("mdxLeaf");
+      expect(roundTrip(text)).toBe(text); // unchanged → byte-identical
+    }
+    // edit a FormulaCard's records
+    const doc = loadDocument('<FormulaCard formulas={[{ name: "a", tex: "x" }]} />\n');
+    doc.blocks[0].props = {
+      name: "FormulaCard",
+      dataJson: JSON.stringify({ formulas: [{ name: "a", tex: "x" }, { name: "b", tex: "y" }] })
+    };
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    const data = JSON.parse((loadDocument(out).blocks[0].props as { dataJson: string }).dataJson);
+    expect(data.formulas).toHaveLength(2);
+    expect(data.formulas[1]).toEqual({ name: "b", tex: "y" });
+  });
+
   it("round-trips an edited Critique to valid JSX", () => {
     const text = '<Critique weaknesses={["a", "b"]} improvements={["c"]} />\n';
     const doc = loadDocument(text);

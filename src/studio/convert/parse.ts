@@ -130,7 +130,15 @@ function mapComponent(node: MdastNode & { name?: string | null }): ConvBlock | n
   return null;
 }
 
-const LEAF_COMPONENTS = new Set(["Critique", "WhenMatrix", "KeyTakeaways", "Recall"]);
+const LEAF_COMPONENTS = new Set([
+  "Critique",
+  "WhenMatrix",
+  "KeyTakeaways",
+  "Recall",
+  "Figure",
+  "FormulaCard",
+  "Derivation"
+]);
 
 export { LEAF_COMPONENTS, strList };
 

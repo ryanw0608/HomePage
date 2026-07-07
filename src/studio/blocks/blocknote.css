@@ -163,6 +163,27 @@
   color: var(--faint);
 }
 
+.studio-leaf-bool {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.studio-leaf-records {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.studio-leaf-record {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.studio-leaf-record .studio-input {
+  flex: 1;
+}
+
 .studio-slash-glyph {
   display: inline-flex;
   align-items: center;

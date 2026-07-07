@@ -12,10 +12,16 @@ import { useMemo, useState } from "react";
 import { renderComponent } from "@/studio/preview/components";
 import "@/studio/preview/components.css";
 
+interface Col {
+  key: string;
+  label: string;
+}
 type Field =
   | { key: string; label: string; kind: "list" }
   | { key: string; label: string; kind: "text" }
-  | { key: string; label: string; kind: "pairs"; a: string; b: string };
+  | { key: string; label: string; kind: "bool" }
+  | { key: string; label: string; kind: "pairs"; a: string; b: string }
+  | { key: string; label: string; kind: "records"; cols: Col[] };
 
 const FIELDS: Record<string, Field[]> = {
   Critique: [
@@ -29,7 +35,40 @@ const FIELDS: Record<string, Field[]> = {
     { key: "hurtsLabel", label: "hurts label", kind: "text" }
   ],
   KeyTakeaways: [{ key: "items", label: "items", kind: "list" }],
-  Recall: [{ key: "items", label: "q / a pairs", kind: "pairs", a: "q", b: "a" }]
+  Recall: [{ key: "items", label: "q / a pairs", kind: "pairs", a: "q", b: "a" }],
+  Figure: [
+    { key: "src", label: "image src", kind: "text" },
+    { key: "alt", label: "alt text", kind: "text" },
+    { key: "caption", label: "caption", kind: "text" },
+    { key: "source", label: "source", kind: "text" },
+    { key: "sourceUrl", label: "source url", kind: "text" }
+  ],
+  FormulaCard: [
+    { key: "title", label: "title", kind: "text" },
+    {
+      key: "formulas",
+      label: "formulas",
+      kind: "records",
+      cols: [
+        { key: "name", label: "name" },
+        { key: "tex", label: "TeX" },
+        { key: "note", label: "note" }
+      ]
+    }
+  ],
+  Derivation: [
+    { key: "title", label: "title", kind: "text" },
+    { key: "open", label: "open by default", kind: "bool" },
+    {
+      key: "steps",
+      label: "steps",
+      kind: "records",
+      cols: [
+        { key: "text", label: "text" },
+        { key: "math", label: "TeX (optional)" }
+      ]
+    }
+  ]
 };
 
 function parseData(dataJson: string): Record<string, unknown> {
@@ -101,6 +140,60 @@ function LeafField({
           onBlur={(e) => onChange(field.key, e.target.value.trim() || undefined)}
         />
       </label>
+    );
+  }
+  if (field.kind === "bool") {
+    return (
+      <label className="studio-leaf-field studio-leaf-bool">
+        <input
+          checked={data[field.key] === true}
+          onChange={(e) => onChange(field.key, e.target.checked)}
+          type="checkbox"
+        />
+        <span>{field.label}</span>
+      </label>
+    );
+  }
+  if (field.kind === "records") {
+    const rows = Array.isArray(data[field.key]) ? (data[field.key] as Record<string, unknown>[]) : [];
+    const update = (next: Record<string, unknown>[]) =>
+      onChange(field.key, next.filter((r) => Object.values(r).some((v) => String(v ?? "").trim())));
+    return (
+      <div className="studio-leaf-field">
+        <span>{field.label}</span>
+        <div className="studio-leaf-records">
+          {rows.map((row, i) => (
+            <div className="studio-leaf-record" key={i}>
+              {field.cols.map((col) => (
+                <input
+                  className="studio-input"
+                  defaultValue={String(row[col.key] ?? "")}
+                  key={col.key}
+                  onBlur={(e) => {
+                    const next = rows.map((r, j) => (j === i ? { ...r, [col.key]: e.target.value } : r));
+                    update(next);
+                  }}
+                  placeholder={col.label}
+                />
+              ))}
+              <button
+                className="studio-rawmdx-toggle"
+                onClick={() => update(rows.filter((_, j) => j !== i))}
+                type="button"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <button
+            className="studio-rawmdx-toggle"
+            onClick={() => update([...rows, Object.fromEntries(field.cols.map((c) => [c.key, ""]))])}
+            type="button"
+          >
+            + row
+          </button>
+        </div>
+      </div>
     );
   }
   if (field.kind === "list") {
