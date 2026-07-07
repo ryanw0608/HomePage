@@ -21,11 +21,48 @@ Done and pushed:
   Verified by an offline puppeteer smoke test with a mocked GitHub API
   (login→tree→edit→⌘S→PUT sha/content→CI pill all pass).
 
-**Next up (P1b, then P2+):** markdown live preview styled like `.article-body`; pre-commit
-diff review; properties panel (frontmatter form validated by the shared zod schema);
-then P2 database views (table/kanban) + ⌘K, P3 BlockNote block editor + MDX⇄block converter
-(golden round-trip tests in ci.yml), P4 version history UI + Pagefind, P5 AI assist via the
-site-api Worker `/ai/chat` (already deployed code-side; Notion-style Space-to-summon).
+**Done since:** P1b (live preview + properties panel + pre-commit diff, all review-fixed)
+and **P3.0** (BlockNote editor shell + raw/blocks toggle + vitest wired into CI) are shipped.
+
+**Enriched Studio roadmap (2026-07-07)** — after a design panel (SpanLock round-trip spine +
+all-11-components ambition; spec in the wf_5faafd47 journal) and a Docmost/AFFiNE reference-
+mining pass. Owner chose the fuller feature set over the scope-guardian's cut list. Order:
+
+- **P3.1 converter spine**: `src/studio/convert/` (frozen mdast parser, verbatim-fence
+  frontmatter split, `document.ts` no-op short-circuit + load-time self-check + whole-doc
+  rawMdx fallback), `blocks/RawMdx.tsx`, `blocks/schema.ts`, and the **golden round-trip test
+  harness in CI** (the #1 enrichment: block-registration discipline — every block = typed
+  schema + MDX (de)serializer + view + golden test, or it doesn't merge). Byte-clean floor.
+- **P3.2 native markdown + inline**: parse/serialize/provenance for paragraph/heading(1–6)/
+  list(+regrouping)/quote/code/divider/image/**table**/inline-marks/inlineMath/displayMath.
+- **P3.3 container components + math**: Tldr, Callout, DisplayMath, InlineMath (+ TexField,
+  composition-safe inputs); **@-internal-note-link autocomplete** against notes.json.
+- **P3.4 leaf components I**: jsxAttrs literal evaluator + printer + acorn net +
+  `frontmatter.<field>` binding; Critique, WhenMatrix, KeyTakeaways (bound+literal), Recall;
+  Verdict read-only strip in the panel. **Mermaid** fenced-code block (dual render: Studio
+  preview + a lazy client-only renderer on public article pages).
+- **P3.5 leaf components II**: Derivation, FormulaCard, Figure, Bench (spreadsheet).
+- **P3.6 hardening + GA**: full 10-fixture golden suite, invariant guards, whole-doc fallback
+  banner, curated **metadata-rich fuzzy slash menu** (title/desc/searchTerms/icon, `hd1`→
+  Heading 1; only round-trippable blocks; Verdict excluded), then flip block mode to default.
+- **P2 database views**: Table + Kanban + **Gallery** card view over the collections;
+  **⌘F find/replace** (in-editor, ProseMirror); **+new template picker**; **unified ⌘K**
+  (Pagefind search + jump-to-note + new-from-template + a deferred Ask-AI entry).
+- **P4 history**: in-editor **diff + one-click Restore** over git (listCommits/getFileAtCommit;
+  restore = a new sha-based commit, never force-push); **backlinks panel** (build-time index
+  scanning MDX internal links) shown in the editor and optionally on public pages; Pagefind
+  in ⌘K.
+- **P5 AI assist**: selection/`/ai` toolbar → site-api `/ai/chat` GLM proxy; polish / continue
+  / zh↔en translate / summarize / generate tldr / expand-to-skeleton, rendered as an
+  accept/reject **suggestion diff** (never silent rewrite), "faithful, don't fabricate" prompt.
+
+**Rejected for good (architecture conflict — do not revisit):** realtime multi-user collab
+(Yjs/CRDT sync server), server-side full-text/attachment search, semantic-RAG AI Q&A, comment
+threads + notifications, RBAC/roles/approval workflow, share links with per-link perms/expiry,
+edgeless canvas/whiteboard, Excalidraw/Draw.io embedded-scene nodes, Postgres/Redis/BullMQ,
+persistent DB "Bases", generic UI kits, paid version-retention tiers. All need a server/DB the
+static+git+single-user model doesn't have; their value is re-expressed statically (commits =
+versions, build-time indexes = search/backlinks, visibility frontmatter = access).
 
 Owner-side actions pending (any order, docs/admin-setup.md):
 
