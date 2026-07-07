@@ -25,6 +25,10 @@
   --bn-font-family: var(--font-mono);
   --bn-border-radius: 4px;
 
+  /* Fill the editor pane (the bug fix: without flex:1 the editor collapsed
+     to ~800px and left a dead gap before the properties rail). */
+  flex: 1;
+  min-width: 0;
   height: 100%;
   overflow-y: auto;
 }
@@ -33,13 +37,33 @@
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-mono);
-  padding-block: 1.1rem;
+  padding-block: 1.4rem 4rem;
 }
 
-/* Match the published .article-body measure so WYSIWYG ~= what ships. */
+/* Center a comfortable document column so wide screens don't left-hug the
+   content; matches the published .article-body measure (WYSIWYG ~= shipped). */
 .studio-blocknote .bn-block-group {
   max-width: 72ch;
   margin-inline: auto;
+}
+
+/* Themed, unobtrusive scrollbars for the editor + properties rail. */
+.studio-blocknote,
+.studio-props {
+  scrollbar-width: thin;
+  scrollbar-color: var(--edge) transparent;
+}
+
+.studio-blocknote::-webkit-scrollbar,
+.studio-props::-webkit-scrollbar {
+  width: 9px;
+}
+
+.studio-blocknote::-webkit-scrollbar-thumb,
+.studio-props::-webkit-scrollbar-thumb {
+  background: var(--edge);
+  border-radius: 999px;
+  border: 2px solid var(--bg);
 }
 
 .studio-blocknote .bn-inline-content code,
