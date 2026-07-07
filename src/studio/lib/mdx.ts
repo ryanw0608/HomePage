@@ -98,9 +98,14 @@ function transform(node: MdastNode, frontmatter: Record<string, unknown>): void 
         props = null;
       }
       if (props && isKnownComponent(name)) {
-        const childrenHtml = isContainer(name) ? renderChildrenHtml(child.children ?? [], frontmatter) : "";
-        const html = renderComponent(name, props, childrenHtml);
-        if (html != null) return [{ type: "html", value: html } as MdastNode];
+        try {
+          const childrenHtml = isContainer(name) ? renderChildrenHtml(child.children ?? [], frontmatter) : "";
+          const html = renderComponent(name, props, childrenHtml);
+          if (html != null) return [{ type: "html", value: html } as MdastNode];
+        } catch {
+          // A renderer crashed on malformed props (e.g. a null array hole) —
+          // fall through to the placeholder instead of blanking the preview.
+        }
       }
       return [placeholder(child, name)];
     }
@@ -145,7 +150,11 @@ function scrubUrls() {
 }
 
 function isUnsafeUrl(url: string): boolean {
-  const scheme = url.trim().match(/^([a-z][a-z0-9+.-]*):/i);
+  // Browsers strip ASCII tab/newline/CR (and trim leading controls) from an
+  // href BEFORE resolving the scheme, so `java\tscript:` runs as javascript:.
+  // Strip all C0 controls + space before scheme-testing to match that.
+  const normalized = url.replace(/[\u0000-\u0020]/g, "");
+  const scheme = normalized.match(/^([a-z][a-z0-9+.-]*):/i);
   if (!scheme) return false; // relative path or #anchor
   return !["http", "https", "mailto", "tel"].includes(scheme[1].toLowerCase());
 }

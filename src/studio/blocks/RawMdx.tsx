@@ -37,6 +37,9 @@ function RawMdxCard({
 
   useEffect(() => {
     let alive = true;
+    // NOTE: no frontmatter passed here, so `items={frontmatter.takeaways}`-
+    // bound components fall back to a placeholder in the block-mode card. The
+    // split-pane Preview resolves them; block mode is reworked in P3.2.
     renderPreview(source)
       .then((rendered) => {
         if (!alive) return;

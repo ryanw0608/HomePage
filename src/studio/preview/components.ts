@@ -53,7 +53,7 @@ const RENDERERS: Record<string, Renderer> = {
 
   Tldr(props, children) {
     const label = String(props.label ?? "tldr");
-    return `<aside class="tldr"><p class="tldr-prompt"><span class="prompt">$</span> ${esc(label)}</p><div class="tldr-body">${children}</div></aside>`;
+    return `<aside class="tldr"><p class="tldr-prompt" aria-hidden="true"><span class="prompt">$</span> ${esc(label)}</p><div class="tldr-body">${children}</div></aside>`;
   },
 
   Critique(props) {
@@ -67,8 +67,8 @@ const RENDERERS: Record<string, Renderer> = {
         )
         .join("")}</ul>`;
     let inner = "";
-    if (weaknesses.length) inner += `<section><p class="critique-label">weaknesses</p>${list(weaknesses, "-", "diff-minus")}</section>`;
-    if (improvements.length) inner += `<section><p class="critique-label">improvements</p>${list(improvements, "+", "diff-plus")}</section>`;
+    if (weaknesses.length) inner += `<section aria-label="Weaknesses"><p class="critique-label">weaknesses</p>${list(weaknesses, "-", "diff-minus")}</section>`;
+    if (improvements.length) inner += `<section aria-label="Possible improvements"><p class="critique-label">improvements</p>${list(improvements, "+", "diff-plus")}</section>`;
     return `<div class="critique">${inner}</div>`;
   },
 
@@ -78,7 +78,7 @@ const RENDERERS: Record<string, Renderer> = {
     const helpsLabel = String(props.helpsLabel ?? "helps when");
     const hurtsLabel = String(props.hurtsLabel ?? "hurts when");
     const col = (label: string, labelCls: string, items: unknown[], mark: string, markCls: string) =>
-      `<section><p class="matrix-label ${labelCls}">${esc(label)}</p><ul>${items
+      `<section aria-label="${esc(label)}"><p class="matrix-label ${labelCls}">${esc(label)}</p><ul>${items
         .map((item) => `<li><span class="mark ${markCls}" aria-hidden="true">${mark}</span>${esc(item)}</li>`)
         .join("")}</ul></section>`;
     return `<div class="when-matrix">${col(helpsLabel, "label-helps", helps, "✓", "mark-helps")}${col(hurtsLabel, "label-hurts", hurts, "✗", "mark-hurts")}</div>`;
@@ -87,7 +87,7 @@ const RENDERERS: Record<string, Renderer> = {
   KeyTakeaways(props) {
     const id = String(props.id ?? "key-takeaways");
     const items = Array.isArray(props.items) ? props.items : [];
-    return `<section class="takeaways"><h2 id="${esc(id)}">Key Takeaways</h2><ul>${items
+    return `<section class="takeaways" aria-labelledby="${esc(id)}"><h2 id="${esc(id)}">Key Takeaways</h2><ul>${items
       .map((item) => `<li>${esc(item)}</li>`)
       .join("")}</ul></section>`;
   },
@@ -135,7 +135,7 @@ const RENDERERS: Record<string, Renderer> = {
         return `<div class="formula-row"><dt>${esc(f.name)}</dt><dd><div class="formula-math">${tex(String(f.tex ?? ""))}</div>${note}</dd></div>`;
       })
       .join("");
-    return `<aside class="formula-card"><p class="card-label">${esc(title)}</p><dl>${rows}</dl></aside>`;
+    return `<aside class="formula-card" aria-label="${esc(title)}"><p class="card-label">${esc(title)}</p><dl>${rows}</dl></aside>`;
   },
 
   Derivation(props) {
@@ -157,13 +157,14 @@ const RENDERERS: Record<string, Renderer> = {
     const body = items
       .map((item) => `<details><summary>${esc(item.q)}</summary><p>${esc(item.a)}</p></details>`)
       .join("");
-    return `<section class="recall"><p class="recall-label">${esc(title)}</p>${body}</section>`;
+    return `<section class="recall" aria-label="${esc(title)}"><p class="recall-label">${esc(title)}</p>${body}</section>`;
   },
 
   Figure(props) {
     const src = String(props.src ?? "");
-    // Note: BASE_URL isn't resolvable here; show the raw/relative src.
-    const resolved = /^(https?:)?\/\//.test(src) || src.startsWith("/") ? src : src;
+    // Base-path aware, matching Figure.astro (relative → /HomePage/…).
+    const base = import.meta.env.BASE_URL || "/";
+    const resolved = /^(https?:)?\/\//.test(src) || src.startsWith("/") ? src : `${base}${src}`;
     const parts = [esc(props.caption)];
     if (props.source && props.sourceUrl) parts.push(` Source: <a href="${esc(props.sourceUrl)}">${esc(props.source)}</a>.`);
     else if (props.source) parts.push(` Source: ${esc(props.source)}.`);
