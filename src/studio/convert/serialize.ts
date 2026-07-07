@@ -7,7 +7,7 @@
  *   - a brand-new block gets a blank-line gap + house style.
  * The rawMdx block always emits its source prop verbatim (its own escape hatch).
  */
-import { inlineToMarkdown, type Inline } from "./inline";
+import { escapeBlockStart, inlineToMarkdown, type Inline } from "./inline";
 import type { ConvBlock } from "./rawmdx";
 
 export interface Provenance {
@@ -50,7 +50,9 @@ function houseStyle(block: ConvBlock): string {
       return `${"#".repeat(Math.min(6, Math.max(1, level)))} ${inline()}`;
     }
     case "paragraph":
-      return inline();
+      // A bare paragraph is at column 0 — escape a leading block marker so it
+      // can't reparse as a heading/quote/list.
+      return escapeBlockStart(inline());
     case "quote":
       return `> ${inline()}`;
     case "bulletListItem":
@@ -59,7 +61,11 @@ function houseStyle(block: ConvBlock): string {
       return `1. ${inline()}`;
     case "codeBlock": {
       const lang = String((block.props as { language?: string })?.language ?? "");
-      return `\`\`\`${lang === "text" ? "" : lang}\n${contentText(block.content)}\n\`\`\``;
+      const code = contentText(block.content);
+      // Fence long enough to contain any backtick run inside the code.
+      const longest = (code.match(/`+/g) ?? []).reduce((m, r) => Math.max(m, r.length), 0);
+      const fence = "`".repeat(Math.max(3, longest + 1));
+      return `${fence}${lang === "text" ? "" : lang}\n${code}\n${fence}`;
     }
     case "rawMdx":
       return String((block.props as { source?: string })?.source ?? "");
@@ -76,15 +82,23 @@ export function serializeBody(blocks: ConvBlock[], prov: ProvMap, tail: string):
   let out = "";
   for (const block of blocks) {
     const entry = block.id ? prov.get(block.id) : undefined;
+    let piece: string;
     if (entry && blockKey(block) === entry.pristineKey) {
-      out += entry.gapBefore + entry.source; // unchanged → verbatim
+      piece = entry.gapBefore + entry.source; // unchanged → verbatim
     } else if (entry) {
-      out += entry.gapBefore + houseStyle(block); // edited → reuse glue, house style
+      piece = entry.gapBefore + houseStyle(block); // edited → reuse glue, house style
     } else if (isEmptyParagraph(block)) {
-      // BlockNote's trailing empty paragraph (or a user blank line): no bytes.
+      continue; // BlockNote's trailing empty paragraph (or a user blank line)
     } else {
-      out += (out === "" ? "" : "\n\n") + houseStyle(block); // brand-new block
+      piece = houseStyle(block); // brand-new block
     }
+    // Guarantee a blank-line boundary between blocks whenever neither side
+    // provides one — otherwise an inserted/edited block (whose stored glue is
+    // "" or a relative gap) would jam into its neighbour and merge on reparse.
+    if (out !== "" && !/\n\s*$/.test(out) && !/^\n/.test(piece)) {
+      out += "\n\n";
+    }
+    out += piece;
   }
   return out + tail;
 }
