@@ -52,8 +52,88 @@
   line-height: 1.7;
 }
 
-.studio-blocknote .bn-block-content[data-content-type="heading"] {
-  margin-top: 1.6rem;
+/* ── BlockNote/Mantine chrome themed to Terminal-Luxe ─────────────────────
+   The toolbar/menus ship with Mantine's own light styling; retheme them to
+   the dark surface + mono + iris palette so the editor reads as one system. */
+
+.studio-blocknote .bn-side-menu {
+  align-items: center;
+}
+
+.studio-blocknote .bn-side-menu .bn-button {
+  color: var(--faint);
+  background: transparent;
+  border-radius: 4px;
+}
+
+.studio-blocknote .bn-side-menu .bn-button:hover {
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+}
+
+/* Formatting (selection) toolbar */
+.studio-blocknote .bn-toolbar,
+.bn-toolbar.bn-formatting-toolbar {
+  background: var(--surface);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.4);
+  padding: 0.2rem;
+  gap: 0.1rem;
+  font-family: var(--font-mono);
+}
+
+.bn-toolbar .bn-button,
+.bn-toolbar .mantine-ActionIcon-root,
+.bn-toolbar button {
+  color: var(--muted);
+  background: transparent;
+  border-radius: 5px;
+}
+
+.bn-toolbar .bn-button:hover,
+.bn-toolbar .mantine-ActionIcon-root:hover,
+.bn-toolbar button:hover {
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
+}
+
+.bn-toolbar .mantine-Button-label,
+.bn-toolbar [class*="Select"],
+.bn-toolbar [class*="label"] {
+  color: var(--fg);
+  font-family: var(--font-mono);
+}
+
+/* Dropdown menus (heading levels, colours, block type, slash) */
+.bn-menu-dropdown,
+.mantine-Menu-dropdown,
+.bn-suggestion-menu {
+  background: var(--surface) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.45) !important;
+  color: var(--fg) !important;
+  font-family: var(--font-mono) !important;
+}
+
+.mantine-Menu-item,
+.bn-suggestion-menu-item {
+  color: var(--fg) !important;
+  border-radius: 5px;
+}
+
+.mantine-Menu-item:hover,
+.mantine-Menu-item[data-hovered],
+.bn-suggestion-menu-item[aria-selected="true"],
+.bn-suggestion-menu-item:hover {
+  background: color-mix(in oklab, var(--accent) 16%, transparent) !important;
+  color: var(--accent) !important;
+}
+
+.bn-suggestion-menu-item-subtitle,
+.mantine-Menu-itemSection {
+  color: var(--faint) !important;
 }
 
 /* Themed, unobtrusive scrollbars for the editor + properties rail. */

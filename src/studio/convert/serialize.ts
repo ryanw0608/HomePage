@@ -41,8 +41,16 @@ function contentText(content: unknown): string {
   return "";
 }
 
-/** House-style Markdown for an EDITED block. */
-function houseStyle(block: ConvBlock): string {
+/* Reuse the source item's exact marker (bullet char / ordered delimiter +
+ * ordinal) so an edited item doesn't re-group the list or reset numbering. */
+function listMarker(source: string | undefined, fallback: string): string {
+  const m = source?.match(/^(\s*(?:[-*+]|\d+[.)])[ \t]+)/);
+  return m ? m[1] : fallback;
+}
+
+/** House-style Markdown for an EDITED block. `entry` (its provenance) carries
+ * the original source so list markers/ordinals can be preserved. */
+function houseStyle(block: ConvBlock, entry?: Provenance): string {
   const inline = () => inlineToMarkdown((block.content as Inline[]) ?? []);
   switch (block.type) {
     case "heading": {
@@ -56,9 +64,9 @@ function houseStyle(block: ConvBlock): string {
     case "quote":
       return `> ${inline()}`;
     case "bulletListItem":
-      return `- ${inline()}`;
+      return `${listMarker(entry?.source, "- ")}${inline()}`;
     case "numberedListItem":
-      return `1. ${inline()}`;
+      return `${listMarker(entry?.source, "1. ")}${inline()}`;
     case "codeBlock": {
       const lang = String((block.props as { language?: string })?.language ?? "");
       const code = contentText(block.content);
@@ -145,29 +153,48 @@ function isListItem(block: ConvBlock): boolean {
   return block.type === "bulletListItem" || block.type === "numberedListItem";
 }
 
+const leadingNewlines = (s: string): number => s.match(/^\n*/)?.[0].length ?? 0;
+const trailingNewlines = (s: string): number => s.match(/\n*$/)?.[0].length ?? 0;
+
+/* Minimum blank between two adjacent blocks: one newline keeps consecutive
+ * list items in the same list; everything else needs a blank line, so a
+ * list-item→paragraph (or any→any) transition can't lazily merge. */
+function requiredNewlines(prev: ConvBlock | null, cur: ConvBlock): number {
+  if (prev && isListItem(prev) && isListItem(cur)) return 1;
+  return 2;
+}
+
 export function serializeBody(blocks: ConvBlock[], prov: ProvMap, tail: string): string {
   let out = "";
   let prev: ConvBlock | null = null;
   for (const block of blocks) {
     const entry = block.id ? prov.get(block.id) : undefined;
-    let piece: string;
-    if (entry && blockKey(block) === entry.pristineKey) {
-      piece = entry.gapBefore + entry.source; // unchanged → verbatim
+    const unchanged = Boolean(entry && blockKey(block) === entry.pristineKey);
+    let sep: string;
+    let text: string;
+    if (unchanged) {
+      sep = entry!.gapBefore;
+      text = entry!.source;
     } else if (entry) {
-      piece = entry.gapBefore + houseStyle(block); // edited → reuse glue, house style
+      sep = entry.gapBefore;
+      text = houseStyle(block, entry);
     } else if (isEmptyParagraph(block)) {
       continue; // BlockNote's trailing empty paragraph (or a user blank line)
     } else {
-      piece = houseStyle(block); // brand-new block
+      sep = "";
+      text = houseStyle(block);
     }
-    // Guarantee separation between blocks whenever neither side provides one —
-    // otherwise an inserted/edited block (whose stored glue is "" or a relative
-    // gap) would jam into its neighbour. Adjacent list items take a single
-    // newline; everything else takes a blank line.
-    if (out !== "" && !/\n\s*$/.test(out) && !/^\n/.test(piece)) {
-      out += prev && isListItem(prev) && isListItem(block) ? "\n" : "\n\n";
+
+    if (out === "") {
+      out += sep + text;
+    } else {
+      // Ensure the boundary provides at least the separation the two block
+      // types require — upgrading only when the stored glue is short (an edit
+      // changed a type). All-unchanged notes keep their exact glue → byte-safe.
+      const have = trailingNewlines(out) + leadingNewlines(sep);
+      const need = requiredNewlines(prev, block);
+      out += have >= need ? sep + text : "\n".repeat(need) + text;
     }
-    out += piece;
     prev = block;
   }
   return out + tail;

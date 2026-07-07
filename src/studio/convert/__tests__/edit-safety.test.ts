@@ -80,6 +80,35 @@ describe("edited-block serialization safety", () => {
     }
   });
 
+  it("editing a *-bullet or 1)-ordered list item keeps the list's marker", () => {
+    for (const [text, expect1] of [
+      ["* a\n* b\n* c\n", "* a\n* EDIT\n* c\n"],
+      ["+ a\n+ b\n+ c\n", "+ EDIT\n+ b\n+ c\n"],
+      ["1) a\n2) b\n3) c\n", "1) a\n2) EDIT\n3) c\n"]
+    ] as const) {
+      const doc = loadDocument(text);
+      const idx = expect1.indexOf("EDIT") === 0 || /^[-*+]\sEDIT/.test(expect1) ? 0 : expect1.split("\n").findIndex((l) => l.includes("EDIT"));
+      (doc.blocks[idx] as { content: unknown }).content = [{ type: "text", text: "EDIT", styles: {} }] as never;
+      expect(serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion)).toBe(expect1);
+    }
+  });
+
+  it("editing the first item of a list starting at 3 keeps the ordinal", () => {
+    const doc = loadDocument("3. a\n4. b\n5. c\n");
+    (doc.blocks[0] as { content: unknown }).content = [{ type: "text", text: "EDIT", styles: {} }] as never;
+    expect(serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion)).toBe("3. EDIT\n4. b\n5. c\n");
+  });
+
+  it("converting a middle list item to a paragraph does not merge it upward", () => {
+    const doc = loadDocument("- item1\n- item2\n- item3\n");
+    (doc.blocks[1] as { type: string }).type = "paragraph";
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    // reparse: item2 must be its own paragraph, NOT swallowed into item1
+    const nodes = parseBody(out).children as { type: string }[];
+    expect(nodes.some((n) => n.type === "paragraph")).toBe(true);
+    expect(out).not.toMatch(/item1\nitem2/);
+  });
+
   it("a link href with a space survives round-trip", () => {
     const doc = loadDocument("link me\n");
     const p = doc.blocks[0] as ConvBlock;
