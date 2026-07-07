@@ -46,6 +46,29 @@ function componentItems(editor: BlockNoteEditor<never, never, never>): DefaultRe
       group: "Components",
       icon: <span className="studio-slash-glyph">//</span>,
       onItemClick: () => insertBlock(editor, { type: "callout", content: [] } as never)
+    },
+    ...leaf("Critique", "weaknesses ↔ improvements", ["critique", "weakness"], editor),
+    ...leaf("WhenMatrix", "helps when / hurts when", ["whenmatrix", "helps", "hurts"], editor),
+    ...leaf("KeyTakeaways", "bulleted takeaways", ["keytakeaways", "takeaways"], editor),
+    ...leaf("Recall", "active-recall Q/A", ["recall", "qa"], editor)
+  ];
+}
+
+function leaf(
+  name: string,
+  subtext: string,
+  aliases: string[],
+  editor: BlockNoteEditor<never, never, never>
+): DefaultReactSuggestionItem[] {
+  return [
+    {
+      title: name,
+      subtext,
+      aliases,
+      group: "Components",
+      icon: <span className="studio-slash-glyph">▤</span>,
+      onItemClick: () =>
+        insertBlock(editor, { type: "mdxLeaf", props: { name, dataJson: "{}" } } as never)
     }
   ];
 }

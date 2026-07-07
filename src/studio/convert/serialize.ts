@@ -80,17 +80,51 @@ function houseStyle(block: ConvBlock): string {
       const title = props.title ? ` title=${jsxAttr(props.title)}` : "";
       return `<Callout${type}${title}>\n  ${inline()}\n</Callout>`;
     }
+    case "mdxLeaf": {
+      const p = (block.props ?? {}) as { name?: string; dataJson?: string };
+      let data: Record<string, unknown> = {};
+      try {
+        data = JSON.parse(String(p.dataJson ?? "{}")) as Record<string, unknown>;
+      } catch {
+        /* corrupt json → empty props */
+      }
+      return printLeafComponent(String(p.name ?? ""), data);
+    }
     default:
       throw new Error(`no house-style serializer for block "${block.type}"`);
   }
 }
 
-/* Quote a JSX string attribute; flips to single quotes when the value
- * contains a double quote (JSX has no in-string escapes). */
+/* Deterministic JS-literal printer for a leaf component's props. Only runs on
+ * an EDITED instance (unchanged ones re-emit their verbatim source slice). */
+function printJsValue(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(printJsValue).join(", ")}]`;
+  if (value === null) return "null";
+  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>).map(
+      ([k, v]) => `${/^[A-Za-z_$][\w$]*$/.test(k) ? k : JSON.stringify(k)}: ${printJsValue(v)}`
+    );
+    return `{ ${entries.join(", ")} }`;
+  }
+  return "null";
+}
+
+function printLeafComponent(name: string, props: Record<string, unknown>): string {
+  const attrs = Object.entries(props)
+    .filter(([, v]) => v !== undefined)
+    .map(([key, v]) => (typeof v === "string" ? `${key}=${jsxAttr(v)}` : `${key}={${printJsValue(v)}}`));
+  return `<${name}${attrs.length ? " " + attrs.join(" ") : ""} />`;
+}
+
+/* Quote a JSX string attribute. JSX string literals have no escapes, so flip
+ * to single quotes when the value has a double quote; if it has BOTH quote
+ * kinds, use an expression attribute {"…"} (JSON-escaped) — lossless. */
 function jsxAttr(value: string): string {
   if (!value.includes('"')) return `"${value}"`;
   if (!value.includes("'")) return `'${value}'`;
-  return JSON.stringify(value.replace(/"/g, "”")); // both quote kinds: degrade politely
+  return `{${JSON.stringify(value)}}`;
 }
 
 function isEmptyParagraph(block: ConvBlock): boolean {

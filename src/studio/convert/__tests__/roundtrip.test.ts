@@ -89,6 +89,32 @@ describe("byte-clean round-trip (P3.2 real-block converter)", () => {
     expect(texts).toContain("inlineMath");
   });
 
+  it("parses leaf components (Critique/WhenMatrix) as mdxLeaf blocks (seed)", () => {
+    const raw = readFileSync(SEEDS[1], "utf8").replace(/\r\n/g, "\n");
+    const doc = loadDocument(raw);
+    const leaves = doc.blocks.filter((b) => b.type === "mdxLeaf");
+    const names = leaves.map((b) => (b.props as { name?: string }).name);
+    expect(names).toContain("Critique");
+    expect(names).toContain("WhenMatrix");
+    expect(doc.selfCheckOk).toBe(true);
+  });
+
+  it("round-trips an edited Critique to valid JSX", () => {
+    const text = '<Critique weaknesses={["a", "b"]} improvements={["c"]} />\n';
+    const doc = loadDocument(text);
+    expect(doc.blocks[0].type).toBe("mdxLeaf");
+    doc.blocks[0].props = {
+      name: "Critique",
+      dataJson: JSON.stringify({ weaknesses: ["a", "b", "new"], improvements: ["c"] })
+    };
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    const doc2 = loadDocument(out);
+    expect(doc2.blocks[0].type).toBe("mdxLeaf");
+    const data = JSON.parse((doc2.blocks[0].props as { dataJson: string }).dataJson);
+    expect(data.weaknesses).toEqual(["a", "b", "new"]);
+    expect(data.improvements).toEqual(["c"]);
+  });
+
   it("keeps a multi-paragraph Callout as rawMdx (not silently flattened)", () => {
     const text = "<Callout>\n  First para.\n\n  Second para.\n</Callout>\n";
     const doc = loadDocument(text);

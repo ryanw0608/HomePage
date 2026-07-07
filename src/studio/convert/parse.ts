@@ -97,27 +97,42 @@ const CALLOUT_TYPES = new Set(["note", "insight", "warning", "question", "exam",
  * components, non-literal props) stays a render-first rawMdx card for now —
  * leaf-component form blocks land in P3.4/P3.5.
  */
+const strList = (v: unknown): string[] => (Array.isArray(v) ? v.map((s) => String(s)) : []);
+
 function mapComponent(node: MdastNode & { name?: string | null }): ConvBlock | null {
   const name = (node as { name?: string | null }).name ?? "";
-  if (name !== "Tldr" && name !== "Callout") return null;
 
-  const kids = node.children ?? [];
-  const singlePara = kids.length === 1 && kids[0].type === "paragraph";
-  const empty = kids.length === 0;
-  if (!singlePara && !empty) return null;
-
-  const props = readProps(node as never, {}); // throws on non-literal → rawMdx
-  const content = singlePara ? inlineFromMdast(kids[0].children ?? []) : [];
-
-  if (name === "Tldr") {
-    const label = typeof props.label === "string" ? props.label : "tldr";
-    return { type: "tldr", props: { label }, content };
+  // Container components: single inline paragraph → editable prose block.
+  if (name === "Tldr" || name === "Callout") {
+    const kids = node.children ?? [];
+    const singlePara = kids.length === 1 && kids[0].type === "paragraph";
+    const empty = kids.length === 0;
+    if (!singlePara && !empty) return null;
+    const props = readProps(node as never, {}); // throws on non-literal → rawMdx
+    const content = singlePara ? inlineFromMdast(kids[0].children ?? []) : [];
+    if (name === "Tldr") {
+      const label = typeof props.label === "string" ? props.label : "tldr";
+      return { type: "tldr", props: { label }, content };
+    }
+    const type = typeof props.type === "string" && CALLOUT_TYPES.has(props.type) ? props.type : "note";
+    const title = typeof props.title === "string" ? props.title : "";
+    return { type: "callout", props: { type, title }, content };
   }
 
-  const type = typeof props.type === "string" && CALLOUT_TYPES.has(props.type) ? props.type : "note";
-  const title = typeof props.title === "string" ? props.title : "";
-  return { type: "callout", props: { type, title }, content };
+  // Leaf list-form components → a dataJson block (no children slot). The
+  // structured prop object round-trips through JSON; the printer re-emits it.
+  if (LEAF_COMPONENTS.has(name)) {
+    if ((node.children ?? []).length > 0) return null; // leaf has no children
+    const props = readProps(node as never, {}); // throws on non-literal → rawMdx
+    return { type: "mdxLeaf", props: { name, dataJson: JSON.stringify(props) }, content: undefined };
+  }
+
+  return null;
 }
+
+const LEAF_COMPONENTS = new Set(["Critique", "WhenMatrix", "KeyTakeaways", "Recall"]);
+
+export { LEAF_COMPONENTS, strList };
 
 function reasonFor(type: string): RawReason {
   if (type.startsWith("mdxJsx")) return "unknown-component";

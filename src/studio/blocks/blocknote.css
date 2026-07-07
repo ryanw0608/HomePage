@@ -126,6 +126,43 @@
   width: 9rem;
 }
 
+.studio-leaf {
+  position: relative;
+}
+
+.studio-leaf-bar {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  z-index: 2;
+  display: flex;
+  gap: 0.4rem;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.studio-leaf:hover .studio-leaf-bar,
+.studio-leaf:focus-within .studio-leaf-bar {
+  opacity: 1;
+}
+
+.studio-leaf-fields {
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 0.7rem;
+  padding: 0.8rem;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--surface) 40%, var(--bg));
+}
+
+.studio-leaf-field {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  color: var(--faint);
+}
+
 .studio-slash-glyph {
   display: inline-flex;
   align-items: center;

@@ -7,6 +7,7 @@ import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs } from "@
 
 import { CalloutBlock } from "./Callout";
 import { InlineMath } from "./InlineMath";
+import { MdxLeafBlock } from "./MdxLeaf";
 import { RawMdxBlock } from "./RawMdx";
 import { TldrBlock } from "./Tldr";
 
@@ -17,7 +18,8 @@ export const studioSchema = BlockNoteSchema.create({
     // createReactBlockSpec returns a factory in BlockNote 0.51 — call it.
     rawMdx: RawMdxBlock(),
     tldr: TldrBlock(),
-    callout: CalloutBlock()
+    callout: CalloutBlock(),
+    mdxLeaf: MdxLeafBlock()
   },
   inlineContentSpecs: {
     ...defaultInlineContentSpecs,
