@@ -21,69 +21,106 @@ Done and pushed:
   Verified by an offline puppeteer smoke test with a mocked GitHub API
   (login→tree→edit→⌘S→PUT sha/content→CI pill all pass).
 
-**Done since:** P1b (live preview + properties panel + pre-commit diff, all review-fixed)
-and **P3.0** (BlockNote editor shell + raw/blocks toggle + vitest wired into CI) are shipped.
+**Done since:** P1b (live preview + properties panel + pre-commit diff), **P3.0** (BlockNote
+shell + raw/blocks toggle + vitest in CI), and **P3.1** (converter spine + byte-clean rawMdx
+floor + golden round-trip tests) are all shipped.
 
-**Enriched Studio roadmap (2026-07-07)** — after a design panel (SpanLock round-trip spine +
-all-11-components ambition; spec in the wf_5faafd47 journal) and a Docmost/AFFiNE reference-
-mining pass. Owner chose the fuller feature set over the scope-guardian's cut list. Order:
+---
 
-- **P3.1 converter spine**: `src/studio/convert/` (frozen mdast parser, verbatim-fence
-  frontmatter split, `document.ts` no-op short-circuit + load-time self-check + whole-doc
-  rawMdx fallback), `blocks/RawMdx.tsx`, `blocks/schema.ts`, and the **golden round-trip test
-  harness in CI** (the #1 enrichment: block-registration discipline — every block = typed
-  schema + MDX (de)serializer + view + golden test, or it doesn't merge). Byte-clean floor.
-- **P3.2 native markdown + inline**: parse/serialize/provenance for paragraph/heading(1–6)/
-  list(+regrouping)/quote/code/divider/image/**table**/inline-marks/inlineMath/displayMath.
-- **P3.3 container components + math**: Tldr, Callout, DisplayMath, InlineMath (+ TexField,
-  composition-safe inputs); **@-internal-note-link autocomplete** against notes.json.
-- **P3.4 leaf components I**: jsxAttrs literal evaluator + printer + acorn net +
-  `frontmatter.<field>` binding; Critique, WhenMatrix, KeyTakeaways (bound+literal), Recall;
-  Verdict read-only strip in the panel. **Mermaid** fenced-code block (dual render: Studio
-  preview + a lazy client-only renderer on public article pages).
-- **P3.5 leaf components II**: Derivation, FormulaCard, Figure, Bench (spreadsheet).
-- **P3.6 hardening + GA**: full 10-fixture golden suite, invariant guards, whole-doc fallback
-  banner, curated **metadata-rich fuzzy slash menu** (title/desc/searchTerms/icon, `hd1`→
-  Heading 1; only round-trippable blocks; Verdict excluded), then flip block mode to default.
-- **P2 database views**: Table + Kanban + **Gallery** card view over the collections;
-  **⌘F find/replace** (in-editor, ProseMirror); **+new template picker**; **unified ⌘K**
-  (Pagefind search + jump-to-note + new-from-template + a deferred Ask-AI entry).
-- **P4 history**: in-editor **diff + one-click Restore** over git (listCommits/getFileAtCommit;
-  restore = a new sha-based commit, never force-push); **backlinks panel** (build-time index
-  scanning MDX internal links) shown in the editor and optionally on public pages; Pagefind
-  in ⌘K.
-- **P5 AI assist**: selection/`/ai` toolbar → site-api `/ai/chat` GLM proxy; polish / continue
-  / zh↔en translate / summarize / generate tldr / expand-to-skeleton, rendered as an
-  accept/reject **suggestion diff** (never silent rewrite), "faithful, don't fabricate" prompt.
+## MASTER ROADMAP (consolidated 2026-07-07 — supersedes earlier scattered lists)
 
-**Later owner requests (2026-07-07, folded in):**
-- **Export** (P-Export): per-note export to **Markdown / HTML / PDF**, output must be clean and
-  correct. MD = the committed source (or a rendered variant); HTML = the built article HTML
-  (self-contained, inlined CSS); PDF = print-stylesheet via the browser. Client-only, no server.
-- **Insert page / page embed** (P3.3-adjacent): a "link to note" block + an inline `@`-note-link
-  (both serialize to a plain relative markdown link, lossless). "Subpages" in our flat file
-  model = a build-time child/index block listing related notes. No nested-page DB.
-- **Heading levels 1–6** (P3.2): the heading block supports H1–H6 (the design already specced
-  "extend level to 1–6, style 1–3"); H4–H6 round-trip as `####`/`#####`/`######` and get a
-  small styled treatment. Fixes "need an H4".
-- **Performance** (cross-cutting NFR): notes with many images / multiple page-embeds / long
-  bodies must stay smooth. Rules threaded through P3: lazy-load images (`loading="lazy"`,
-  intrinsic sizing), lazy-render embeds/mermaid (IntersectionObserver, only when scrolled into
-  view), debounce the converter/preview, and consider block virtualization if a note exceeds a
-  large block count. Public pages stay JS-light (enhancement-only).
-- **Note-page aesthetic refinement** (P-Polish): the published article pages (and the shared
-  `.article-body` the block editor reuses) get a dedicated typography/rhythm/detail pass —
-  higher-craft within Terminal-Luxe (fix the cramped author meta-rail wrap, refine vertical
-  rhythm, hierarchy, and component detailing). Since the editor shares `.article-body`, this
-  lifts both surfaces at once.
+Every accumulated owner request is folded in and de-duplicated below. Design basis: the P3
+design panel (SpanLock byte-identity spine + all-components ambition; spec in the wf_5faafd47
+journal) + the Docmost/AFFiNE enrichment pass. Owner chose the fuller Notion-parity set.
+Sequencing rule: **the block-editor converter is the backbone — most block/inline features
+depend on it, so Track A comes first**; independent tracks (page actions, links, AI, polish)
+follow. Every custom block ships schema + MDX (de)serializer + view + golden test or it doesn't
+merge (block-registration discipline).
 
-**Rejected for good (architecture conflict — do not revisit):** realtime multi-user collab
-(Yjs/CRDT sync server), server-side full-text/attachment search, semantic-RAG AI Q&A, comment
-threads + notifications, RBAC/roles/approval workflow, share links with per-link perms/expiry,
-edgeless canvas/whiteboard, Excalidraw/Draw.io embedded-scene nodes, Postgres/Redis/BullMQ,
-persistent DB "Bases", generic UI kits, paid version-retention tiers. All need a server/DB the
-static+git+single-user model doesn't have; their value is re-expressed statically (commits =
-versions, build-time indexes = search/backlinks, visibility frontmatter = access).
+### Track A — Block editor + lossless MDX converter (the backbone)
+
+- **P3.1 ✅** converter spine, verbatim-fence frontmatter, rawMdx escape hatch, golden tests.
+- **P3.2 native markdown + tables + math** — paragraph; **headings H1–H6** (fixes "need H4",
+  `####`+ round-trip); lists (+regrouping); **blockquote (引用)**; code block; divider; image;
+  **GFM tables** with in-cell **bold/italic/inline-code + inline math**, **row/column select +
+  batch ops**, and a polished table UI; inline marks; **inline `$…$` + display `$$…$$` math**
+  incl. **select-text→convert-to-math**. Math = KaTeX (site standard; see LaTeX note below).
+- **P3.3 containers + math editing + links** — Tldr, Callout, **toggle / collapsible blocks
+  (折叠标题)**, DisplayMath/InlineMath cards (TexField + KaTeX preview, IME-safe); **link to
+  page / `@`-note-link** autocomplete against notes.json (serializes to a plain relative link).
+- **P3.4 leaf components I + rich blocks** — Critique, WhenMatrix, KeyTakeaways(bound+literal),
+  Recall; jsxAttrs literal evaluator + printer + acorn net + `frontmatter.<field>` binding;
+  Verdict read-only strip in the panel; **Tabs block (选项卡, clickable)**; **Mermaid** fenced
+  block (lazy dual render). New MDX components (`<Tabs>`, `<Toggle>` if needed) get schema+test.
+- **P3.5 leaf components II** — Derivation, FormulaCard, Figure, Bench (spreadsheet).
+- **P3.6 hardening + GA** — full golden suite, invariant guards, whole-doc fallback banner,
+  curated **fuzzy slash menu** (title/desc/searchTerms/icon; only round-trippable blocks;
+  Verdict excluded), flip block mode to default. Raw mode stays as the always-available hatch.
+
+### Track B — Page actions (mostly independent of the converter)
+
+- **Read-only ↔ edit toggle** per open note.
+- **Copy page content**, **duplicate page** (new slug via contents API), **copy link** to the
+  note; **copy link to a selection/block** (anchor id) that renders a preview when pasted.
+- **Find in page (⌘F)** — in-editor ProseMirror find/replace + a raw-mode text find.
+- **Export**: **Markdown** (source), **HTML** (self-contained, inlined CSS), **PDF** (print
+  stylesheet). Clean, correct, client-only.
+- **TOC / outline (目录)** panel from headings (editor + article pages already have a TOC rail).
+
+### Track C — Links & hover previews
+
+- **Hover a note-link → preview card (peek)** — both in the editor and on public article pages
+  (build-time excerpt index; JS-enhancement only on public pages).
+- Copy-link-to-block feeds this (paste a block link → inline preview).
+
+### Track D — Data views & navigation (former "P2")
+
+- All-notes **Table** + paper **Kanban** + **Gallery** card view over the collections (views
+  over the MDX folder + frontmatter, edits commit via contents API — no DB).
+- **Template picker** in `+new`; **unified ⌘K** (Pagefind search + jump-to-note + new-from-
+  template + deferred Ask-AI entry).
+
+### Track E — History (former "P4")
+
+- In-editor **diff + one-click Restore** over git; **backlinks panel** (build-time link index).
+
+### Track F — AI assist (former "P5"; needs the site-api `/ai/chat` GLM proxy live)
+
+- Selection toolbar + `/ai`: **explain**, **translate (default → Simplified Chinese)**, polish,
+  continue, summarize, generate tldr, expand-to-skeleton. Careful prompts ("faithful to the
+  note, don't fabricate; translate to zh-CN unless told otherwise"), streamed as an
+  **accept/reject suggestion diff** — never a silent rewrite.
+
+### Track G — Annotations
+
+- Single-user anchored **annotations/notes-to-self** (round-trip to an HTML comment or a
+  sidecar), non-blocking. Lower priority.
+
+### Cross-cutting
+
+- **Performance NFR**: lazy images (`loading="lazy"` + intrinsic size), lazy embed/mermaid
+  render (IntersectionObserver), debounced converter/preview, block virtualization for very
+  long notes. Public pages stay JS-light.
+- **Aesthetic polish (P-Polish)**: dedicated typography/rhythm/detail pass on `.article-body`
+  (fixes the cramped author meta-rail wrap etc.); lifts both the public pages and the editor
+  since they share the stylesheet. Deferred by owner behind the editor build.
+
+### LaTeX note (decision when P3.2 math lands)
+
+Site standard is **KaTeX** (fast, already wired, covers essentially all common math). Owner
+wants "comprehensive LaTeX, correct + beautiful". KaTeX covers the vast majority; a few exotic
+LaTeX packages/macros it doesn't support would need **MathJax** (more complete, heavier, slower).
+Recommendation: stay on KaTeX, add any missing macros via KaTeX's `macros` option, and only
+revisit MathJax if a real note hits a genuine KaTeX gap. Flag at P3.2.
+
+### Rejected for good (architecture conflict — do not revisit)
+
+Realtime multi-user collab (Yjs/CRDT sync server), server-side full-text/attachment search,
+semantic-RAG AI Q&A, comment threads + notifications, RBAC/roles/approval, share links with
+per-link perms/expiry, edgeless canvas/whiteboard, Excalidraw/Draw.io embedded-scene nodes,
+Postgres/Redis/BullMQ, persistent DB "Bases", generic UI kits, paid version-retention tiers.
+All need a server/DB the static+git+single-user model lacks; value re-expressed statically
+(commits = versions, build-time indexes = search/backlinks, visibility frontmatter = access).
 
 Owner-side actions pending (any order, docs/admin-setup.md):
 
