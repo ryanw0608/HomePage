@@ -818,7 +818,7 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
       <div className="studio-editor-body">
         {view.mode === "blocks" ? (
           <Suspense fallback={<CenteredNote text="loading block editor…" />}>
-            <BlockEditor onChange={setText} text={text} />
+            <BlockEditor notePath={path} onChange={setText} text={text} />
           </Suspense>
         ) : view.preview ? (
           <SplitPane

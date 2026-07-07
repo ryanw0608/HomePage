@@ -3,7 +3,7 @@
  * progresses; each block registers here AND ships a converter (de)serializer
  * + golden test, or it doesn't merge (the block-registration discipline).
  */
-import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs } from "@blocknote/core";
+import { BlockNoteEditor, BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs } from "@blocknote/core";
 
 import { CalloutBlock } from "./Callout";
 import { InlineMath } from "./InlineMath";
@@ -28,3 +28,11 @@ export const studioSchema = BlockNoteSchema.create({
 });
 
 export type StudioSchema = typeof studioSchema;
+
+export type StudioEditor = BlockNoteEditor<
+  StudioSchema["blockSchema"],
+  StudioSchema["inlineContentSchema"],
+  StudioSchema["styleSchema"]
+>;
+
+export type StudioBlock = StudioEditor["document"][number];

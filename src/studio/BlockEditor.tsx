@@ -22,7 +22,9 @@ import { SuggestionMenuController, useCreateBlockNote } from "@blocknote/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { studioSchema } from "@/studio/blocks/schema";
+import { StudioSideMenu } from "@/studio/blocks/SideMenu";
 import { studioSlashItems } from "@/studio/blocks/slashMenu";
+import { StudioFormattingToolbar } from "@/studio/blocks/Toolbar";
 import {
   joinDocument,
   loadDocument,
@@ -35,9 +37,11 @@ import { blockKey, serializeBody, type ProvMap } from "@/studio/convert/serializ
 interface Props {
   text: string;
   onChange?: (next: string) => void;
+  /** note path (src/content/…/slug.mdx) — used for block "copy link". */
+  notePath?: string;
 }
 
-export default function BlockEditor({ text, onChange }: Props) {
+export default function BlockEditor({ text, onChange, notePath }: Props) {
   const mountText = useRef(text);
   const latestText = useRef(text);
   latestText.current = text;
@@ -106,13 +110,22 @@ export default function BlockEditor({ text, onChange }: Props) {
 
   return (
     <div className="studio-blocknote">
-      <BlockNoteView editor={editor} onChange={emit} slashMenu={false} theme="dark">
+      <BlockNoteView
+        editor={editor}
+        formattingToolbar={false}
+        onChange={emit}
+        sideMenu={false}
+        slashMenu={false}
+        theme="dark"
+      >
         <SuggestionMenuController
           getItems={async (query) =>
             filterSuggestionItems(studioSlashItems(editor as never), query)
           }
           triggerCharacter="/"
         />
+        <StudioFormattingToolbar />
+        <StudioSideMenu notePath={notePath} />
       </BlockNoteView>
     </div>
   );
