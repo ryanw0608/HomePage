@@ -4,11 +4,15 @@
  * Static client-only app: all writes go through the GitHub contents API
  * with the logged-in user's token (collaborator gate = write permission).
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { SLUG_RE, courseTemplate, paperTemplate } from "@/lib/templates.mjs";
 import Preview from "@/studio/Preview";
 import PropertiesPanel from "@/studio/PropertiesPanel";
+
+// BlockNote is heavy (ProseMirror + Mantine); load it only when a note is
+// opened in block mode so the login/tree paint stays instant.
+const BlockEditor = lazy(() => import("@/studio/BlockEditor"));
 import { REPO_SLUG, STUDIO, type StudioCollection } from "@/studio/config";
 import { getStoredToken, loginWithPopup, storeToken } from "@/studio/lib/auth";
 import { diffLines, diffStats, foldSameRuns } from "@/studio/lib/diff";
@@ -506,6 +510,7 @@ function NewNoteDialog(props: { token: string; onClose: () => void; onCreated: (
 type ConflictState = null | { remote: FileContent };
 
 interface ViewPrefs {
+  mode: "raw" | "blocks";
   preview: boolean;
   props: boolean;
 }
@@ -513,13 +518,14 @@ interface ViewPrefs {
 function loadViewPrefs(): ViewPrefs {
   try {
     const raw = window.localStorage.getItem("studio:view");
-    if (raw) return { preview: true, props: true, ...JSON.parse(raw) };
+    if (raw) return { mode: "raw", preview: true, props: true, ...JSON.parse(raw) };
   } catch {
     /* defaults below */
   }
-  // Live preview and properties on by default on wide screens.
+  // Live preview and properties on by default on wide screens. Raw is the
+  // default editing surface until the block converter reaches GA (P3.6).
   const wide = window.matchMedia("(min-width: 1100px)").matches;
-  return { preview: wide, props: wide };
+  return { mode: "raw", preview: wide, props: wide };
 }
 
 function collectionOf(path: string): StudioCollection {
@@ -542,17 +548,19 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
   const dirty = remote !== null && text !== remote.text;
   const collection = collectionOf(path);
 
-  const toggleView = useCallback((key: keyof ViewPrefs) => {
-    setView((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
-      try {
-        window.localStorage.setItem("studio:view", JSON.stringify(next));
-      } catch {
-        /* session-only prefs */
-      }
-      return next;
-    });
-  }, []);
+  const updateView = useCallback(
+    (patch: Partial<ViewPrefs>) =>
+      setView((prev) => {
+        const next = { ...prev, ...patch };
+        try {
+          window.localStorage.setItem("studio:view", JSON.stringify(next));
+        } catch {
+          /* session-only prefs */
+        }
+        return next;
+      }),
+    []
+  );
 
   // Always-fresh snapshot (written during render, so a macrotask scheduled
   // right after a state update reads the new value) — used by the unmount/
@@ -686,18 +694,38 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
         </p>
         <div className="studio-editor-actions">
           {savedAt && dirty && <span className="faint">draft saved {new Date(savedAt).toLocaleTimeString()}</span>}
-          <button
-            aria-pressed={view.preview}
-            className={`studio-btn studio-btn-ghost${view.preview ? " is-on" : ""}`}
-            onClick={() => toggleView("preview")}
-            type="button"
-          >
-            preview
-          </button>
+          <span className="studio-segment" role="group" aria-label="editor mode">
+            <button
+              aria-pressed={view.mode === "raw"}
+              className={`studio-seg-btn${view.mode === "raw" ? " is-on" : ""}`}
+              onClick={() => updateView({ mode: "raw" })}
+              type="button"
+            >
+              raw
+            </button>
+            <button
+              aria-pressed={view.mode === "blocks"}
+              className={`studio-seg-btn${view.mode === "blocks" ? " is-on" : ""}`}
+              onClick={() => updateView({ mode: "blocks" })}
+              type="button"
+            >
+              blocks
+            </button>
+          </span>
+          {view.mode === "raw" && (
+            <button
+              aria-pressed={view.preview}
+              className={`studio-btn studio-btn-ghost${view.preview ? " is-on" : ""}`}
+              onClick={() => updateView({ preview: !view.preview })}
+              type="button"
+            >
+              preview
+            </button>
+          )}
           <button
             aria-pressed={view.props}
             className={`studio-btn studio-btn-ghost${view.props ? " is-on" : ""}`}
-            onClick={() => toggleView("props")}
+            onClick={() => updateView({ props: !view.props })}
             type="button"
           >
             properties
@@ -772,16 +800,22 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
       )}
 
       <div className="studio-editor-body">
-        <div className={`studio-panes${view.preview ? " with-preview" : ""}`}>
-          <textarea
-            aria-label={`MDX source of ${filename}`}
-            className="studio-textarea"
-            onChange={(event) => setText(event.target.value)}
-            spellCheck={false}
-            value={text}
-          />
-          {view.preview && <Preview text={text} />}
-        </div>
+        {view.mode === "blocks" ? (
+          <Suspense fallback={<CenteredNote text="loading block editor…" />}>
+            <BlockEditor onChange={setText} text={text} />
+          </Suspense>
+        ) : (
+          <div className={`studio-panes${view.preview ? " with-preview" : ""}`}>
+            <textarea
+              aria-label={`MDX source of ${filename}`}
+              className="studio-textarea"
+              onChange={(event) => setText(event.target.value)}
+              spellCheck={false}
+              value={text}
+            />
+            {view.preview && <Preview text={text} />}
+          </div>
+        )}
         {view.props && <PropertiesPanel collection={collection} onChange={setText} text={text} />}
       </div>
 

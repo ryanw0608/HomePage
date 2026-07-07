@@ -1,0 +1,48 @@
+/*
+ * Terminal-Luxe skin for BlockNote/Mantine, scoped to .studio-blocknote so
+ * it can never leak into the published site. Overrides BlockNote's own CSS
+ * custom properties with the site's :root tokens (dark-first, JetBrains
+ * Mono, iris accent) — this adapts automatically to the theme toggle since
+ * the tokens flip with data-theme.
+ */
+.studio-blocknote {
+  --bn-colors-editor-text: var(--fg);
+  --bn-colors-editor-background: var(--bg);
+  --bn-colors-menu-text: var(--fg);
+  --bn-colors-menu-background: var(--surface);
+  --bn-colors-tooltip-text: var(--fg);
+  --bn-colors-tooltip-background: var(--surface);
+  --bn-colors-hovered-text: var(--fg);
+  --bn-colors-hovered-background: color-mix(in oklab, var(--surface) 70%, var(--bg));
+  --bn-colors-selected-text: var(--bg);
+  --bn-colors-selected-background: var(--accent);
+  --bn-colors-disabled-text: var(--faint);
+  --bn-colors-disabled-background: var(--surface);
+  --bn-colors-shadow: rgb(0 0 0 / 0.35);
+  --bn-colors-border: var(--line);
+  --bn-colors-side-menu: var(--faint);
+  --bn-color-highlight-text: var(--accent);
+  --bn-font-family: var(--font-mono);
+  --bn-border-radius: 4px;
+
+  height: 100%;
+  overflow-y: auto;
+}
+
+.studio-blocknote .bn-editor {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  padding-block: 1.1rem;
+}
+
+/* Match the published .article-body measure so WYSIWYG ~= what ships. */
+.studio-blocknote .bn-block-group {
+  max-width: 72ch;
+  margin-inline: auto;
+}
+
+.studio-blocknote .bn-inline-content code,
+.studio-blocknote code {
+  font-family: var(--font-mono);
+}
