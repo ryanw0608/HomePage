@@ -25,7 +25,45 @@ Done and pushed:
 shell + raw/blocks toggle + vitest in CI), **P3.1** (converter spine), and **P3.2a** (real
 Notion blocks) are all shipped.
 
-### CURRENT STATE — pick up here (2026-07-07, owner said "save progress, I'll call you back")
+### CURRENT STATE — pick up here (2026-07-08, four commits landed locally, NOT pushed)
+
+This session (2026-07-08) shipped four verified commits on `master` (local only — **not yet
+pushed**, hold for owner's go-ahead since push = GitHub Pages deploy):
+
+1. **Edit-in-place WYSIWYG leaf blocks** (`4996beb`): the 7 leaf components (Critique,
+   WhenMatrix, KeyTakeaways, Recall, Figure, FormulaCard, Derivation) render their REAL markup
+   with the text itself editable in place — click the rendered line and type, Enter adds an item,
+   Backspace on empty removes it (no forms, no markdown). New primitives in
+   `blocks/EditableField.tsx` (`AutoInput` single-line, `AutoArea` wrapping/auto-grow with
+   Enter/Backspace/autofocus). `RawMdx` source box auto-grows (no fixed-height scroll). Converter
+   hardened (`serialize.ts` `jsxAttr` forces JSON-escaped expression form on control chars so soft
+   newlines survive; a stray raw NUL byte removed). +2 golden tests (34 total). Adversarial
+   converter review run: **no corruption** across 89 cases.
+2. **Custom formatting toolbar + block side menu** (`blocks/Toolbar.tsx`, `blocks/SideMenu.tsx`,
+   `blocks/noteUrl.ts`): selection bubble has a "turn into" select (Text/H1-3/lists/quote/code,
+   hidden for custom cards), text styles, inline-math button, inline text/bg colour (inline =
+   text-only, fixes the whole-row-background complaint), link. Drag-handle "⋮⋮" menu: Copy link
+   (public URL + #heading anchor), Duplicate, Convert to, Delete. NOTE: BlockNote 0.51 does NOT
+   pass the hovered block to a custom side menu (sideMenu fn gets `{}`, dragHandleMenu gets
+   `{children}`) — the block is tracked from the DOM (`.bn-block-outer[data-id]`) and resolved via
+   `editor.getBlock()`.
+3. **Collapsible sidebar folders + note context menu** (`App.tsx`, `lib/github.ts` `deleteFile`,
+   `studio.css`): file-explorer-style tree — collapsible collections (chevron + count, persisted),
+   right-click / hover-"⋯" context menu (Open / Copy link / Duplicate / Rename… / Delete…), with a
+   rename slug dialog and a delete confirm. `NoteRow` now carries the blob sha.
+4. **Drag-handle alignment** (`3add2a5`): +/⋮⋮ top-align to the block's first line (was centred).
+
+All verified in-browser via puppeteer with a mocked GitHub API (edit-in-place typing, Enter/
+Backspace, toolbar contents, all four side-menu actions firing the right PUT/DELETE, sidebar
+collapse + context menu + duplicate/delete API calls). `npm run check` 0 errors, 34 tests, build green.
+
+**Deferred, needs an owner decision:** cross-collection drag-to-reparent and arbitrary
+sub-folders in the sidebar. The content model is flat — two fixed collection roots
+(course-notes, paper-reading) with *different* frontmatter schemas — so "reparenting" a note
+means a schema transformation, and sub-folders would break Astro's collection layout. Ask the
+owner whether they want (a) just move-between-the-two-collections (with frontmatter migration),
+(b) a virtual grouping layer (by area/tag/status) that doesn't touch the file layout, or (c)
+leave it flat.
 
 Both editing surfaces are live at `/studio/` and in good shape:
 
@@ -47,23 +85,24 @@ Both editing surfaces are live at `/studio/` and in good shape:
 Two adversarial reviews (component preview, converter) were run; all confirmed findings fixed
 with regression tests. Converter is the highest-risk code — keep every `convert/__tests__` green.
 
-### NEXT — remaining owner feedback (2026-07-07), in priority order
+### NEXT — remaining owner feedback (updated 2026-07-08), in priority order
 
-1. **P3.3c remaining component blocks**: Tldr/Callout + Critique/WhenMatrix/KeyTakeaways/Recall
-   are DONE (editable). Still to do as editable blocks: **Bench** (spreadsheet: columns+better
-   toggles, rows with cells aligned + baseline, number-vs-string preserved), **Derivation**
-   (title/open + ordered steps with TeX field + KaTeX preview), **FormulaCard** (title + formula
-   rows: name/TeX/note), **Figure** (src/alt/caption/source + resize/align). Pattern exists:
-   parse via `preview/jsxProps.ts` evaluator → mdxLeaf-style block or a bespoke spec; serialize
-   via the deterministic JSX printer in `serialize.ts` (`printLeafComponent`). Verdict stays
-   frontmatter-only.
-2. **P3.2b-rest**: GFM tables + display `$$` math as real blocks (simple lists already done).
-3. **Raw-mode slash**: `/` in the raw textarea inserts an MDX SOURCE snippet (not a block).
-4. **Colour/polish pass**: owner finds the palette "not high-end enough"; do a deliberate
-   Terminal-Luxe refinement pass on the editor chrome + `.article-body` (also the P-Polish item).
-5. **Staging/submit clarity**: "draft saved" indicator + `⌘S` commit already exist; make the
-   distinction (local draft vs commit-that-updates-the-site) more explicit if still unclear.
-6. Then the independent tracks (page actions/export/find, links/hover-preview, data views, git
+1. **DONE 2026-07-08**: all 7 leaf components (Critique/WhenMatrix/KeyTakeaways/Recall/Figure/
+   FormulaCard/Derivation) are now edit-in-place, plus Tldr/Callout. Custom formatting toolbar,
+   block side menu, collapsible sidebar + context menu, handle alignment — all shipped (see
+   CURRENT STATE). Figure edit-in-place exists but **image resize/align/caption-as-you-see-it**
+   (drag handles on the image) is still TODO.
+2. **Bench** is still a render-first rawMdx card — make it a real editable spreadsheet block
+   (columns + "better" toggles, rows with aligned cells + baseline, number-vs-string preserved).
+   Only leaf component not yet edit-in-place.
+3. **P3.2b-rest**: GFM tables + display `$$` math as real editable blocks (simple lists done;
+   display math renders read-only in a rawMdx card).
+4. **Sidebar reparent decision** (see CURRENT STATE "Deferred") — owner must pick the model.
+5. **Export** MD / PDF / HTML; **minimap** + **git-gutter** change markers (vs committed version).
+6. **Raw-mode slash**: `/` in the raw textarea inserts an MDX SOURCE snippet (not a block).
+7. **Colour/polish pass**: owner finds the palette "not high-end enough"; deliberate Terminal-Luxe
+   refinement of editor chrome + `.article-body`.
+8. Then the independent tracks (page actions/export/find, links/hover-preview, data views, git
    history, AI assist) per the master roadmap below.
 
 ---
