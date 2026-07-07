@@ -22,8 +22,47 @@ Done and pushed:
   (login→tree→edit→⌘S→PUT sha/content→CI pill all pass).
 
 **Done since:** P1b (live preview + properties panel + pre-commit diff), **P3.0** (BlockNote
-shell + raw/blocks toggle + vitest in CI), and **P3.1** (converter spine + byte-clean rawMdx
-floor + golden round-trip tests) are all shipped.
+shell + raw/blocks toggle + vitest in CI), **P3.1** (converter spine), and **P3.2a** (real
+Notion blocks) are all shipped.
+
+### CURRENT STATE — pick up here (2026-07-07, owner said "save progress, I'll call you back")
+
+Both editing surfaces are live at `/studio/` and in good shape:
+
+- **Raw mode**: draggable source|preview split (`SplitPane`) + synced scroll; the preview
+  renders the REAL 11 MDX components (browser ports in `src/studio/preview/`), not placeholders,
+  hardened against XSS (control-char URL scrub) + render crashes.
+- **Block mode (P3.2a)**: the note parses into real, editable BlockNote blocks —
+  heading 1–6 (+ toggle headings), paragraph, single-para quote, code, and inline `$…$` math —
+  via the byte-exact converter in `src/studio/convert/` (parse→segments with source-slice
+  provenance; unchanged block = verbatim slice → byte-identical; edited block = minimal
+  house-style diff; self-check + whole-doc rawMdx fallback). Golden + edit-safety tests green
+  (`convert/__tests__/`). Components (Tldr/Callout/Bench/Critique/WhenMatrix/…), lists, tables,
+  and display math are **render-first rawMdx cards** (the real rendering shown; raw source behind
+  a hover "source" toggle). Curated slash menu (`blocks/slashMenu.tsx`): H1–3, Paragraph,
+  Bullet/Numbered List, Quote, Code — deduped, only round-trippable blocks.
+
+Two adversarial reviews (component preview, converter) were run; all confirmed findings fixed
+with regression tests. Converter is the highest-risk code — keep every `convert/__tests__` green.
+
+### NEXT — remaining owner feedback (2026-07-07), in priority order
+
+1. **P3.3 real editable component blocks** (the big one — "many blocks aren't WYSIWYG"): turn the
+   render-first rawMdx cards into真-editable blocks. Start with the container components
+   **Tldr, Callout** (inline-editable prose slot), then leaf components (Bench spreadsheet,
+   Critique/WhenMatrix/KeyTakeaways/Recall string-list forms, Derivation/FormulaCard TeX fields,
+   Figure). Each: BlockNote block spec + converter parse (MDX JSX→block via `preview/jsxProps.ts`
+   evaluator, already built) + house-style JSX printer + golden fixture. Verdict stays
+   frontmatter-only (never a block).
+2. **P3.2b**: lists + GFM tables + display-math as real blocks (list N-item regrouping on
+   serialize; table cell marks + row/col ops).
+3. **Raw-mode slash**: `/` in the raw textarea inserts an MDX SOURCE snippet (not a block).
+4. **Colour/polish pass**: owner finds the palette "not high-end enough"; do a deliberate
+   Terminal-Luxe refinement pass on the editor chrome + `.article-body` (also the P-Polish item).
+5. **Staging/submit clarity**: "draft saved" indicator + `⌘S` commit already exist; make the
+   distinction (local draft vs commit-that-updates-the-site) more explicit if still unclear.
+6. Then the independent tracks (page actions/export/find, links/hover-preview, data views, git
+   history, AI assist) per the master roadmap below.
 
 ---
 
