@@ -32,30 +32,32 @@ Both editing surfaces are live at `/studio/` and in good shape:
 - **Raw mode**: draggable source|preview split (`SplitPane`) + synced scroll; the preview
   renders the REAL 11 MDX components (browser ports in `src/studio/preview/`), not placeholders,
   hardened against XSS (control-char URL scrub) + render crashes.
-- **Block mode (P3.2a)**: the note parses into real, editable BlockNote blocks —
-  heading 1–6 (+ toggle headings), paragraph, single-para quote, code, and inline `$…$` math —
-  via the byte-exact converter in `src/studio/convert/` (parse→segments with source-slice
+- **Block mode (P3.2a/P3.2b/P3.3)**: the note parses into real, editable BlockNote blocks via
+  the byte-exact converter in `src/studio/convert/` (parse→segments with source-slice
   provenance; unchanged block = verbatim slice → byte-identical; edited block = minimal
-  house-style diff; self-check + whole-doc rawMdx fallback). Golden + edit-safety tests green
-  (`convert/__tests__/`). Components (Tldr/Callout/Bench/Critique/WhenMatrix/…), lists, tables,
-  and display math are **render-first rawMdx cards** (the real rendering shown; raw source behind
-  a hover "source" toggle). Curated slash menu (`blocks/slashMenu.tsx`): H1–3, Paragraph,
-  Bullet/Numbered List, Quote, Code — deduped, only round-trippable blocks.
+  house-style diff; self-check + whole-doc rawMdx fallback). NOW real blocks:
+  heading 1–6 (+ toggle headings), paragraph, quote, code, **simple lists** (per-item,
+  P3.2b), inline `$…$` math, and the components **Tldr, Callout** (inline-editable prose)
+  + **Critique, WhenMatrix, KeyTakeaways, Recall** (mdxLeaf: render-first + hover "edit
+  fields" form; P3.3). Still render-first rawMdx cards: **Bench, Derivation, FormulaCard,
+  Figure** + tables + display `$$` math + nested/loose lists. Curated slash menu
+  (`blocks/slashMenu.tsx`) has a Blocks group + a Components group. Golden + edit-safety tests
+  green (`convert/__tests__/`, 28 tests); each block reviewed adversarially, findings fixed.
 
 Two adversarial reviews (component preview, converter) were run; all confirmed findings fixed
 with regression tests. Converter is the highest-risk code — keep every `convert/__tests__` green.
 
 ### NEXT — remaining owner feedback (2026-07-07), in priority order
 
-1. **P3.3 real editable component blocks** (the big one — "many blocks aren't WYSIWYG"): turn the
-   render-first rawMdx cards into真-editable blocks. Start with the container components
-   **Tldr, Callout** (inline-editable prose slot), then leaf components (Bench spreadsheet,
-   Critique/WhenMatrix/KeyTakeaways/Recall string-list forms, Derivation/FormulaCard TeX fields,
-   Figure). Each: BlockNote block spec + converter parse (MDX JSX→block via `preview/jsxProps.ts`
-   evaluator, already built) + house-style JSX printer + golden fixture. Verdict stays
-   frontmatter-only (never a block).
-2. **P3.2b**: lists + GFM tables + display-math as real blocks (list N-item regrouping on
-   serialize; table cell marks + row/col ops).
+1. **P3.3c remaining component blocks**: Tldr/Callout + Critique/WhenMatrix/KeyTakeaways/Recall
+   are DONE (editable). Still to do as editable blocks: **Bench** (spreadsheet: columns+better
+   toggles, rows with cells aligned + baseline, number-vs-string preserved), **Derivation**
+   (title/open + ordered steps with TeX field + KaTeX preview), **FormulaCard** (title + formula
+   rows: name/TeX/note), **Figure** (src/alt/caption/source + resize/align). Pattern exists:
+   parse via `preview/jsxProps.ts` evaluator → mdxLeaf-style block or a bespoke spec; serialize
+   via the deterministic JSX printer in `serialize.ts` (`printLeafComponent`). Verdict stays
+   frontmatter-only.
+2. **P3.2b-rest**: GFM tables + display `$$` math as real blocks (simple lists already done).
 3. **Raw-mode slash**: `/` in the raw textarea inserts an MDX SOURCE snippet (not a block).
 4. **Colour/polish pass**: owner finds the palette "not high-end enough"; do a deliberate
    Terminal-Luxe refinement pass on the editor chrome + `.article-body` (also the P-Polish item).
