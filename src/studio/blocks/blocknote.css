@@ -57,7 +57,10 @@
    the dark surface + mono + iris palette so the editor reads as one system. */
 
 .studio-blocknote .bn-side-menu {
-  align-items: center;
+  /* Align the +/⋮⋮ controls with the block's FIRST line (Notion behaviour),
+     not the vertical centre of a tall/multi-line block. */
+  align-items: flex-start;
+  padding-top: 0.12rem;
 }
 
 .studio-blocknote .bn-side-menu .bn-button {
