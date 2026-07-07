@@ -69,9 +69,28 @@ function houseStyle(block: ConvBlock): string {
     }
     case "rawMdx":
       return String((block.props as { source?: string })?.source ?? "");
+    case "tldr": {
+      const label = String((block.props as { label?: string })?.label ?? "tldr");
+      const attrs = label && label !== "tldr" ? ` label=${jsxAttr(label)}` : "";
+      return `<Tldr${attrs}>\n  ${inline()}\n</Tldr>`;
+    }
+    case "callout": {
+      const props = (block.props ?? {}) as { type?: string; title?: string };
+      const type = props.type && props.type !== "note" ? ` type=${jsxAttr(props.type)}` : "";
+      const title = props.title ? ` title=${jsxAttr(props.title)}` : "";
+      return `<Callout${type}${title}>\n  ${inline()}\n</Callout>`;
+    }
     default:
       throw new Error(`no house-style serializer for block "${block.type}"`);
   }
+}
+
+/* Quote a JSX string attribute; flips to single quotes when the value
+ * contains a double quote (JSX has no in-string escapes). */
+function jsxAttr(value: string): string {
+  if (!value.includes('"')) return `"${value}"`;
+  if (!value.includes("'")) return `'${value}'`;
+  return JSON.stringify(value.replace(/"/g, "”")); // both quote kinds: degrade politely
 }
 
 function isEmptyParagraph(block: ConvBlock): boolean {

@@ -80,6 +80,61 @@
   font-family: var(--font-mono);
 }
 
+/* editable component blocks (Tldr/Callout share the .mdx-preview CSS) */
+
+.studio-component-block {
+  width: 100%;
+}
+
+.studio-component-block .tldr,
+.studio-component-block .callout {
+  margin-block: 0.35rem;
+}
+
+.studio-callout-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.studio-callout-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.studio-component-block:hover .studio-callout-controls,
+.studio-component-block:focus-within .studio-callout-controls {
+  opacity: 1;
+}
+
+.studio-callout-select,
+.studio-callout-title {
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--surface) 80%, var(--bg));
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.68rem;
+  padding: 0.08rem 0.35rem;
+}
+
+.studio-callout-title {
+  width: 9rem;
+}
+
+.studio-slash-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
 /* inline math atoms */
 .studio-inline-math {
   display: inline-block;

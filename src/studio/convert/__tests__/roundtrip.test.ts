@@ -60,6 +60,43 @@ describe("byte-clean round-trip (P3.2 real-block converter)", () => {
     expect(roundTrip(text)).toBe(text); // and still byte-identical
   });
 
+  it("parses Tldr/Callout as real editable container blocks (seeds)", () => {
+    const raw = readFileSync(SEEDS[0], "utf8").replace(/\r\n/g, "\n");
+    const doc = loadDocument(raw);
+    const types = doc.blocks.map((b) => b.type);
+    expect(types).toContain("tldr");
+    expect(types).toContain("callout");
+    expect(doc.selfCheckOk).toBe(true);
+  });
+
+  it("round-trips an edited Callout as valid JSX with math intact", () => {
+    const text = '<Callout type="definition" title="def · x">\n  Original body.\n</Callout>\n';
+    const doc = loadDocument(text);
+    expect(doc.blocks[0].type).toBe("callout");
+    doc.blocks[0].content = [
+      { type: "text", text: "Edited with ", styles: {} },
+      { type: "inlineMath", props: { tex: "E=mc^2" } },
+      { type: "text", text: " and ", styles: {} },
+      { type: "text", text: "bold", styles: { bold: true } }
+    ] as never;
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    // reparse: still one callout block with the same props + edited content
+    const doc2 = loadDocument(out);
+    expect(doc2.blocks[0].type).toBe("callout");
+    expect((doc2.blocks[0].props as { type: string }).type).toBe("definition");
+    expect((doc2.blocks[0].props as { title: string }).title).toBe("def · x");
+    const texts = (doc2.blocks[0].content as { text?: string; type: string }[]).map((c) => c.type);
+    expect(texts).toContain("inlineMath");
+  });
+
+  it("keeps a multi-paragraph Callout as rawMdx (not silently flattened)", () => {
+    const text = "<Callout>\n  First para.\n\n  Second para.\n</Callout>\n";
+    const doc = loadDocument(text);
+    expect(doc.blocks[0].type).toBe("rawMdx");
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    expect(out).toBe(text);
+  });
+
   it("falls back to rawMdx for a list/table but stays byte-identical", () => {
     const text = "- one\n- two\n\n| a | b |\n| - | - |\n| 1 | 2 |\n";
     const doc = loadDocument(text);

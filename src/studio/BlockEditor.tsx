@@ -13,6 +13,8 @@
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import "@/studio/blocks/blocknote.css";
+// Editable component blocks (Tldr/Callout) reuse the ported component styles.
+import "@/studio/preview/components.css";
 
 import { filterSuggestionItems, type PartialBlock } from "@blocknote/core";
 import { BlockNoteView } from "@blocknote/mantine";

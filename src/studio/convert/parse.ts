@@ -10,6 +10,8 @@
  * raw html, footnotes) becomes a rawMdx block whose source is that node's
  * slice — visible and editable, upgraded to real blocks in later steps.
  */
+import { readProps } from "@/studio/preview/jsxProps";
+
 import { inlineFromMdast } from "./inline";
 import { parseBody } from "./mdast";
 import { rawMdxBlock, type ConvBlock, type RawReason } from "./rawmdx";
@@ -77,12 +79,44 @@ function mapNode(node: MdastNode): ConvBlock | null {
           props: { language: node.lang || "text" },
           content: [{ type: "text", text: node.value ?? "", styles: {} }]
         };
+      case "mdxJsxFlowElement":
+        return mapComponent(node);
       default:
         return null;
     }
   } catch {
     return null; // unsupported inline etc. → rawMdx
   }
+}
+
+const CALLOUT_TYPES = new Set(["note", "insight", "warning", "question", "exam", "definition"]);
+
+/*
+ * Container components with a SINGLE inline paragraph become real editable
+ * blocks (Tldr, Callout). Anything else (multi-paragraph children, other
+ * components, non-literal props) stays a render-first rawMdx card for now —
+ * leaf-component form blocks land in P3.4/P3.5.
+ */
+function mapComponent(node: MdastNode & { name?: string | null }): ConvBlock | null {
+  const name = (node as { name?: string | null }).name ?? "";
+  if (name !== "Tldr" && name !== "Callout") return null;
+
+  const kids = node.children ?? [];
+  const singlePara = kids.length === 1 && kids[0].type === "paragraph";
+  const empty = kids.length === 0;
+  if (!singlePara && !empty) return null;
+
+  const props = readProps(node as never, {}); // throws on non-literal → rawMdx
+  const content = singlePara ? inlineFromMdast(kids[0].children ?? []) : [];
+
+  if (name === "Tldr") {
+    const label = typeof props.label === "string" ? props.label : "tldr";
+    return { type: "tldr", props: { label }, content };
+  }
+
+  const type = typeof props.type === "string" && CALLOUT_TYPES.has(props.type) ? props.type : "note";
+  const title = typeof props.title === "string" ? props.title : "";
+  return { type: "callout", props: { type, title }, content };
 }
 
 function reasonFor(type: string): RawReason {
