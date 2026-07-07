@@ -14,12 +14,13 @@ import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import "@/studio/blocks/blocknote.css";
 
-import type { PartialBlock } from "@blocknote/core";
+import { filterSuggestionItems, type PartialBlock } from "@blocknote/core";
 import { BlockNoteView } from "@blocknote/mantine";
-import { useCreateBlockNote } from "@blocknote/react";
+import { SuggestionMenuController, useCreateBlockNote } from "@blocknote/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { studioSchema } from "@/studio/blocks/schema";
+import { studioSlashItems } from "@/studio/blocks/slashMenu";
 import {
   joinDocument,
   loadDocument,
@@ -103,7 +104,14 @@ export default function BlockEditor({ text, onChange }: Props) {
 
   return (
     <div className="studio-blocknote">
-      <BlockNoteView editor={editor} onChange={emit} theme="dark" />
+      <BlockNoteView editor={editor} onChange={emit} slashMenu={false} theme="dark">
+        <SuggestionMenuController
+          getItems={async (query) =>
+            filterSuggestionItems(studioSlashItems(editor as never), query)
+          }
+          triggerCharacter="/"
+        />
+      </BlockNoteView>
     </div>
   );
 }
