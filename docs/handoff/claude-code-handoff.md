@@ -52,10 +52,21 @@ merge (block-registration discipline).
   Recall; jsxAttrs literal evaluator + printer + acorn net + `frontmatter.<field>` binding;
   Verdict read-only strip in the panel; **Tabs block (选项卡, clickable)**; **Mermaid** fenced
   block (lazy dual render). New MDX components (`<Tabs>`, `<Toggle>` if needed) get schema+test.
-- **P3.5 leaf components II** — Derivation, FormulaCard, Figure, Bench (spreadsheet).
+- **P3.5 leaf components II** — Derivation, FormulaCard, **Figure (image resize + left/center/
+  right align + caption)**, Bench (spreadsheet). Images: `loading="lazy"`, intrinsic sizing.
 - **P3.6 hardening + GA** — full golden suite, invariant guards, whole-doc fallback banner,
   curated **fuzzy slash menu** (title/desc/searchTerms/icon; only round-trippable blocks;
   Verdict excluded), flip block mode to default. Raw mode stays as the always-available hatch.
+
+### Track A′ — Raw (source) editor polish
+
+- **✅ draggable source|preview split + synced scroll** (SplitPane, proportional sync).
+- **Minimap** beside the scrollbar (VSCode-style scaled overview of the long note) for
+  fast navigation of long notes.
+- **Git-style change gutter**: added / modified / deleted line markers vs the last committed
+  version (compute a line diff against `remote.text`, render a thin gutter beside the source).
+- Later: line-accurate (not just proportional) scroll sync if the proportional feel isn't
+  precise enough for dense notes.
 
 ### Track B — Page actions (mostly independent of the converter)
 
