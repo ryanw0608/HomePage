@@ -131,6 +131,26 @@ describe("byte-clean round-trip (P3.2 real-block converter)", () => {
     expect(data.formulas[1]).toEqual({ name: "b", tex: "y" });
   });
 
+  it("round-trips a Figure with width+align (byte-identical; edited width reparses)", () => {
+    const text = '<Figure src="/m/a.png" alt="a" caption="cap" width="60%" align="center" />\n';
+    const doc = loadDocument(text);
+    expect(doc.blocks[0].type).toBe("mdxLeaf");
+    const data0 = JSON.parse((doc.blocks[0].props as { dataJson: string }).dataJson);
+    expect(data0.width).toBe("60%");
+    expect(data0.align).toBe("center");
+    expect(roundTrip(text)).toBe(text); // unchanged → byte-identical
+
+    // edit only the width (and align) → reparse still carries both props
+    doc.blocks[0].props = {
+      name: "Figure",
+      dataJson: JSON.stringify({ src: "/m/a.png", alt: "a", caption: "cap", width: "40%", align: "right" })
+    };
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    const data = JSON.parse((loadDocument(out).blocks[0].props as { dataJson: string }).dataJson);
+    expect(data.width).toBe("40%");
+    expect(data.align).toBe("right");
+  });
+
   it("round-trips an edited Critique to valid JSX", () => {
     const text = '<Critique weaknesses={["a", "b"]} improvements={["c"]} />\n';
     const doc = loadDocument(text);

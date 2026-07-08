@@ -546,10 +546,140 @@
   flex-shrink: 0;
 }
 
-.studio-figure-edit {
+/* WYSIWYG figure: the rendered image is the editing surface; controls surface
+ * on hover so the resting state reads like the published page. */
+.studio-figure {
+  position: relative;
+  margin: 1.5rem 0;
+  max-width: 100%;
+}
+
+.studio-figure-frame {
+  position: relative;
+  display: block;
+}
+
+.studio-figure-frame img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.studio-figure-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 6rem;
   border: 1px dashed var(--edge);
   border-radius: 6px;
-  padding: 0.7rem 0.9rem;
+  color: var(--faint);
+  font-size: 0.78rem;
+}
+
+/* right-edge resize handle — appears on hover, drag to set width % */
+.studio-figure-handle {
+  position: absolute;
+  top: 50%;
+  right: -3px;
+  width: 8px;
+  height: 42px;
+  transform: translateY(-50%);
+  border-radius: 4px;
+  background: var(--accent);
+  cursor: ew-resize;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.studio-figure:hover .studio-figure-handle {
+  opacity: 0.85;
+}
+
+.studio-figure-toolbar {
+  position: absolute;
+  top: -0.6rem;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  z-index: 3;
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.25rem 0.35rem;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.studio-figure:hover .studio-figure-toolbar,
+.studio-figure:focus-within .studio-figure-toolbar {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.studio-fig-group {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.studio-fig-group + .studio-fig-group {
+  border-left: 1px solid var(--line);
+  padding-left: 0.4rem;
+}
+
+.studio-fig-btn {
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.72rem;
+  line-height: 1;
+  padding: 0.24rem 0.4rem;
+  cursor: pointer;
+}
+
+.studio-fig-btn:hover {
+  color: var(--fg);
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
+}
+
+.studio-fig-btn.on {
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 20%, transparent);
+}
+
+.studio-fig-pct {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  color: var(--faint);
+  font-size: 0.72rem;
+}
+
+.studio-fig-pct .studio-edit-input {
+  width: 2.6rem;
+  text-align: right;
+  color: var(--muted);
+  font-size: 0.72rem;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.studio-fig-pct .studio-edit-input::-webkit-outer-spin-button,
+.studio-fig-pct .studio-edit-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.studio-figure figcaption {
+  margin-top: 0.5rem;
+  color: var(--muted);
+  font-size: 0.9375rem;
 }
 
 .studio-figure-src,
@@ -557,6 +687,12 @@
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
+}
+
+.studio-figure-src {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--muted);
 }
 
 .studio-field-tag {

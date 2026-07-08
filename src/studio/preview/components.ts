@@ -40,6 +40,33 @@ function numeric(value: unknown): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+const WIDTH_RE = /^\d+(\.\d+)?(%|px|rem|em|vw|ch)$/;
+
+/** A Figure `width` prop is honoured only if it is a whitelisted CSS length. */
+export function safeFigureWidth(width: unknown): string | undefined {
+  if (typeof width !== "string") return undefined;
+  const w = width.trim();
+  return WIDTH_RE.test(w) ? w : undefined;
+}
+
+export function figureAlign(align: unknown): "center" | "right" | "left" | undefined {
+  return align === "center" || align === "right" || align === "left" ? align : undefined;
+}
+
+/* The one source of truth for a Figure's inline style, shared by the Studio
+ * preview port (this file), the Studio editor block (MdxLeaf), and mirrored in
+ * Figure.astro — so the editing surface, the preview, and the published page
+ * are pixel-identical ("所见即所发布"). */
+export function figureStyle(width: unknown, align: unknown): string {
+  const w = safeFigureWidth(width);
+  const a = figureAlign(align);
+  const parts: string[] = [];
+  if (w) parts.push(`width: ${w}`);
+  if (a === "center") parts.push("margin-inline: auto");
+  else if (a === "right") parts.push("margin-left: auto; margin-right: 0");
+  return parts.join("; ");
+}
+
 type Props = Record<string, unknown>;
 type Renderer = (props: Props, childrenHtml: string) => string;
 
@@ -168,7 +195,9 @@ const RENDERERS: Record<string, Renderer> = {
     const parts = [esc(props.caption)];
     if (props.source && props.sourceUrl) parts.push(` Source: <a href="${esc(props.sourceUrl)}">${esc(props.source)}</a>.`);
     else if (props.source) parts.push(` Source: ${esc(props.source)}.`);
-    return `<figure><img src="${esc(resolved)}" alt="${esc(props.alt)}" loading="lazy" /><figcaption>${parts.join("")}</figcaption></figure>`;
+    const style = figureStyle(props.width, props.align);
+    const styleAttr = style ? ` style="${esc(style)}"` : "";
+    return `<figure${styleAttr}><img src="${esc(resolved)}" alt="${esc(props.alt)}" loading="lazy" /><figcaption>${parts.join("")}</figcaption></figure>`;
   }
 };
 

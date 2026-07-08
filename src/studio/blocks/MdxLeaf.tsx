@@ -8,9 +8,10 @@
  */
 import { createReactBlockSpec } from "@blocknote/react";
 import katex from "katex";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 
 import { AutoArea, AutoInput } from "@/studio/blocks/EditableField";
+import { figureAlign, safeFigureWidth } from "@/studio/preview/components";
 // AutoArea = wrapping/auto-grow field for long lines; AutoInput = short single-line labels.
 import "@/studio/preview/components.css";
 
@@ -79,6 +80,144 @@ function TexInput({ value, onChange, placeholder }: { value: string; onChange: (
       <AutoInput className="studio-tex-src" onChange={onChange} placeholder={placeholder} value={value} />
       {value && <span className="studio-tex-preview" dangerouslySetInnerHTML={{ __html: preview }} />}
     </span>
+  );
+}
+
+/* -------------------------------------------------------------- Figure block
+ * WYSIWYG: the rendered <figure> IS the editing surface. The real image shows
+ * at its live width/alignment; hovering reveals a toolbar (align L/C/R, width
+ * S/M/Full + %), and a right-edge handle drag-resizes it. Caption, alt and src
+ * edit in place. width/align are plain props that round-trip through dataJson.
+ */
+const ALIGNS = ["left", "center", "right"] as const;
+const ALIGN_GLYPH: Record<(typeof ALIGNS)[number], string> = { left: "⬅", center: "↔", right: "➡" };
+const WIDTH_PRESETS = [
+  { label: "S", value: "33%" },
+  { label: "M", value: "66%" },
+  { label: "Full", value: undefined }
+] as const;
+
+function resolveFigureSrc(src: string): string {
+  if (!src) return "";
+  const base = import.meta.env.BASE_URL || "/";
+  return /^(https?:)?\/\//.test(src) || src.startsWith("/") ? src : `${base}${src}`;
+}
+
+function FigureEditor({
+  data,
+  set
+}: {
+  data: Record<string, unknown>;
+  set: (key: string, value: unknown) => void;
+}) {
+  const figRef = useRef<HTMLElement>(null);
+  const src = String(data.src ?? "");
+  const resolved = resolveFigureSrc(src);
+  const width = safeFigureWidth(data.width);
+  const align = figureAlign(data.align) ?? "left";
+  const widthPct = width && width.endsWith("%") ? Number.parseInt(width, 10) : undefined;
+
+  const figStyle: CSSProperties = {};
+  if (width) figStyle.width = width;
+  if (align === "center") figStyle.marginInline = "auto";
+  else if (align === "right") {
+    figStyle.marginLeft = "auto";
+    figStyle.marginRight = "0";
+  }
+
+  // Drag the right-edge handle → width becomes a % of the block column, live.
+  function startResize(e: ReactPointerEvent) {
+    e.preventDefault();
+    const fig = figRef.current;
+    const parent = fig?.parentElement;
+    if (!fig || !parent) return;
+    const move = (ev: PointerEvent) => {
+      const parentW = parent.clientWidth || 1;
+      const left = fig.getBoundingClientRect().left;
+      let pct = Math.round(((ev.clientX - left) / parentW) * 100);
+      pct = Math.max(15, Math.min(100, pct));
+      set("width", pct >= 100 ? undefined : `${pct}%`);
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
+
+  return (
+    <figure className="studio-figure" ref={figRef} style={figStyle}>
+      <div className="studio-figure-toolbar" contentEditable={false}>
+        <div className="studio-fig-group" role="group" aria-label="align">
+          {ALIGNS.map((a) => (
+            <button
+              aria-label={`align ${a}`}
+              aria-pressed={align === a}
+              className={`studio-fig-btn${align === a ? " on" : ""}`}
+              key={a}
+              onClick={() => set("align", a === "left" ? undefined : a)}
+              type="button"
+            >
+              {ALIGN_GLYPH[a]}
+            </button>
+          ))}
+        </div>
+        <div className="studio-fig-group" role="group" aria-label="width">
+          {WIDTH_PRESETS.map((p) => (
+            <button
+              aria-pressed={p.value === width || (!p.value && !width)}
+              className={`studio-fig-btn${p.value === width || (!p.value && !width) ? " on" : ""}`}
+              key={p.label}
+              onClick={() => set("width", p.value)}
+              type="button"
+            >
+              {p.label}
+            </button>
+          ))}
+          <span className="studio-fig-pct">
+            <input
+              aria-label="width percent"
+              className="studio-edit-input"
+              max={100}
+              min={15}
+              onChange={(e) => {
+                const n = Number.parseInt(e.target.value, 10);
+                set("width", Number.isFinite(n) ? `${Math.max(15, Math.min(100, n))}%` : undefined);
+              }}
+              placeholder="—"
+              type="number"
+              value={widthPct ?? ""}
+            />
+            %
+          </span>
+        </div>
+      </div>
+      <div className="studio-figure-frame">
+        {resolved ? (
+          <img alt={String(data.alt ?? "")} src={resolved} />
+        ) : (
+          <div className="studio-figure-empty">no image — set a src below</div>
+        )}
+        <span
+          aria-hidden="true"
+          className="studio-figure-handle"
+          onPointerDown={startResize}
+          title="drag to resize"
+        />
+      </div>
+      <div className="studio-figure-src">
+        <span className="studio-field-tag">src</span>
+        <AutoInput onChange={(v) => set("src", v)} placeholder="media/…" value={src} />
+      </div>
+      <figcaption>
+        <AutoInput onChange={(v) => set("caption", v)} placeholder="caption…" value={String(data.caption ?? "")} />
+        <span className="studio-figure-meta">
+          <span className="studio-field-tag">alt</span>
+          <AutoInput onChange={(v) => set("alt", v)} placeholder="alt text" value={String(data.alt ?? "")} />
+        </span>
+      </figcaption>
+    </figure>
   );
 }
 
@@ -170,21 +309,7 @@ function LeafEditor({ name, data, set }: { name: string; data: Record<string, un
     );
   }
   if (name === "Figure") {
-    return (
-      <figure className="studio-figure-edit">
-        <div className="studio-figure-src">
-          <span className="studio-field-tag">src</span>
-          <AutoInput onChange={(v) => set("src", v)} placeholder="media/…" value={String(data.src ?? "")} />
-        </div>
-        <figcaption>
-          <AutoInput onChange={(v) => set("caption", v)} placeholder="caption…" value={String(data.caption ?? "")} />
-          <span className="studio-figure-meta">
-            <span className="studio-field-tag">alt</span>
-            <AutoInput onChange={(v) => set("alt", v)} placeholder="alt text" value={String(data.alt ?? "")} />
-          </span>
-        </figcaption>
-      </figure>
-    );
+    return <FigureEditor data={data} set={set} />;
   }
   if (name === "FormulaCard") {
     const rows = Array.isArray(data.formulas) ? (data.formulas as Record<string, unknown>[]) : [];

@@ -5,16 +5,30 @@ interface Props {
   caption: string;
   source?: string;
   sourceUrl?: string;
+  /** Optional CSS width for the figure (e.g. "60%", "320px"); absent = full width. */
+  width?: string;
+  /** Optional horizontal alignment; absent = left (default block flow). */
+  align?: "left" | "center" | "right";
 }
-const { src, alt, caption, source, sourceUrl } = Astro.props;
+const { src, alt, caption, source, sourceUrl, width, align } = Astro.props;
 
 // Base-path aware: `media/paper-reading/x/fig1.png` resolves under /HomePage/.
 const resolvedSrc = /^(https?:)?\/\//.test(src) || src.startsWith("/")
   ? src
   : `${import.meta.env.BASE_URL}${src}`;
+
+// Honour width/align. Only a whitelisted width unit is applied (keeps the three
+// renderers — site, Studio preview, Studio editor — pixel-identical and safe).
+const safeWidth = typeof width === "string" && /^\d+(\.\d+)?(%|px|rem|em|vw|ch)$/.test(width.trim())
+  ? width.trim()
+  : undefined;
+const figStyle = [
+  safeWidth ? `width: ${safeWidth}` : "",
+  align === "center" ? "margin-inline: auto" : align === "right" ? "margin-left: auto; margin-right: 0" : ""
+].filter(Boolean).join("; ") || undefined;
 ---
 
-<figure>
+<figure style={figStyle} data-align={align}>
   <img src={resolvedSrc} alt={alt} loading="lazy" />
   <figcaption>
     {caption}
