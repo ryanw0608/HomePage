@@ -33,7 +33,7 @@ import {
 } from "@/studio/lib/github";
 import { noteUrl } from "@/studio/blocks/noteUrl";
 import { fmSet, fmValues, frontmatterToText, parseFrontmatter } from "@/studio/lib/frontmatter";
-import { joinFrontmatter, splitFrontmatter } from "@/studio/lib/mdx";
+import { joinFrontmatter, renderPreview, splitFrontmatter } from "@/studio/lib/mdx";
 import {
   addTaxonomy,
   parseTaxonomy,
@@ -1202,6 +1202,134 @@ function ConfirmDialog(props: {
   );
 }
 
+function downloadFile(filename: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+const EXPORT_CSS = `
+  :root { color-scheme: light; }
+  body { max-width: 46rem; margin: 2.5rem auto; padding: 0 1.25rem; background: #fff; color: #1a1a1a;
+    font-family: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, monospace; line-height: 1.7; }
+  h1,h2,h3,h4 { line-height: 1.25; margin: 2rem 0 0.6rem; }
+  p, li { margin: 0.5rem 0; }
+  a { color: #3b5bdb; }
+  code { background: #f0f0f3; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre { background: #f6f6f8; padding: 0.9rem 1.1rem; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  blockquote { margin: 1rem 0; padding-left: 1rem; border-left: 3px solid #d0d0d8; color: #555; }
+  table { border-collapse: collapse; width: 100%; margin: 1.2rem 0; font-size: 0.92em; }
+  th, td { border-bottom: 1px solid #e2e2e8; padding: 0.45rem 0.8rem; text-align: left; }
+  th { color: #666; font-size: 0.82em; text-transform: uppercase; letter-spacing: 0.05em; }
+  img { max-width: 100%; height: auto; }
+  .mdx-preview > * { border: 1px solid #e6e6ec; border-radius: 8px; padding: 0.8rem 1rem; margin: 1rem 0; }
+  .katex-display { overflow-x: auto; }
+`;
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>]/g, (c) => (c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;"));
+}
+
+async function renderHtmlDoc(text: string, title: string): Promise<string> {
+  const split = splitFrontmatter(text);
+  const fm = fmValues(parseFrontmatter(split.frontmatter));
+  const body = await renderPreview(split.body, fm);
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${escapeHtml(title)}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style>${EXPORT_CSS}</style>
+</head>
+<body>
+<article class="article-body mdx-preview">
+<h1>${escapeHtml(title)}</h1>
+${body}
+</article>
+</body>
+</html>
+`;
+}
+
+function ExportMenu({ text, filename }: { text: string; filename: string }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const slug = filename.replace(/\.(md|mdx)$/, "");
+  const title = fmValues(parseFrontmatter(splitFrontmatter(text).frontmatter)).title;
+  const docTitle = typeof title === "string" && title ? title : slug;
+
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown, true);
+    return () => document.removeEventListener("mousedown", onDown, true);
+  }, []);
+
+  const exportMd = () => {
+    downloadFile(`${slug}.md`, text, "text/markdown;charset=utf-8");
+    setOpen(false);
+  };
+  const exportHtml = async () => {
+    setBusy(true);
+    try {
+      downloadFile(`${slug}.html`, await renderHtmlDoc(text, docTitle), "text/html;charset=utf-8");
+    } finally {
+      setBusy(false);
+      setOpen(false);
+    }
+  };
+  const exportPdf = async () => {
+    setBusy(true);
+    try {
+      const html = await renderHtmlDoc(text, docTitle);
+      const w = window.open("", "_blank");
+      if (w) {
+        w.document.write(html);
+        w.document.close();
+        w.addEventListener("load", () => {
+          w.focus();
+          w.print();
+        });
+      }
+    } finally {
+      setBusy(false);
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div className="studio-export" ref={ref}>
+      <button className="studio-btn studio-btn-ghost" onClick={() => setOpen((v) => !v)} type="button">
+        {busy ? "…" : "export"}
+      </button>
+      {open && (
+        <div className="studio-export-menu">
+          <button onClick={exportMd} type="button">
+            Markdown <span className="faint">.md</span>
+          </button>
+          <button onClick={() => void exportHtml()} type="button">
+            HTML <span className="faint">.html</span>
+          </button>
+          <button onClick={() => void exportPdf()} type="button">
+            PDF <span className="faint">print</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NewNoteDialog(props: {
   token: string;
   preset?: { collection?: StudioCollection; group?: string } | null;
@@ -1526,6 +1654,7 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
               preview
             </button>
           )}
+          <ExportMenu filename={filename} text={text} />
           <button
             aria-pressed={view.props}
             className={`studio-btn studio-btn-ghost${view.props ? " is-on" : ""}`}
