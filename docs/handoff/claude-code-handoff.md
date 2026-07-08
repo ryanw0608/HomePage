@@ -57,13 +57,14 @@ All verified in-browser via puppeteer with a mocked GitHub API (edit-in-place ty
 Backspace, toolbar contents, all four side-menu actions firing the right PUT/DELETE, sidebar
 collapse + context menu + duplicate/delete API calls). `npm run check` 0 errors, 34 tests, build green.
 
-**Deferred, needs an owner decision:** cross-collection drag-to-reparent and arbitrary
-sub-folders in the sidebar. The content model is flat — two fixed collection roots
-(course-notes, paper-reading) with *different* frontmatter schemas — so "reparenting" a note
-means a schema transformation, and sub-folders would break Astro's collection layout. Ask the
-owner whether they want (a) just move-between-the-two-collections (with frontmatter migration),
-(b) a virtual grouping layer (by area/tag/status) that doesn't touch the file layout, or (c)
-leave it flat.
+**Sidebar hierarchy — RESOLVED 2026-07-08:** owner chose **virtual grouping** (option b) and
+it shipped (`9ae83ca`, pushed). Within each collection, notes group into collapsible sub-groups
+by their frontmatter dimension — `area` for papers, `course` for course-notes — with a "Move
+to…" context action that reassigns that field (a minimal yaml edit, committed). No files move;
+the flat two-collection layout is untouched. Group metadata is read from each note's frontmatter
+after the tree loads (cached by sha). If a richer scheme is ever wanted, remaining options are
+cross-collection move (needs frontmatter migration between the two schemas) or drag-and-drop
+onto a group header (currently done via the Move dialog, not DnD).
 
 Both editing surfaces are live at `/studio/` and in good shape:
 
@@ -97,7 +98,8 @@ with regression tests. Converter is the highest-risk code — keep every `conver
    Only leaf component not yet edit-in-place.
 3. **P3.2b-rest**: GFM tables + display `$$` math as real editable blocks (simple lists done;
    display math renders read-only in a rawMdx card).
-4. **Sidebar reparent decision** (see CURRENT STATE "Deferred") — owner must pick the model.
+4. **DONE 2026-07-08**: sidebar virtual grouping by area/course + "Move to…" (owner chose it).
+   Possible follow-on: drag-and-drop a note onto a group header (today it's the Move dialog).
 5. **Export** MD / PDF / HTML; **minimap** + **git-gutter** change markers (vs committed version).
 6. **Raw-mode slash**: `/` in the raw textarea inserts an MDX SOURCE snippet (not a block).
 7. **Colour/polish pass**: owner finds the palette "not high-end enough"; deliberate Terminal-Luxe
