@@ -10,7 +10,7 @@ import { loadDocument, serializeDocument } from "@/studio/convert/document";
  * own fixture) or it doesn't merge — the block-registration discipline.
  */
 const SEEDS = [
-  "src/content/course-notes/ml-foundations-gradient-descent.mdx",
+  "src/content/course-notes/ml-foundations-gradient-descent11.mdx",
   "src/content/paper-reading/attention-is-all-you-need.mdx"
 ];
 
