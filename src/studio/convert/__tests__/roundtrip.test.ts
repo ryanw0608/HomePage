@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
@@ -8,9 +8,18 @@ import { loadDocument, serializeDocument } from "@/studio/convert/document";
  * The golden gate for the CLAUDE.md "unchanged notes save byte-identical"
  * non-negotiable. Every future block type must keep these green (and add its
  * own fixture) or it doesn't merge — the block-registration discipline.
+ *
+ * The course-notes seed is discovered by glob (it gets renamed via Studio's
+ * rename action), so a rename can't break the suite.
  */
+function firstMdx(dir: string): string {
+  const name = readdirSync(dir).find((f) => f.endsWith(".mdx"));
+  if (!name) throw new Error(`no .mdx seed in ${dir}`);
+  return `${dir}/${name}`;
+}
+
 const SEEDS = [
-  "src/content/course-notes/ml-foundations-gradient-descent11.mdx",
+  firstMdx("src/content/course-notes"),
   "src/content/paper-reading/attention-is-all-you-need.mdx"
 ];
 
