@@ -34,7 +34,27 @@ import {
 import { noteUrl } from "@/studio/blocks/noteUrl";
 import { fmSet, fmValues, frontmatterToText, parseFrontmatter } from "@/studio/lib/frontmatter";
 import { joinFrontmatter, splitFrontmatter } from "@/studio/lib/mdx";
-import { areas, courses } from "@/data/taxonomy";
+import {
+  addTaxonomy,
+  parseTaxonomy,
+  removeTaxonomy,
+  renameTaxonomyLabel,
+  TAX_ID_RE,
+  type Taxonomy
+} from "@/studio/lib/taxonomyEdit";
+import { areas as bundledAreas, courses as bundledCourses } from "@/data/taxonomy";
+
+const TAXONOMY_PATH = "src/data/taxonomy.ts";
+
+/** Live taxonomy folders for a collection: id -> label. Falls back to the
+ * build-time import until the fetched taxonomy.ts is parsed. */
+function foldersFor(collection: StudioCollection, tax: Taxonomy | null): Record<string, string> {
+  if (collection === "paper-reading") {
+    return tax?.areas ?? Object.fromEntries(Object.entries(bundledAreas).map(([k, v]) => [k, v.label]));
+  }
+  const courses = tax?.courses ?? bundledCourses;
+  return Object.fromEntries(Object.entries(courses).map(([k, v]) => [k, (v as { label: string }).label]));
+}
 
 import "@/studio/studio.css";
 
@@ -264,12 +284,6 @@ function groupKeyFor(collection: StudioCollection): "area" | "course" {
   return collection === "paper-reading" ? "area" : "course";
 }
 
-export function groupLabel(collection: StudioCollection, id: string | null): string {
-  if (!id) return "· ungrouped";
-  const table = collection === "paper-reading" ? areas : courses;
-  return (table as Record<string, { label: string }>)[id]?.label ?? id;
-}
-
 function Workbench({ token, viewer, onLogout }: { token: string; viewer: Viewer; onLogout: () => void }) {
   const [notes, setNotes] = useState<NoteRow[] | null>(null);
   const [treeError, setTreeError] = useState<string | null>(null);
@@ -332,6 +346,22 @@ function Workbench({ token, viewer, onLogout }: { token: string; viewer: Viewer;
     };
   }, [notes, token]);
 
+  // Live taxonomy (folders). Read from the committed taxonomy.ts so folders
+  // added this session are usable before the next deploy; falls back to the
+  // bundled import until fetched.
+  const [taxonomy, setTaxonomy] = useState<Taxonomy | null>(null);
+  const refreshTaxonomy = useCallback(async () => {
+    try {
+      const file = await readFile(token, TAXONOMY_PATH);
+      setTaxonomy(parseTaxonomy(file.text));
+    } catch {
+      /* keep the bundled fallback */
+    }
+  }, [token]);
+  useEffect(() => {
+    void refreshTaxonomy();
+  }, [refreshTaxonomy]);
+
   useEffect(() => {
     const onHash = () => setActivePath(currentHashPath());
     window.addEventListener("hashchange", onHash);
@@ -376,7 +406,16 @@ function Workbench({ token, viewer, onLogout }: { token: string; viewer: Viewer;
         </div>
       </header>
       <div className="studio-main">
-        <Sidebar activePath={activePath} error={treeError} meta={noteMeta} notes={notes} onNew={refreshTree} token={token} />
+        <Sidebar
+          activePath={activePath}
+          error={treeError}
+          meta={noteMeta}
+          notes={notes}
+          onNew={refreshTree}
+          onTaxonomyChange={refreshTaxonomy}
+          taxonomy={taxonomy}
+          token={token}
+        />
         {activePath ? (
           <Editor key={activePath} onCommitted={onCommitted} path={activePath} token={token} />
         ) : (
@@ -507,41 +546,57 @@ function Sidebar(props: {
   token: string;
   notes: NoteRow[] | null;
   meta: Record<string, NoteMeta>;
+  taxonomy: Taxonomy | null;
   error: string | null;
   activePath: string | null;
   onNew: () => void;
+  onTaxonomyChange: () => void;
 }) {
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState<{ collection?: StudioCollection; group?: string } | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(loadCollapsed);
   const [menu, setMenu] = useState<{ note: NoteRow; x: number; y: number } | null>(null);
+  const [folderMenu, setFolderMenu] = useState<{ collection: StudioCollection; group: NoteGroup | null; x: number; y: number } | null>(null);
   const [dialog, setDialog] = useState<{ mode: "rename" | "delete" | "move"; note: NoteRow } | null>(null);
+  const [folderDialog, setFolderDialog] = useState<{ mode: "new" | "rename"; collection: StudioCollection; group?: NoteGroup } | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [dragPath, setDragPath] = useState<string | null>(null);
   const [dropKey, setDropKey] = useState<string | null>(null);
 
-  const { meta } = props;
+  const { meta, taxonomy } = props;
   const titleOf = (note: NoteRow) => meta[note.path]?.title ?? note.name;
 
-  // collection -> ordered groups (known groups A→Z by label, ungrouped last).
+  // collection -> ordered groups. Every folder from the live taxonomy is shown
+  // (empty or not, so folders can be created and dragged into), non-empty A→Z
+  // first, then empty folders, then an "ungrouped" bucket for notes whose group
+  // is missing/unknown.
   const grouped = useMemo(() => {
     const map = new Map<StudioCollection, NoteGroup[]>();
     for (const collection of STUDIO.collections) {
+      const folders = foldersFor(collection, taxonomy);
       const byGroup = new Map<string | null, NoteRow[]>();
-      const rows = (props.notes ?? []).filter((n) => n.collection === collection);
-      for (const note of rows) {
+      for (const id of Object.keys(folders)) byGroup.set(id, []);
+      for (const note of (props.notes ?? []).filter((n) => n.collection === collection)) {
         const id = meta[note.path]?.group ?? null;
-        (byGroup.get(id) ?? byGroup.set(id, []).get(id)!).push(note);
+        const key = id != null && folders[id] ? id : null;
+        (byGroup.get(key) ?? byGroup.set(key, []).get(key)!).push(note);
       }
       const groups: NoteGroup[] = [...byGroup.entries()]
-        .map(([id, notes]) => ({ id, label: groupLabel(collection, id), notes }))
-        .sort((a, b) => (a.id === null ? 1 : b.id === null ? -1 : a.label.localeCompare(b.label)));
+        .map(([id, notes]) => ({ id, label: id ? folders[id] ?? id : "· ungrouped", notes }))
+        // drop an empty ungrouped bucket; keep empty real folders
+        .filter((g) => g.id !== null || g.notes.length > 0)
+        .sort((a, b) => {
+          if (a.id === null) return 1;
+          if (b.id === null) return -1;
+          if ((a.notes.length > 0) !== (b.notes.length > 0)) return a.notes.length > 0 ? -1 : 1;
+          return a.label.localeCompare(b.label);
+        });
       for (const g of groups) g.notes.sort((a, b) => titleOf(a).localeCompare(titleOf(b)));
       map.set(collection, groups);
     }
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.notes, meta]);
+  }, [props.notes, meta, taxonomy]);
 
   const toggle = (c: string) =>
     setCollapsed((prev) => {
@@ -666,11 +721,44 @@ function Sidebar(props: {
     if (dragged && groupId && canDropOn(collection, groupId)) void move(dragged, groupId);
   };
 
+  // ---- folder (taxonomy) operations: add / rename / remove ---------------
+  const editTaxonomy = async (fn: (text: string) => string, message: string) => {
+    setActionError(null);
+    setPending("taxonomy");
+    try {
+      const file = await readFile(props.token, TAXONOMY_PATH);
+      await saveFile(props.token, TAXONOMY_PATH, fn(file.text), message, file.sha);
+      props.onTaxonomyChange();
+      setFolderDialog(null);
+    } catch (err) {
+      setActionError(String((err as Error)?.message ?? err));
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const newFolder = (collection: StudioCollection, id: string, label: string) => {
+    const kind = collection === "paper-reading" ? "areas" : "courses";
+    const area = collection === "course-notes" ? Object.keys(bundledAreas)[0] : undefined;
+    void editTaxonomy((t) => addTaxonomy(t, kind, id, label, area), `studio: add folder ${id}`);
+  };
+
+  const renameFolder = (collection: StudioCollection, id: string, label: string) => {
+    const kind = collection === "paper-reading" ? "areas" : "courses";
+    void editTaxonomy((t) => renameTaxonomyLabel(t, kind, id, label), `studio: rename folder ${id} label`);
+  };
+
+  const deleteFolder = (collection: StudioCollection, group: NoteGroup) => {
+    if (!group.id || group.notes.length > 0) return; // only empty folders
+    const kind = collection === "paper-reading" ? "areas" : "courses";
+    void editTaxonomy((t) => removeTaxonomy(t, kind, group.id as string), `studio: remove folder ${group.id}`);
+  };
+
   return (
     <nav aria-label="notes" className="studio-sidebar">
       <div className="studio-sidebar-head">
         <span className="studio-label">notes</span>
-        <button className="studio-btn studio-btn-ghost" onClick={() => setCreating(true)} type="button">
+        <button className="studio-btn studio-btn-ghost" onClick={() => setCreating({})} type="button">
           + new
         </button>
       </div>
@@ -687,6 +775,10 @@ function Sidebar(props: {
               aria-expanded={!isCollapsed}
               className="studio-folder-head"
               onClick={() => toggle(colKey)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setFolderMenu({ collection, group: null, x: e.clientX, y: e.clientY });
+              }}
               type="button"
             >
               <span className={`studio-chevron${isCollapsed ? " is-collapsed" : ""}`} aria-hidden="true">
@@ -694,6 +786,19 @@ function Sidebar(props: {
               </span>
               <span className="studio-folder-name">{collection}/</span>
               <span className="studio-folder-count">{total || ""}</span>
+              <span
+                aria-label={`${collection} actions`}
+                className="studio-tree-more"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setFolderMenu({ collection, group: null, x: r.right, y: r.bottom });
+                }}
+                role="button"
+                tabIndex={-1}
+              >
+                ⋯
+              </span>
             </button>
             <div className={`studio-tree-wrap${isCollapsed ? " is-collapsed" : ""}`}>
               <div className="studio-collapse-inner">
@@ -705,8 +810,12 @@ function Sidebar(props: {
                   <div className="studio-group" key={gKey}>
                     <button
                       aria-expanded={!gCollapsed}
-                      className={`studio-group-head${dropKey === gKey ? " is-drop" : ""}`}
+                      className={`studio-group-head${dropKey === gKey ? " is-drop" : ""}${group.notes.length === 0 ? " is-empty" : ""}`}
                       onClick={() => toggle(gKey)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setFolderMenu({ collection, group, x: e.clientX, y: e.clientY });
+                      }}
                       onDragLeave={() => setDropKey((k) => (k === gKey ? null : k))}
                       onDragOver={(e) => {
                         if (canDropOn(collection, group.id)) {
@@ -722,6 +831,21 @@ function Sidebar(props: {
                       </span>
                       <span className="studio-group-name">{group.label}</span>
                       <span className="studio-folder-count">{group.notes.length}</span>
+                      {group.id && (
+                        <span
+                          aria-label={`${group.label} actions`}
+                          className="studio-tree-more"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                            setFolderMenu({ collection, group, x: r.right, y: r.bottom });
+                          }}
+                          role="button"
+                          tabIndex={-1}
+                        >
+                          ⋯
+                        </span>
+                      )}
                     </button>
                     <div className={`studio-tree-wrap${gCollapsed ? " is-collapsed" : ""}`}>
                       <ul className="studio-tree">
@@ -786,6 +910,7 @@ function Sidebar(props: {
         <MoveDialog
           busy={pending === dialog.note.path}
           current={meta[dialog.note.path]?.group ?? null}
+          folders={foldersFor(dialog.note.collection, taxonomy)}
           note={dialog.note}
           onClose={() => setDialog(null)}
           onSubmit={(groupId) => void move(dialog.note, groupId)}
@@ -800,11 +925,46 @@ function Sidebar(props: {
           title="delete note"
         />
       )}
+      {folderMenu && (
+        <FolderMenu
+          canDelete={!!folderMenu.group?.id && folderMenu.group.notes.length === 0}
+          isGroup={!!folderMenu.group}
+          onClose={() => setFolderMenu(null)}
+          onPick={(action) => {
+            const { collection, group } = folderMenu;
+            setFolderMenu(null);
+            if (action === "new-note") setCreating({ collection, group: group?.id ?? undefined });
+            else if (action === "new-folder") setFolderDialog({ mode: "new", collection });
+            else if (action === "rename-folder" && group) setFolderDialog({ mode: "rename", collection, group });
+            else if (action === "delete-folder" && group) deleteFolder(collection, group);
+          }}
+          x={folderMenu.x}
+          y={folderMenu.y}
+        />
+      )}
+      {folderDialog?.mode === "new" && (
+        <FolderDialog
+          busy={pending === "taxonomy"}
+          collection={folderDialog.collection}
+          onClose={() => setFolderDialog(null)}
+          onSubmit={(id, label) => newFolder(folderDialog.collection, id, label)}
+        />
+      )}
+      {folderDialog?.mode === "rename" && folderDialog.group?.id && (
+        <FolderDialog
+          busy={pending === "taxonomy"}
+          collection={folderDialog.collection}
+          current={{ id: folderDialog.group.id, label: folderDialog.group.label }}
+          onClose={() => setFolderDialog(null)}
+          onSubmit={(_id, label) => renameFolder(folderDialog.collection, folderDialog.group!.id as string, label)}
+        />
+      )}
       {creating && (
         <NewNoteDialog
-          onClose={() => setCreating(false)}
+          preset={creating}
+          onClose={() => setCreating(null)}
           onCreated={(path) => {
-            setCreating(false);
+            setCreating(null);
             props.onNew();
             navigateTo(path);
           }}
@@ -813,6 +973,129 @@ function Sidebar(props: {
       )}
     </nav>
   );
+}
+
+type FolderAction = "new-note" | "new-folder" | "rename-folder" | "delete-folder";
+
+function FolderMenu(props: {
+  isGroup: boolean;
+  canDelete: boolean;
+  x: number;
+  y: number;
+  onClose: () => void;
+  onPick: (action: FolderAction) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) props.onClose();
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && props.onClose();
+    document.addEventListener("mousedown", onDown, true);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown, true);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [props]);
+  const items: { action: FolderAction; label: string; glyph: string; show: boolean; danger?: boolean }[] = [
+    { action: "new-note", label: props.isGroup ? "New note here" : "New note", glyph: "✚", show: true },
+    { action: "new-folder", label: "New folder…", glyph: "⊞", show: !props.isGroup },
+    { action: "rename-folder", label: "Rename folder…", glyph: "✎", show: props.isGroup },
+    { action: "delete-folder", label: "Delete folder", glyph: "✕", show: props.isGroup, danger: true }
+  ];
+  const style = { left: Math.min(props.x, window.innerWidth - 190), top: Math.min(props.y, window.innerHeight - 170) };
+  return (
+    <div className="studio-ctx" ref={ref} role="menu" style={style}>
+      {items
+        .filter((it) => it.show)
+        .map((it) => (
+          <button
+            className={`studio-ctx-item${it.danger ? " is-danger" : ""}`}
+            disabled={it.action === "delete-folder" && !props.canDelete}
+            key={it.action}
+            onClick={() => props.onPick(it.action)}
+            role="menuitem"
+            type="button"
+          >
+            <span aria-hidden="true" className="studio-ctx-glyph">
+              {it.glyph}
+            </span>
+            {it.label}
+            {it.action === "delete-folder" && !props.canDelete && <span className="studio-ctx-hint">(empty only)</span>}
+          </button>
+        ))}
+    </div>
+  );
+}
+
+function FolderDialog(props: {
+  collection: StudioCollection;
+  current?: { id: string; label: string };
+  busy: boolean;
+  onClose: () => void;
+  onSubmit: (id: string, label: string) => void;
+}) {
+  const isRename = !!props.current;
+  const [label, setLabel] = useState(props.current?.label ?? "");
+  const [id, setId] = useState(props.current?.id ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const noun = props.collection === "paper-reading" ? "area" : "course";
+  const submit = () => {
+    if (!label.trim()) return setError("label is required");
+    const finalId = isRename ? props.current!.id : id.trim() || slugify(label);
+    if (!isRename && !TAX_ID_RE.test(finalId)) return setError("id must be ascii kebab-case (e.g. efficient-inference)");
+    props.onSubmit(finalId, label.trim());
+  };
+  return (
+    <div aria-modal className="studio-modal-backdrop" role="dialog">
+      <div className="studio-modal">
+        <p className="studio-prompt">
+          <span className="accent">$</span> studio {isRename ? "rename" : "new"} folder
+        </p>
+        <label className="studio-field">
+          {noun} label
+          <input
+            autoFocus
+            className="studio-input"
+            onChange={(e) => setLabel(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && submit()}
+            placeholder="Efficient Inference"
+            value={label}
+          />
+        </label>
+        {!isRename && (
+          <label className="studio-field">
+            id
+            <input
+              className="studio-input"
+              onChange={(e) => setId(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              placeholder={slugify(label) || "efficient-inference"}
+              value={id}
+            />
+          </label>
+        )}
+        {error && <p className="studio-error">{error}</p>}
+        <div className="studio-modal-actions">
+          <button className="studio-btn studio-btn-ghost" disabled={props.busy} onClick={props.onClose} type="button">
+            cancel
+          </button>
+          <button className="studio-btn" disabled={props.busy} onClick={submit} type="button">
+            {props.busy ? "saving…" : isRename ? "rename" : "create"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function slugify(s: string): string {
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-");
 }
 
 function RenameDialog(props: { note: NoteRow; busy: boolean; onClose: () => void; onSubmit: (slug: string) => void }) {
@@ -855,12 +1138,12 @@ function RenameDialog(props: { note: NoteRow; busy: boolean; onClose: () => void
 function MoveDialog(props: {
   note: NoteRow;
   current: string | null;
+  folders: Record<string, string>;
   busy: boolean;
   onClose: () => void;
   onSubmit: (groupId: string) => void;
 }) {
-  const table = props.note.collection === "paper-reading" ? areas : courses;
-  const options = Object.entries(table as Record<string, { label: string }>);
+  const options = Object.entries(props.folders);
   const [groupId, setGroupId] = useState(props.current ?? options[0]?.[0] ?? "");
   const dimension = props.note.collection === "paper-reading" ? "area" : "course";
   return (
@@ -872,9 +1155,9 @@ function MoveDialog(props: {
         <label className="studio-field">
           {dimension}
           <select className="studio-input" onChange={(e) => setGroupId(e.target.value)} value={groupId}>
-            {options.map(([id, v]) => (
+            {options.map(([id, label]) => (
               <option key={id} value={id}>
-                {v.label}
+                {label}
               </option>
             ))}
           </select>
@@ -919,8 +1202,14 @@ function ConfirmDialog(props: {
   );
 }
 
-function NewNoteDialog(props: { token: string; onClose: () => void; onCreated: (path: string) => void }) {
-  const [kind, setKind] = useState<"course" | "paper">("paper");
+function NewNoteDialog(props: {
+  token: string;
+  preset?: { collection?: StudioCollection; group?: string } | null;
+  onClose: () => void;
+  onCreated: (path: string) => void;
+}) {
+  const presetKind = props.preset?.collection === "course-notes" ? "course" : props.preset?.collection === "paper-reading" ? "paper" : null;
+  const [kind, setKind] = useState<"course" | "paper">(presetKind ?? "paper");
   const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
@@ -938,9 +1227,18 @@ function NewNoteDialog(props: { token: string; onClose: () => void; onCreated: (
     setBusy(true);
     setError(null);
     const today = new Date().toISOString().slice(0, 10);
-    const collection = kind === "paper" ? "paper-reading" : "course-notes";
+    const collection: StudioCollection = kind === "paper" ? "paper-reading" : "course-notes";
     const path = `${STUDIO.contentRoot}/${collection}/${slug}.mdx`;
-    const body = kind === "paper" ? paperTemplate(title.trim(), today) : courseTemplate(title.trim(), today);
+    let body = kind === "paper" ? paperTemplate(title.trim(), today) : courseTemplate(title.trim(), today);
+    // "New note here" preset: put the note straight into the chosen folder.
+    if (props.preset?.group) {
+      const split = splitFrontmatter(body);
+      if (split.hasFrontmatter) {
+        const fm = parseFrontmatter(split.frontmatter);
+        fmSet(fm, groupKeyFor(collection), props.preset.group);
+        body = joinFrontmatter(frontmatterToText(fm), split.body);
+      }
+    }
     try {
       await saveFile(props.token, path, body, `studio: scaffold ${collection}/${slug}`);
       props.onCreated(path);
@@ -958,7 +1256,12 @@ function NewNoteDialog(props: { token: string; onClose: () => void; onCreated: (
         </p>
         <label className="studio-field">
           kind
-          <select className="studio-input" onChange={(e) => setKind(e.target.value as "course" | "paper")} value={kind}>
+          <select
+            className="studio-input"
+            disabled={!!presetKind}
+            onChange={(e) => setKind(e.target.value as "course" | "paper")}
+            value={kind}
+          >
             <option value="paper">paper-reading</option>
             <option value="course">course-notes</option>
           </select>

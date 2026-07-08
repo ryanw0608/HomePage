@@ -338,6 +338,22 @@
   color: var(--faint);
 }
 
+.studio-ctx-item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.studio-ctx-hint {
+  margin-left: auto;
+  color: var(--edge);
+  font-size: 0.66rem;
+}
+
+/* empty folders are dimmed (still shown so notes can be dragged/created in) */
+.studio-group-head.is-empty .studio-group-name {
+  color: var(--faint);
+}
+
 .studio-ctx-item:hover .studio-ctx-glyph {
   color: inherit;
 }
