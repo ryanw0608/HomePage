@@ -97,5 +97,13 @@ export function studioSlashItems(
   const items = KEEP_ORDER.map((title) => byTitle.get(title)).filter(
     (item): item is DefaultReactSuggestionItem => Boolean(item)
   );
-  return [...items.map((item) => ({ ...item, group: "Blocks" })), ...componentItems(editor)];
+  const equation: DefaultReactSuggestionItem = {
+    title: "Equation",
+    subtext: "Display math ($$…$$)",
+    aliases: ["equation", "math", "katex", "$$", "display"],
+    group: "Blocks",
+    icon: <span className="studio-slash-glyph">∑</span>,
+    onItemClick: () => insertBlock(editor, { type: "displayMath", props: { tex: "" } } as never)
+  };
+  return [...items.map((item) => ({ ...item, group: "Blocks" })), equation, ...componentItems(editor)];
 }

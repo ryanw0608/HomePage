@@ -6,6 +6,7 @@
 import { BlockNoteEditor, BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs } from "@blocknote/core";
 
 import { CalloutBlock } from "./Callout";
+import { DisplayMathBlock } from "./DisplayMath";
 import { InlineMath } from "./InlineMath";
 import { MdxLeafBlock } from "./MdxLeaf";
 import { RawMdxBlock } from "./RawMdx";
@@ -19,7 +20,8 @@ export const studioSchema = BlockNoteSchema.create({
     rawMdx: RawMdxBlock(),
     tldr: TldrBlock(),
     callout: CalloutBlock(),
-    mdxLeaf: MdxLeafBlock()
+    mdxLeaf: MdxLeafBlock(),
+    displayMath: DisplayMathBlock()
   },
   inlineContentSpecs: {
     ...defaultInlineContentSpecs,

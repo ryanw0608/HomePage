@@ -79,6 +79,9 @@ function mapNode(node: MdastNode): ConvBlock | null {
           props: { language: node.lang || "text" },
           content: [{ type: "text", text: node.value ?? "", styles: {} }]
         };
+      case "math":
+        // Block-level `$$…$$` (remark-math). TeX is the source of truth.
+        return { type: "displayMath", props: { tex: node.value ?? "" }, content: undefined } as ConvBlock;
       case "mdxJsxFlowElement":
         return mapComponent(node);
       default:

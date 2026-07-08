@@ -77,6 +77,8 @@ function houseStyle(block: ConvBlock, entry?: Provenance): string {
     }
     case "rawMdx":
       return String((block.props as { source?: string })?.source ?? "");
+    case "displayMath":
+      return `$$\n${String((block.props as { tex?: string })?.tex ?? "").trim()}\n$$`;
     case "tldr": {
       const label = String((block.props as { label?: string })?.label ?? "tldr");
       const attrs = label && label !== "tldr" ? ` label=${jsxAttr(label)}` : "";

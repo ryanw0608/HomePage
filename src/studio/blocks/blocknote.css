@@ -77,6 +77,49 @@
   margin-bottom: 0;
 }
 
+/* display math ($$…$$) block */
+.studio-displaymath {
+  margin: 0.5rem 0;
+}
+
+.studio-displaymath-render {
+  cursor: pointer;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+.studio-displaymath-render:hover {
+  background: color-mix(in oklab, var(--surface) 55%, transparent);
+}
+
+.studio-displaymath-edit {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px dashed var(--edge);
+  border-radius: 6px;
+}
+
+.studio-displaymath-src {
+  width: 100%;
+  border: 0;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.studio-displaymath-preview {
+  overflow-x: auto;
+  padding-top: 0.3rem;
+  border-top: 1px solid var(--line);
+}
+
 /* slim, borderless treatment for comment-only rawMdx blocks */
 .studio-rawmdx-note {
   margin: 0.1rem 0;

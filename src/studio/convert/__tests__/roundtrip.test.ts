@@ -162,6 +162,23 @@ describe("byte-clean round-trip (P3.2 real-block converter)", () => {
     expect(data.caption).toBe("top\nbottom");
   });
 
+  it("parses display math ($$…$$) as a displayMath block and round-trips it", () => {
+    const text = "$$\nE = mc^2\n$$\n";
+    const doc = loadDocument(text);
+    expect(doc.blocks[0].type).toBe("displayMath");
+    expect((doc.blocks[0].props as { tex: string }).tex).toBe("E = mc^2");
+    expect(roundTrip(text)).toBe(text); // unchanged → byte-identical
+  });
+
+  it("serializes an edited displayMath block back to valid $$…$$", () => {
+    const doc = loadDocument("$$\na\n$$\n");
+    (doc.blocks[0].props as { tex: string }).tex = "\\int_0^1 x^2 \\, dx";
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    const doc2 = loadDocument(out);
+    expect(doc2.blocks[0].type).toBe("displayMath");
+    expect((doc2.blocks[0].props as { tex: string }).tex).toBe("\\int_0^1 x^2 \\, dx");
+  });
+
   it("keeps a multi-paragraph Callout as rawMdx (not silently flattened)", () => {
     const text = "<Callout>\n  First para.\n\n  Second para.\n</Callout>\n";
     const doc = loadDocument(text);
