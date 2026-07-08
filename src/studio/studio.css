@@ -428,10 +428,146 @@
   line-height: 1.7;
   padding: 1.1rem 1.25rem 3rem;
   tab-size: 2;
+  scrollbar-gutter: stable;
 }
 
 .studio-textarea:focus-visible {
   box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* --- git-style change gutter (vs last committed version) ---------------- */
+
+/* Raw mode: textarea over a transparent, scroll-synced mirror that draws the
+ * change bars. The wrapper owns the background so the mirror shows through. */
+.studio-raw {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg);
+}
+
+.studio-raw .studio-textarea {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+/* Mirror: identical metrics + wrapping to the textarea so bars align to lines,
+ * including wrapped ones. Text is invisible; only the ::before bars paint. */
+.cg-mirror {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  margin: 0;
+  border: 0;
+  box-sizing: border-box;
+  padding: 1.1rem 0 3rem;
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  tab-size: 2;
+  color: transparent;
+  scrollbar-gutter: stable;
+}
+
+.cg-ln {
+  position: relative;
+  margin: 0;
+  padding: 0 1.25rem;
+  min-height: 1.7em;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* thin coloured bar in the left margin, clear of the focus accent (2px) */
+.cg-ln.cg-add::before,
+.cg-ln.cg-modify::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 2px;
+}
+
+.cg-ln.cg-add::before {
+  background: var(--tk-green);
+}
+
+.cg-ln.cg-modify::before {
+  background: var(--tk-orange);
+}
+
+/* deletions have no line of their own — a small red wedge marks the seam */
+.cg-ln.cg-del-before::after,
+.cg-ln.cg-del-after::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid var(--tk-red);
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+}
+
+.cg-ln.cg-del-before::after {
+  top: -3px;
+}
+
+.cg-ln.cg-del-after::after {
+  bottom: -3px;
+}
+
+/* Block mode: no source lines — a coarse overview strip, one tick per region. */
+.studio-block-wrap {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.studio-block-wrap > .studio-blocknote {
+  flex: 1;
+  min-width: 0;
+}
+
+.cg-strip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.cg-tick {
+  position: absolute;
+  left: 1px;
+  width: 3px;
+  height: 14px;
+  margin-top: -7px;
+  border-radius: 2px;
+}
+
+.cg-tick-add {
+  background: var(--tk-green);
+}
+
+.cg-tick-modify {
+  background: var(--tk-orange);
+}
+
+.cg-tick-delete {
+  background: var(--tk-red);
 }
 
 .studio-welcome {

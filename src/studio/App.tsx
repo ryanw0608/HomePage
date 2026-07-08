@@ -16,7 +16,9 @@ import SplitPane from "@/studio/SplitPane";
 const BlockEditor = lazy(() => import("@/studio/BlockEditor"));
 import { REPO_SLUG, STUDIO, type StudioCollection } from "@/studio/config";
 import { getStoredToken, loginWithPopup, storeToken } from "@/studio/lib/auth";
+import { BlockChangeGutter, RawChangeGutter } from "@/studio/ChangeGutter";
 import { diffLines, diffStats, foldSameRuns } from "@/studio/lib/diff";
+import { changeRegions, computeLineMarks, hasChanges } from "@/studio/lib/gutter";
 import {
   GhConflictError,
   GhError,
@@ -1460,6 +1462,9 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
   const [conflict, setConflict] = useState<ConflictState>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [view, setView] = useState<ViewPrefs>(() => loadViewPrefs());
+  // Debounced snapshot of `text` that drives the change-marker gutter, so the
+  // diff isn't recomputed on every keystroke.
+  const [diffText, setDiffText] = useState<string>("");
   const lastDraftAt = useRef(0);
   const sourceRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -1479,6 +1484,19 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
 
   const dirty = remote !== null && text !== remote.text;
   const collection = collectionOf(path);
+
+  // Git-style change markers vs the last committed text. Recomputed off the
+  // debounced snapshot; empty (cleared) whenever the note isn't dirty.
+  useEffect(() => {
+    const t = window.setTimeout(() => setDiffText(text), 160);
+    return () => window.clearTimeout(t);
+  }, [text]);
+  const marks = useMemo(
+    () => (dirty && remote ? computeLineMarks(remote.text, diffText) : []),
+    [dirty, remote, diffText]
+  );
+  const showGutter = hasChanges(marks);
+  const regions = useMemo(() => (showGutter ? changeRegions(marks) : []), [showGutter, marks]);
 
   const updateView = useCallback(
     (patch: Partial<ViewPrefs>) =>
@@ -1734,21 +1752,27 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
 
       <div className="studio-editor-body">
         {view.mode === "blocks" ? (
-          <Suspense fallback={<CenteredNote text="loading block editor…" />}>
-            <BlockEditor notePath={path} onChange={setText} text={text} />
-          </Suspense>
+          <div className="studio-block-wrap">
+            {showGutter && <BlockChangeGutter regions={regions} totalLines={marks.length} />}
+            <Suspense fallback={<CenteredNote text="loading block editor…" />}>
+              <BlockEditor notePath={path} onChange={setText} text={text} />
+            </Suspense>
+          </div>
         ) : view.preview ? (
           <SplitPane
             left={
-              <textarea
-                aria-label={`MDX source of ${filename}`}
-                className="studio-textarea"
-                onChange={(event) => setText(event.target.value)}
-                onScroll={() => syncScroll(sourceRef.current, previewRef.current)}
-                ref={sourceRef}
-                spellCheck={false}
-                value={text}
-              />
+              <div className="studio-raw">
+                {showGutter && <RawChangeGutter marks={marks} textareaRef={sourceRef} />}
+                <textarea
+                  aria-label={`MDX source of ${filename}`}
+                  className="studio-textarea"
+                  onChange={(event) => setText(event.target.value)}
+                  onScroll={() => syncScroll(sourceRef.current, previewRef.current)}
+                  ref={sourceRef}
+                  spellCheck={false}
+                  value={text}
+                />
+              </div>
             }
             right={
               <Preview
@@ -1759,13 +1783,17 @@ function Editor(props: { token: string; path: string; onCommitted: (commitSha: s
             }
           />
         ) : (
-          <textarea
-            aria-label={`MDX source of ${filename}`}
-            className="studio-textarea"
-            onChange={(event) => setText(event.target.value)}
-            spellCheck={false}
-            value={text}
-          />
+          <div className="studio-raw">
+            {showGutter && <RawChangeGutter marks={marks} textareaRef={sourceRef} />}
+            <textarea
+              aria-label={`MDX source of ${filename}`}
+              className="studio-textarea"
+              onChange={(event) => setText(event.target.value)}
+              ref={sourceRef}
+              spellCheck={false}
+              value={text}
+            />
+          </div>
         )}
         {view.props && <PropertiesPanel collection={collection} onChange={setText} text={text} />}
       </div>
