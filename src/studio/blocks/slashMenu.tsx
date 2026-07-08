@@ -1,9 +1,9 @@
 /*
  * Curated slash menu. BlockNote's default menu duplicates heading entries
  * (plain + toggle) and offers blocks the MDX converter can't serialize yet
- * (table/image/file/video/divider). We keep only the fully round-trippable
- * blocks, de-duplicated and ordered, so `/` is clean and everything it inserts
- * saves correctly. Component/table blocks are added here as P3.2b/P3.3 land.
+ * (image/file/video/divider). We keep only the fully round-trippable blocks,
+ * de-duplicated and ordered, so `/` is clean and everything it inserts saves
+ * correctly. Native table + our components are offered explicitly below.
  */
 import type { BlockNoteEditor, PartialBlock } from "@blocknote/core";
 import { getDefaultReactSlashMenuItems, type DefaultReactSuggestionItem } from "@blocknote/react";
@@ -105,5 +105,24 @@ export function studioSlashItems(
     icon: <span className="studio-slash-glyph">∑</span>,
     onItemClick: () => insertBlock(editor, { type: "displayMath", props: { tex: "" } } as never)
   };
-  return [...items.map((item) => ({ ...item, group: "Blocks" })), equation, ...componentItems(editor)];
+  const table: DefaultReactSuggestionItem = {
+    title: "Table",
+    subtext: "GFM table (header + rows)",
+    aliases: ["table", "grid", "gfm"],
+    group: "Blocks",
+    icon: <span className="studio-slash-glyph">▦</span>,
+    onItemClick: () =>
+      insertBlock(editor, {
+        type: "table",
+        content: {
+          type: "tableContent",
+          headerRows: 1,
+          rows: [
+            { cells: [[], [], []] },
+            { cells: [[], [], []] }
+          ]
+        }
+      } as never)
+  };
+  return [...items.map((item) => ({ ...item, group: "Blocks" })), equation, table, ...componentItems(editor)];
 }

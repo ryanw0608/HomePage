@@ -77,6 +77,8 @@ function houseStyle(block: ConvBlock, entry?: Provenance): string {
     }
     case "rawMdx":
       return String((block.props as { source?: string })?.source ?? "");
+    case "table":
+      return tableToMarkdown(block);
     case "displayMath":
       return `$$\n${String((block.props as { tex?: string })?.tex ?? "").trim()}\n$$`;
     case "tldr": {
@@ -103,6 +105,62 @@ function houseStyle(block: ConvBlock, entry?: Provenance): string {
     default:
       throw new Error(`no house-style serializer for block "${block.type}"`);
   }
+}
+
+/* ------------------------------------------------------------ GFM tables */
+
+interface TableCellLike {
+  props?: { textAlignment?: string };
+  content?: unknown;
+}
+interface TableContentLike {
+  rows?: { cells: (TableCellLike | Inline[])[] }[];
+}
+
+/* A cell is either BlockNote's `{ type:"tableCell", props, content }` object
+ * (parse-time and post-normalization) or a bare InlineContent[] (the terse
+ * form BlockNote also accepts). Read inline content + alignment from both. */
+function cellInline(cell: TableCellLike | Inline[] | undefined): Inline[] {
+  if (Array.isArray(cell)) return cell;
+  const content = cell?.content;
+  return Array.isArray(content) ? (content as Inline[]) : [];
+}
+
+function cellAlign(cell: TableCellLike | Inline[] | undefined): string {
+  if (!cell || Array.isArray(cell)) return "left";
+  return typeof cell.props?.textAlignment === "string" ? cell.props.textAlignment : "left";
+}
+
+/* One GFM cell: inline markdown, with pipes escaped (`\|`) and any newline
+ * flattened to a space so the row can't break on reparse. */
+function cellToMarkdown(cell: TableCellLike | Inline[] | undefined): string {
+  return inlineToMarkdown(cellInline(cell)).replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
+}
+
+/* House-style an EDITED table back to a GFM pipe table: header row, a `---`
+ * delimiter row honoring per-column alignment (`:-:` center, `--:` right; plain
+ * `---` for left/none, since BlockNote can't distinguish them), then body rows.
+ * Column count is fixed by the header so body rows pad/truncate to match. */
+function tableToMarkdown(block: ConvBlock): string {
+  const rows = (block.content as TableContentLike)?.rows ?? [];
+  if (rows.length === 0) return "";
+  const numCols = rows[0].cells.length;
+  if (numCols === 0) return "";
+
+  const renderRow = (cells: (TableCellLike | Inline[])[]): string => {
+    const parts: string[] = [];
+    for (let c = 0; c < numCols; c++) parts.push(cellToMarkdown(cells[c]));
+    return `| ${parts.join(" | ")} |`;
+  };
+
+  const delim = Array.from({ length: numCols }, (_, c) => {
+    const a = cellAlign(rows[0].cells[c]);
+    return a === "center" ? ":-:" : a === "right" ? "--:" : "---";
+  });
+
+  const lines = [renderRow(rows[0].cells), `| ${delim.join(" | ")} |`];
+  for (let r = 1; r < rows.length; r++) lines.push(renderRow(rows[r].cells));
+  return lines.join("\n");
 }
 
 /* Deterministic JS-literal printer for a leaf component's props. Only runs on

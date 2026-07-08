@@ -208,6 +208,68 @@ describe("byte-clean round-trip (P3.2 real-block converter)", () => {
     expect((doc2.blocks[0].props as { tex: string }).tex).toBe("\\int_0^1 x^2 \\, dx");
   });
 
+  it("parses a GFM table as a real table block, byte-identical (unchanged)", () => {
+    const text = "| a | b |\n| - | - |\n| 1 | 2 |\n";
+    const doc = loadDocument(text);
+    expect(doc.blocks[0].type).toBe("table");
+    expect(doc.blocks.every((b) => b.type !== "rawMdx")).toBe(true);
+    const content = doc.blocks[0].content as { type: string; rows: { cells: unknown[] }[] };
+    expect(content.type).toBe("tableContent");
+    expect(content.rows).toHaveLength(2); // header + 1 body (the delimiter row is not a data row)
+    expect(content.rows[0].cells).toHaveLength(2);
+    expect(roundTrip(text)).toBe(text); // unchanged → byte-identical
+  });
+
+  it("reparses an edited table cell to the same table structure", () => {
+    const text = "| a | b |\n| - | - |\n| 1 | 2 |\n";
+    const doc = loadDocument(text);
+    const content = doc.blocks[0].content as {
+      rows: { cells: { content: { type: string; text: string; styles: object }[] }[] }[];
+    };
+    content.rows[1].cells[0].content = [{ type: "text", text: "99", styles: {} }];
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    expect(out).toContain("99");
+    const doc2 = loadDocument(out);
+    expect(doc2.blocks[0].type).toBe("table");
+    const c2 = doc2.blocks[0].content as { rows: { cells: { content: { text?: string }[] }[] }[] };
+    expect(c2.rows).toHaveLength(2);
+    expect(c2.rows[0].cells).toHaveLength(2);
+    expect(c2.rows[1].cells[0].content[0]?.text).toBe("99"); // edited cell
+    expect(c2.rows[0].cells[1].content[0]?.text).toBe("b"); // sibling intact
+  });
+
+  it("keeps column alignment when a table cell is edited", () => {
+    const text = "| L | C | R |\n| :-- | :-: | --: |\n| 1 | 2 | 3 |\n";
+    const doc = loadDocument(text);
+    const content = doc.blocks[0].content as {
+      rows: { cells: { content: unknown; props: { textAlignment: string } }[] }[];
+    };
+    expect(content.rows[0].cells[0].props.textAlignment).toBe("left");
+    expect(content.rows[0].cells[1].props.textAlignment).toBe("center");
+    expect(content.rows[0].cells[2].props.textAlignment).toBe("right");
+    content.rows[1].cells[0].content = [{ type: "text", text: "x", styles: {} }] as never;
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    expect(out).toContain(":-:"); // center delimiter honored
+    expect(out).toContain("--:"); // right delimiter honored
+    const doc2 = loadDocument(out);
+    const c2 = doc2.blocks[0].content as { rows: { cells: { props: { textAlignment: string } }[] }[] };
+    expect(c2.rows[0].cells[1].props.textAlignment).toBe("center");
+    expect(c2.rows[0].cells[2].props.textAlignment).toBe("right");
+  });
+
+  it("escapes pipes in edited table cells so the row can't break", () => {
+    const text = "| a | b |\n| - | - |\n| 1 | 2 |\n";
+    const doc = loadDocument(text);
+    const content = doc.blocks[0].content as {
+      rows: { cells: { content: { type: string; text: string; styles: object }[] }[] }[];
+    };
+    content.rows[1].cells[0].content = [{ type: "text", text: "a|b", styles: {} }];
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    expect(out).toContain("a\\|b"); // pipe escaped in the emitted markdown
+    const c2 = (loadDocument(out).blocks[0].content as { rows: { cells: { content: { text?: string }[] }[] }[] }).rows;
+    expect(c2[1].cells[0].content[0]?.text).toBe("a|b"); // reparses to the literal pipe
+  });
+
   it("keeps a multi-paragraph Callout as rawMdx (not silently flattened)", () => {
     const text = "<Callout>\n  First para.\n\n  Second para.\n</Callout>\n";
     const doc = loadDocument(text);
@@ -220,13 +282,6 @@ describe("byte-clean round-trip (P3.2 real-block converter)", () => {
     const text = "- one\n- two\n- three\n";
     const doc = loadDocument(text);
     expect(doc.blocks.map((b) => b.type)).toEqual(["bulletListItem", "bulletListItem", "bulletListItem"]);
-    expect(roundTrip(text)).toBe(text);
-  });
-
-  it("keeps a table as rawMdx but stays byte-identical", () => {
-    const text = "| a | b |\n| - | - |\n| 1 | 2 |\n";
-    const doc = loadDocument(text);
-    expect(doc.blocks.some((b) => b.type === "rawMdx")).toBe(true);
     expect(roundTrip(text)).toBe(text);
   });
 

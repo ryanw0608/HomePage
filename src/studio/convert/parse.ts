@@ -36,13 +36,14 @@ interface MdastNode {
   depth?: number;
   lang?: string | null;
   value?: string;
+  /** GFM table column alignment, one entry per column. */
+  align?: (string | null)[];
   children?: MdastNode[];
   position?: { start: { offset: number }; end: { offset: number } };
 }
 
 const FALLBACK_REASON: Record<string, RawReason> = {
   list: "container-multiblock",
-  table: "rich-table",
   math: "container-multiblock",
   html: "raw-html",
   footnoteDefinition: "footnote",
@@ -82,6 +83,8 @@ function mapNode(node: MdastNode): ConvBlock | null {
       case "math":
         // Block-level `$$…$$` (remark-math). TeX is the source of truth.
         return { type: "displayMath", props: { tex: node.value ?? "" }, content: undefined } as ConvBlock;
+      case "table":
+        return mapTable(node);
       case "mdxJsxFlowElement":
         return mapComponent(node);
       default:
@@ -90,6 +93,39 @@ function mapNode(node: MdastNode): ConvBlock | null {
   } catch {
     return null; // unsupported inline etc. → rawMdx
   }
+}
+
+/* GFM `table` (remark-gfm). The first mdast row is the header; `node.align`
+ * carries per-column alignment. We build BlockNote's native `table` block
+ * content (tableContent → rows → tableCell), storing column alignment on each
+ * cell's `textAlignment` prop (BlockNote's per-cell model, which round-trips
+ * through the editor). An UNCHANGED table still saves byte-identically via its
+ * verbatim source slice — only an edited table uses the house-style printer. */
+function alignToBlockNote(a: string | null | undefined): "left" | "center" | "right" {
+  // BlockNote table cells have no "none"; its default is "left", so an
+  // unaligned GFM column and an explicit-left one both map to "left".
+  return a === "center" ? "center" : a === "right" ? "right" : "left";
+}
+
+function mapTable(node: MdastNode): ConvBlock {
+  const align = node.align ?? [];
+  const rows = (node.children ?? []).map((row) => ({
+    cells: (row.children ?? []).map((cell, col) => ({
+      type: "tableCell",
+      props: { textAlignment: alignToBlockNote(align[col]) },
+      content: inlineFromMdast((cell.children ?? []) as never)
+    }))
+  }));
+  const numCols = rows[0]?.cells.length ?? 0;
+  return {
+    type: "table",
+    content: {
+      type: "tableContent",
+      columnWidths: new Array(numCols).fill(undefined),
+      headerRows: 1,
+      rows
+    }
+  } as ConvBlock;
 }
 
 const CALLOUT_TYPES = new Set(["note", "insight", "warning", "question", "exam", "definition"]);
