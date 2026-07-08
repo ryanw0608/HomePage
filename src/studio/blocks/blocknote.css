@@ -63,6 +63,56 @@
   padding-top: 0.12rem;
 }
 
+/* Component cards (Tldr/Callout/leaf/rawMdx) carry their own outer margins for
+   the published page; inside a block those margins push the card below the
+   drag handle. Collapse the leading/trailing margin so the card sits flush at
+   the block top and the +/⋮⋮ handles line up with it. */
+.studio-blocknote .mdx-preview > :first-child {
+  margin-top: 0;
+}
+
+.studio-blocknote .mdx-preview > :last-child {
+  margin-bottom: 0;
+}
+
+/* slim, borderless treatment for comment-only rawMdx blocks */
+.studio-rawmdx-note {
+  margin: 0.1rem 0;
+}
+
+.studio-rawmdx-note-btn {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  max-width: 100%;
+  background: none;
+  border: 0;
+  padding: 0.1rem 0.2rem;
+  border-radius: 4px;
+  cursor: text;
+  color: var(--faint);
+  font: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.studio-rawmdx-note-btn:hover {
+  background: color-mix(in oklab, var(--surface) 60%, transparent);
+}
+
+.studio-rawmdx-note-mark {
+  font-family: var(--font-mono);
+  color: var(--edge);
+  flex-shrink: 0;
+}
+
+.studio-rawmdx-note-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: italic;
+}
+
 .studio-blocknote .bn-side-menu .bn-button {
   color: var(--faint);
   background: transparent;
@@ -80,7 +130,7 @@
   background: var(--surface);
   border: 1px solid var(--edge);
   border-radius: 8px;
-  box-shadow: 0 8px 28px rgb(0 0 0 / 0.4);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.28);
   padding: 0.2rem;
   gap: 0.1rem;
   font-family: var(--font-mono);
@@ -115,7 +165,7 @@
   background: var(--surface) !important;
   border: 1px solid var(--edge) !important;
   border-radius: 8px !important;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.45) !important;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.28) !important;
   color: var(--fg) !important;
   font-family: var(--font-mono) !important;
 }

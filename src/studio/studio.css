@@ -36,6 +36,18 @@
   white-space: nowrap;
 }
 
+/* the "login@studio:" prefix links back to the site homepage */
+.studio-crumb-home {
+  text-decoration: none;
+  border-radius: 4px;
+  padding: 0.05rem 0.15rem;
+  transition: background 120ms ease;
+}
+
+.studio-crumb-home:hover {
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
+}
+
 .studio-topbar-right {
   display: flex;
   align-items: center;
@@ -177,6 +189,18 @@
   background: color-mix(in oklab, var(--surface) 55%, transparent);
 }
 
+/* drag-and-drop: dragged note + the group header it can drop onto */
+.studio-tree-row.is-dragging {
+  opacity: 0.4;
+}
+
+.studio-group-head.is-drop {
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 16%, transparent);
+  outline: 1px dashed color-mix(in oklab, var(--accent) 55%, transparent);
+  outline-offset: -1px;
+}
+
 .studio-group-name {
   flex: 1;
   text-align: left;
@@ -201,15 +225,17 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* grid-rows 1fr->0fr gives a smooth height collapse without measuring */
+/* grid-rows 1fr->0fr gives a smooth height collapse without measuring. The
+   grid MUST have a single child for the track to size it, so groups are wrapped
+   in one .studio-collapse-inner; every direct child clips + shrinks to 0. */
 .studio-tree-wrap {
   display: grid;
   grid-template-rows: 1fr;
-  transition: grid-template-rows 180ms ease, opacity 180ms ease;
+  transition: grid-template-rows 180ms ease, opacity 160ms ease;
   opacity: 1;
 }
 
-.studio-tree-wrap > .studio-tree {
+.studio-tree-wrap > * {
   overflow: hidden;
   min-height: 0;
 }
@@ -266,7 +292,7 @@
   background: var(--surface);
   border: 1px solid var(--edge);
   border-radius: 8px;
-  box-shadow: 0 12px 34px rgb(0 0 0 / 0.5);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.28);
   display: flex;
   flex-direction: column;
   gap: 0.05rem;

@@ -23,6 +23,14 @@ const REASON_LABEL: Record<string, string> = {
   "parse-error": "raw"
 };
 
+// A pure MDX/JSX comment expression: {/* … */}. These are placeholder hints in
+// the note templates; rendered as a full bordered card they read as ugly
+// "divider lines", so they get a slim, borderless treatment instead.
+function commentOnly(source: string): string | null {
+  const m = source.match(/^\s*\{\s*\/\*([\s\S]*?)\*\/\s*\}\s*$/);
+  return m ? m[1].trim() : null;
+}
+
 function RawMdxCard({
   source,
   reason,
@@ -36,6 +44,7 @@ function RawMdxCard({
   const [error, setError] = useState<string | null>(null);
   const [showSource, setShowSource] = useState(false);
   const srcRef = useRef<HTMLTextAreaElement>(null);
+  const comment = commentOnly(source);
 
   // Auto-grow the source box to fit the whole draft — no fixed height/scroll.
   useEffect(() => {
@@ -63,6 +72,32 @@ function RawMdxCard({
       alive = false;
     };
   }, [source]);
+
+  // Comment-only blocks: a slim, borderless hint that opens to an editable
+  // source box on click. Keeps the source verbatim (round-trip) without the
+  // heavy card that looked like a divider under a heading.
+  if (comment !== null) {
+    return (
+      <div className="studio-rawmdx-note" contentEditable={false}>
+        {showSource ? (
+          <textarea
+            aria-label="raw mdx source"
+            className="studio-rawmdx-src"
+            onBlur={() => setShowSource(false)}
+            onChange={(event) => onEdit(event.target.value)}
+            ref={srcRef}
+            spellCheck={false}
+            value={source}
+          />
+        ) : (
+          <button className="studio-rawmdx-note-btn" onClick={() => setShowSource(true)} title="mdx comment — click to edit" type="button">
+            <span className="studio-rawmdx-note-mark" aria-hidden="true">{"{/* */}"}</span>
+            <span className="studio-rawmdx-note-text">{comment || "comment"}</span>
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="studio-rawmdx" contentEditable={false}>

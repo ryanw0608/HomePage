@@ -360,8 +360,10 @@ function Workbench({ token, viewer, onLogout }: { token: string; viewer: Viewer;
     <div className="studio-frame">
       <header className="studio-topbar">
         <p className="studio-crumb">
-          <span className="accent">{viewer.login}</span>
-          <span className="faint">@studio:</span>
+          <a className="studio-crumb-home" href={import.meta.env.BASE_URL} title="back to homepage">
+            <span className="accent">{viewer.login}</span>
+            <span className="faint">@studio:</span>
+          </a>
           <span>~/{activePath ? activePath.replace(`${STUDIO.contentRoot}/`, "") : ""}</span>
         </p>
         <div className="studio-topbar-right">
@@ -515,6 +517,8 @@ function Sidebar(props: {
   const [dialog, setDialog] = useState<{ mode: "rename" | "delete" | "move"; note: NoteRow } | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [dragPath, setDragPath] = useState<string | null>(null);
+  const [dropKey, setDropKey] = useState<string | null>(null);
 
   const { meta } = props;
   const titleOf = (note: NoteRow) => meta[note.path]?.title ?? note.name;
@@ -647,6 +651,21 @@ function Sidebar(props: {
     else if (action === "delete") setDialog({ mode: "delete", note });
   };
 
+  // Drag a note onto a group header to reassign its area/course. Only within
+  // the same collection and onto a real (non-ungrouped) group.
+  const canDropOn = (collection: StudioCollection, groupId: string | null): boolean => {
+    if (!dragPath || groupId === null) return false;
+    const dragged = (props.notes ?? []).find((n) => n.path === dragPath);
+    return !!dragged && dragged.collection === collection && (meta[dragPath]?.group ?? null) !== groupId;
+  };
+
+  const dropOnGroup = (collection: StudioCollection, groupId: string | null) => {
+    const dragged = (props.notes ?? []).find((n) => n.path === dragPath);
+    setDropKey(null);
+    setDragPath(null);
+    if (dragged && groupId && canDropOn(collection, groupId)) void move(dragged, groupId);
+  };
+
   return (
     <nav aria-label="notes" className="studio-sidebar">
       <div className="studio-sidebar-head">
@@ -677,6 +696,7 @@ function Sidebar(props: {
               <span className="studio-folder-count">{total || ""}</span>
             </button>
             <div className={`studio-tree-wrap${isCollapsed ? " is-collapsed" : ""}`}>
+              <div className="studio-collapse-inner">
               {total === 0 && <p className="studio-muted studio-tree-empty">(empty)</p>}
               {groups.map((group) => {
                 const gKey = `grp:${collection}:${group.id ?? ""}`;
@@ -685,8 +705,16 @@ function Sidebar(props: {
                   <div className="studio-group" key={gKey}>
                     <button
                       aria-expanded={!gCollapsed}
-                      className="studio-group-head"
+                      className={`studio-group-head${dropKey === gKey ? " is-drop" : ""}`}
                       onClick={() => toggle(gKey)}
+                      onDragLeave={() => setDropKey((k) => (k === gKey ? null : k))}
+                      onDragOver={(e) => {
+                        if (canDropOn(collection, group.id)) {
+                          e.preventDefault();
+                          setDropKey(gKey);
+                        }
+                      }}
+                      onDrop={() => dropOnGroup(collection, group.id)}
                       type="button"
                     >
                       <span className={`studio-chevron is-sub${gCollapsed ? " is-collapsed" : ""}`} aria-hidden="true">
@@ -700,11 +728,20 @@ function Sidebar(props: {
                         {group.notes.map((note) => (
                           <li key={note.path}>
                             <button
-                              className={`studio-tree-row${note.path === props.activePath ? " is-active" : ""}${pending === note.path ? " is-pending" : ""}`}
+                              className={`studio-tree-row${note.path === props.activePath ? " is-active" : ""}${pending === note.path ? " is-pending" : ""}${dragPath === note.path ? " is-dragging" : ""}`}
+                              draggable
                               onClick={() => navigateTo(note.path)}
                               onContextMenu={(e) => {
                                 e.preventDefault();
                                 setMenu({ note, x: e.clientX, y: e.clientY });
+                              }}
+                              onDragEnd={() => {
+                                setDragPath(null);
+                                setDropKey(null);
+                              }}
+                              onDragStart={(e) => {
+                                setDragPath(note.path);
+                                e.dataTransfer.effectAllowed = "move";
                               }}
                               title={note.name}
                               type="button"
@@ -731,6 +768,7 @@ function Sidebar(props: {
                   </div>
                 );
               })}
+              </div>
             </div>
           </section>
         );
