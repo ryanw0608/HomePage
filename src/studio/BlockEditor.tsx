@@ -21,6 +21,7 @@ import { BlockNoteView } from "@blocknote/mantine";
 import { SuggestionMenuController, useCreateBlockNote } from "@blocknote/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
+import Minimap from "@/studio/Minimap";
 import { studioSchema } from "@/studio/blocks/schema";
 import { StudioSideMenu } from "@/studio/blocks/SideMenu";
 import { studioSlashItems } from "@/studio/blocks/slashMenu";
@@ -55,6 +56,7 @@ export default function BlockEditor({ text, onChange, notePath }: Props) {
   const provRef = useRef<ProvMap>(loaded.prov);
   const tailRef = useRef(loaded.tail);
   const ready = useRef(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Post-mount baseline + self-check. Runs once.
   useEffect(() => {
@@ -109,24 +111,27 @@ export default function BlockEditor({ text, onChange, notePath }: Props) {
   }, [editor, onChange]);
 
   return (
-    <div className="studio-blocknote">
-      <BlockNoteView
-        editor={editor}
-        formattingToolbar={false}
-        onChange={emit}
-        sideMenu={false}
-        slashMenu={false}
-        theme="dark"
-      >
-        <SuggestionMenuController
-          getItems={async (query) =>
-            filterSuggestionItems(studioSlashItems(editor as never), query)
-          }
-          triggerCharacter="/"
-        />
-        <StudioFormattingToolbar />
-        <StudioSideMenu notePath={notePath} />
-      </BlockNoteView>
+    <div className="studio-blocknote-shell">
+      <div className="studio-blocknote" ref={scrollRef}>
+        <BlockNoteView
+          editor={editor}
+          formattingToolbar={false}
+          onChange={emit}
+          sideMenu={false}
+          slashMenu={false}
+          theme="dark"
+        >
+          <SuggestionMenuController
+            getItems={async (query) =>
+              filterSuggestionItems(studioSlashItems(editor as never), query)
+            }
+            triggerCharacter="/"
+          />
+          <StudioFormattingToolbar />
+          <StudioSideMenu notePath={notePath} />
+        </BlockNoteView>
+      </div>
+      <Minimap scrollRef={scrollRef} />
     </div>
   );
 }

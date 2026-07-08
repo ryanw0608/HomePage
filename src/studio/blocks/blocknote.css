@@ -33,6 +33,115 @@
   overflow-y: auto;
 }
 
+/* Shell wraps the scrollable editor + the pinned minimap rail so the rail can
+   be positioned against the pane edge without scrolling away with content. */
+.studio-blocknote-shell {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ── document minimap (VS-Code-style overview rail) ───────────────────────
+   A slim vertical map of the document pinned over the editor's right edge:
+   one bar per top-level block (brightness keyed to block type) plus a
+   translucent viewport box. Click / drag to scroll. Hidden on narrow panes. */
+.studio-minimap {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 44px;
+  z-index: 3;
+  cursor: pointer;
+  border-left: 1px solid var(--line);
+  background: color-mix(in oklab, var(--surface) 40%, transparent);
+  opacity: 0.55;
+  transition: opacity 120ms ease;
+}
+
+.studio-blocknote-shell:hover .studio-minimap {
+  opacity: 1;
+}
+
+.studio-minimap-blocks {
+  position: absolute;
+  inset: 0;
+  padding: 0 7px;
+}
+
+.studio-minimap-row {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  border-radius: 1px;
+  background: var(--edge);
+}
+
+/* Prose reads dim; structural blocks read brighter, headings brightest. */
+.studio-minimap-row.is-paragraph {
+  background: var(--faint);
+}
+
+.studio-minimap-row.is-heading {
+  background: var(--accent);
+  left: 5px;
+  right: 5px;
+}
+
+.studio-minimap-row.is-h1 {
+  right: 3px;
+}
+
+.studio-minimap-row.is-quote {
+  background: var(--tk-cyan);
+}
+
+.studio-minimap-row.is-codeBlock {
+  background: var(--tk-green);
+}
+
+.studio-minimap-row.is-bulletListItem,
+.studio-minimap-row.is-numberedListItem,
+.studio-minimap-row.is-checkListItem {
+  background: var(--muted);
+  left: 12px;
+}
+
+.studio-minimap-row.is-displayMath {
+  background: var(--tk-magenta);
+}
+
+.studio-minimap-row.is-rawMdx,
+.studio-minimap-row.is-table {
+  background: var(--tk-yellow);
+}
+
+.studio-minimap-viewport {
+  position: absolute;
+  left: 0;
+  right: 0;
+  min-height: 12px;
+  background: color-mix(in oklab, var(--accent) 16%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 45%, transparent);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Hide the rail where the pane is too narrow for it to be legible. */
+@media (max-width: 900px) {
+  .studio-minimap {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-minimap {
+    transition: none;
+  }
+}
+
 .studio-blocknote .bn-editor {
   background: var(--bg);
   color: var(--fg);
