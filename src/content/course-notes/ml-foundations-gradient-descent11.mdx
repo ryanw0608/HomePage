@@ -1,0 +1,104 @@
+---
+title: "Gradient Descent as an Optimization Baseline"
+description: "A compact course note on gradient descent, loss landscapes, and learning-rate intuition."
+summary: "Gradient descent updates parameters in the direction that most rapidly decreases a differentiable objective. This note records the core idea, a small worked example, and common confusions around learning rates."
+tldr: "Move parameters against the gradient, scaled by a learning rate; everything else in optimization is a refinement of this loop."
+course: "ml-foundations"
+date: "2026-07-06"
+revisit: "2026-08-03"
+language: "en"
+status: "active"
+order: 1
+tags: ["optimization", "gradients"]
+areas: ["machine-learning"]
+featured: true
+math: true
+---
+
+<Tldr>
+  Gradient descent repeatedly moves parameters in the negative gradient direction, scaled by a learning
+  rate. It is the baseline every other optimizer refines.
+</Tldr>
+
+## Overview
+
+Gradient descent is the baseline optimization method behind many machine-learning training loops. Given a
+differentiable loss function, it repeatedly moves parameters in the negative gradient direction.
+
+## Key Concepts
+
+<Callout type="definition" title="def · gradient">
+  The vector of partial derivatives of the objective with respect to each parameter. It points in the
+  direction of steepest local increase, so its negative is a local descent direction.
+</Callout>
+
+- The gradient points in the direction of steepest local increase.
+- The negative gradient is a local descent direction.
+- The learning rate controls the update size.
+
+## Detailed Notes
+
+For parameters $ \theta $, objective $ J(\theta) $, and learning rate $ \eta $, the basic update is:
+
+$$
+\theta_{t+1} = \theta_t - \eta \nabla_\theta J(\theta_t)
+$$
+
+<Derivation
+  title="derivation · one step on a quadratic"
+  steps={[
+    {
+      text: "Take the one-dimensional objective and differentiate it.",
+      math: "J(w) = (w - 3)^2, \\qquad J'(w) = 2(w - 3)"
+    },
+    {
+      text: "Evaluate the gradient at the starting point w = 0.",
+      math: "J'(0) = 2(0 - 3) = -6"
+    },
+    {
+      text: "Apply the update rule with learning rate 0.1: subtracting a negative gradient moves w toward the minimum.",
+      math: "w_1 = w_0 - \\eta J'(w_0) = 0 - 0.1 \\cdot (-6) = 0.6"
+    }
+  ]}
+/>
+
+## Mistakes And Confusions
+
+<Callout type="exam" title="exam-trap · learning rate extremes">
+  A learning rate that is too large can jump over a minimum and diverge. A learning rate that is too small
+  can make useful progress hard to observe. Exam questions love asking which failure mode a given loss
+  curve shows.
+</Callout>
+
+## Active Recall
+
+<Recall
+  items={[
+    {
+      q: "Why is the negative gradient a sensible update direction?",
+      a: "The gradient points in the direction of steepest local increase of the objective, so its negative gives the locally steepest decrease."
+    },
+    {
+      q: "For J(w) = (w-3)^2 starting at w = 0 with η = 0.1, where is w after one step?",
+      a: "w = 0.6. The derivative at 0 is -6, and 0 - 0.1 × (-6) = 0.6."
+    },
+    {
+      q: "What failure modes do extreme learning rates cause?",
+      a: "Too large: the update overshoots the minimum and can diverge. Too small: progress is so slow it is hard to distinguish from no learning."
+    }
+  ]}
+/>
+
+## Summary
+
+<KeyTakeaways
+  items={[
+    "Gradient descent is simple, local, and sensitive to parameter scale.",
+    "The learning rate is the single most important hyperparameter in the basic loop.",
+    "It is the anchor for understanding momentum, Adam, and every refined optimizer."
+  ]}
+/>
+
+## References
+
+- Ian Goodfellow, Yoshua Bengio, and Aaron Courville, _Deep Learning_, Chapter 8: Optimization for Training Deep Models.
