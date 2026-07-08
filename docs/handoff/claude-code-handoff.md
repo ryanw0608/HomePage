@@ -25,6 +25,41 @@ Done and pushed:
 shell + raw/blocks toggle + vitest in CI), **P3.1** (converter spine), and **P3.2a** (real
 Notion blocks) are all shipped.
 
+### ARCHIVE 2026-07-08 (session cont.) — resume at BENCH
+
+Shipped + pushed this session (all green, deployed): P1 fixes (heading-handle
+alignment, auto-grow property fields), folder management (right-click
+collections/groups, add/rename/delete folder via taxonomy.ts, drag-to-regroup,
+live-taxonomy sidebar showing all folders), **display math** `$$…$$` block,
+**export** (MD/HTML/PDF), **minimap**, **git-gutter** change markers, **Figure**
+resize/align/caption, **GFM tables** editable block. Golden suite: 56 tests, seed
+now discovered by glob (rename-proof).
+
+**ONLY REMAINING FROM THE P3 WORKFLOW: Bench editable block.** It is FULLY
+implemented + self-verified in the worktree
+`.claude/worktrees/wf_c557eff6-d2f-5` (workflow runId `wf_c557eff6-d2f`). It was
+deferred because its MdxLeaf.tsx changes conflict with the just-merged Figure
+changes. To finish (the other files apply cleanly):
+1. `git apply --3way` the worktree diff for `src/studio/convert/parse.ts`
+   (adds "Bench" to LEAF_COMPONENTS), `src/studio/blocks/slashMenu.tsx` (Bench
+   item), `src/studio/blocks/blocknote.css` (studio-bench styles) — all clean.
+2. Graft into `src/studio/blocks/MdxLeaf.tsx` (which now has FigureEditor):
+   insert the worktree's Bench section (its lines 85–261: BetterRule/BenchRow
+   types, cellText/coerceCell/benchNumeric/benchWinners/packBetter helpers +
+   `BenchEditor`) right before `function LeafEditor`; add a `setMany:(patch)=>void`
+   param to LeafEditor + `if (name === "Bench") return <BenchEditor data={data}
+   setMany={setMany} />;`; in MdxLeafCard define `setMany` (merge patch → onData
+   JSON) and pass it to LeafEditor.
+3. Add bench golden test from the worktree's roundtrip.test.ts (parse <Bench…/>
+   → mdxLeaf, byte-identical unchanged, edited cell reparses, number-vs-string
+   preserved). Run check + `npm test` + build.
+4. FOLLOW-UP owed: adversarial converter round-trip review of the **tables +
+   bench** edit paths (golden tests pass; edge cases not yet adversarially probed).
+
+The 5 workflow worktrees still exist under `.claude/worktrees/wf_c557eff6-d2f-*`
+(1=tables 2=figure 3=minimap 4=gitgutter 5=bench) — safe to `git worktree remove`
+the first four after confirming their commits landed.
+
 ### CURRENT STATE — pick up here (2026-07-08, four commits landed locally, NOT pushed)
 
 This session (2026-07-08) shipped four verified commits on `master` (local only — **not yet
