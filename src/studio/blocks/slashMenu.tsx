@@ -62,7 +62,8 @@ function componentItems(editor: BlockNoteEditor<never, never, never>): DefaultRe
     ...leaf("Recall", "active-recall Q/A", ["recall", "qa"], editor),
     ...leaf("Figure", "image with caption", ["figure", "image", "img"], editor),
     ...leaf("FormulaCard", "reference formulas (KaTeX)", ["formulacard", "formula"], editor),
-    ...leaf("Derivation", "collapsible numbered steps", ["derivation", "steps", "proof"], editor)
+    ...leaf("Derivation", "collapsible numbered steps", ["derivation", "steps", "proof"], editor),
+    ...leaf("Bench", "comparison table + winner highlight", ["bench", "table", "compare", "benchmark"], editor)
   ];
 }
 

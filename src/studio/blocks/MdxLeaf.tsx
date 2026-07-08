@@ -221,9 +221,200 @@ function FigureEditor({
   );
 }
 
+/* --------------------------------------------------------------- Bench edit */
+
+type BetterRule = "max" | "min" | null;
+interface BenchRow {
+  name: string;
+  cells: (string | number)[];
+  baseline?: boolean;
+}
+
+const cellText = (v: unknown): string => (v === undefined || v === null ? "" : String(v));
+
+/* Keep a cell a NUMBER only when its canonical string equals the typed text,
+ * otherwise a STRING — so 28.4 stays numeric while "28.40", "N/A", "1e3" stay
+ * verbatim. This is what makes number-vs-string cells survive the reparse. */
+const coerceCell = (text: string): string | number =>
+  text !== "" && Number.isFinite(Number(text)) && String(Number(text)) === text ? Number(text) : text;
+
+const benchNumeric = (v: unknown): number | undefined => {
+  const n = typeof v === "number" ? v : Number.parseFloat(String(v ?? "").replace(/[^\d.eE+-]/g, ""));
+  return Number.isFinite(n) ? n : undefined;
+};
+
+/* Per-column winning row (mirrors Bench.astro) so the editor highlights the
+ * exact cell the published component would. */
+function benchWinners(columns: string[], rows: BenchRow[], better: BetterRule[]): number[] {
+  return columns.map((_, c) => {
+    const rule = better[c];
+    if (!rule) return -1;
+    let bestRow = -1;
+    let best: number | undefined;
+    rows.forEach((row, r) => {
+      const value = benchNumeric(row.cells?.[c]);
+      if (value === undefined) return;
+      if (best === undefined || (rule === "max" ? value > best : value < best)) {
+        best = value;
+        bestRow = r;
+      }
+    });
+    return bestRow;
+  });
+}
+
+/* Emit `better` only when a rule is set, normalised to null holes; all-null → drop. */
+const packBetter = (arr: BetterRule[]): BetterRule[] | undefined =>
+  arr.some((b) => b === "max" || b === "min") ? arr.map((b) => b ?? null) : undefined;
+
+/*
+ * The comparison table, rendered as its REAL bench markup with every field
+ * edit-in-place: click a header/cell and type, pick the winner rule per column,
+ * toggle a baseline row, add/remove rows and columns. `setMany` writes several
+ * keys from one snapshot so a compound edit (e.g. add column ⇒ columns + rows +
+ * better) can't clobber itself with stale closures.
+ */
+function BenchEditor({ data, setMany }: { data: Record<string, unknown>; setMany: (patch: Record<string, unknown>) => void }) {
+  const columns = strList(data.columns);
+  const rows: BenchRow[] = Array.isArray(data.rows) ? (data.rows as BenchRow[]) : [];
+  const better: BetterRule[] = Array.isArray(data.better) ? (data.better as BetterRule[]) : [];
+  const caption = typeof data.caption === "string" ? data.caption : "";
+  const winners = benchWinners(columns, rows, better);
+
+  const setColumn = (c: number, name: string) => setMany({ columns: columns.map((x, i) => (i === c ? name : x)) });
+  const setBetter = (c: number, rule: BetterRule) =>
+    setMany({ better: packBetter(columns.map((_, i) => (i === c ? rule : better[i] ?? null))) });
+  const addColumn = () =>
+    setMany({
+      columns: [...columns, ""],
+      better: packBetter([...columns.map((_, i) => better[i] ?? null), null]),
+      rows: rows.map((row) => ({ ...row, cells: [...(row.cells ?? []), ""] }))
+    });
+  const removeColumn = (c: number) =>
+    setMany({
+      columns: columns.filter((_, i) => i !== c),
+      better: packBetter(columns.map((_, i) => better[i] ?? null).filter((_, i) => i !== c)),
+      rows: rows.map((row) => ({ ...row, cells: (row.cells ?? []).filter((_, i) => i !== c) }))
+    });
+  const setRowName = (r: number, name: string) =>
+    setMany({ rows: rows.map((row, i) => (i === r ? { ...row, name } : row)) });
+  const setCell = (r: number, c: number, text: string) =>
+    setMany({
+      rows: rows.map((row, i) =>
+        i === r ? { ...row, cells: (row.cells ?? []).map((v, j) => (j === c ? coerceCell(text) : v)) } : row
+      )
+    });
+  const toggleBaseline = (r: number) =>
+    setMany({
+      rows: rows.map((row, i) => {
+        if (i !== r) return row;
+        if (row.baseline) return { name: row.name, cells: row.cells };
+        return { ...row, baseline: true };
+      })
+    });
+  const addRow = () => setMany({ rows: [...rows, { name: "", cells: columns.map(() => "") }] });
+  const removeRow = (r: number) => setMany({ rows: rows.filter((_, i) => i !== r) });
+
+  return (
+    <figure className="bench studio-bench">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">method</th>
+            {columns.map((col, c) => (
+              <th className="studio-bench-col" key={c} scope="col">
+                <span className="studio-bench-colhead">
+                  <AutoInput className="studio-bench-input" onChange={(v) => setColumn(c, v)} placeholder="column" value={col} />
+                  <button className="studio-bench-colx" onClick={() => removeColumn(c)} title="remove column" type="button">
+                    ✕
+                  </button>
+                </span>
+                <select
+                  className="studio-bench-better"
+                  onChange={(e) => setBetter(c, e.target.value === "max" || e.target.value === "min" ? e.target.value : null)}
+                  title="which value wins the column"
+                  value={better[c] ?? ""}
+                >
+                  <option value="">— no winner</option>
+                  <option value="max">▲ higher wins</option>
+                  <option value="min">▼ lower wins</option>
+                </select>
+              </th>
+            ))}
+            <th className="studio-bench-gutter" scope="col">
+              <button className="studio-leaf-add" onClick={addColumn} type="button">
+                + col
+              </button>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, r) => (
+            <tr className={row.baseline ? "baseline" : undefined} key={r}>
+              <th className="studio-bench-rowhead" scope="row">
+                <AutoInput className="studio-bench-input" onChange={(v) => setRowName(r, v)} placeholder="method" value={cellText(row.name)} />
+                <span className="studio-bench-rowctl">
+                  <button
+                    className={`studio-bench-base${row.baseline ? " is-on" : ""}`}
+                    onClick={() => toggleBaseline(r)}
+                    title="mark as a dimmed baseline row"
+                    type="button"
+                  >
+                    base
+                  </button>
+                  <button className="studio-leaf-x" onClick={() => removeRow(r)} title="remove row" type="button">
+                    ✕
+                  </button>
+                </span>
+              </th>
+              {columns.map((_, c) => (
+                <td className={winners[c] === r ? "winner" : undefined} key={c}>
+                  <AutoInput
+                    className="studio-bench-input studio-bench-cell"
+                    onChange={(v) => setCell(r, c, v)}
+                    placeholder="–"
+                    value={cellText(row.cells?.[c])}
+                  />
+                </td>
+              ))}
+              <td className="studio-bench-gutter" />
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="studio-bench-actions">
+        <button className="studio-leaf-add" onClick={addRow} type="button">
+          + row
+        </button>
+      </div>
+      <figcaption>
+        <AutoInput
+          className="studio-bench-input studio-bench-caption"
+          onChange={(v) => setMany({ caption: v || undefined })}
+          placeholder="caption…"
+          value={caption}
+        />
+      </figcaption>
+    </figure>
+  );
+}
+
 /* --------------------------------------------------------- per-component UI */
 
-function LeafEditor({ name, data, set }: { name: string; data: Record<string, unknown>; set: (key: string, value: unknown) => void }) {
+function LeafEditor({
+  name,
+  data,
+  set,
+  setMany
+}: {
+  name: string;
+  data: Record<string, unknown>;
+  set: (key: string, value: unknown) => void;
+  setMany: (patch: Record<string, unknown>) => void;
+}) {
+  if (name === "Bench") {
+    return <BenchEditor data={data} setMany={setMany} />;
+  }
   if (name === "Critique") {
     return (
       <div className="critique">
@@ -373,15 +564,20 @@ function LeafEditor({ name, data, set }: { name: string; data: Record<string, un
 
 function MdxLeafCard({ name, dataJson, onData }: { name: string; dataJson: string; onData: (next: string) => void }) {
   const data = useMemo(() => parseData(dataJson), [dataJson]);
-  const set = (key: string, value: unknown) => {
+  // Apply several key updates from ONE base snapshot (compound block edits);
+  // an empty array or undefined value deletes the key (house-style stays clean).
+  const setMany = (patch: Record<string, unknown>) => {
     const next = { ...data };
-    if (value === undefined || (Array.isArray(value) && value.length === 0)) delete next[key];
-    else next[key] = value;
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === undefined || (Array.isArray(value) && value.length === 0)) delete next[key];
+      else next[key] = value;
+    }
     onData(JSON.stringify(next));
   };
+  const set = (key: string, value: unknown) => setMany({ [key]: value });
   return (
     <div className="mdx-preview studio-component-block studio-leaf" contentEditable={false}>
-      <LeafEditor data={data} name={name} set={set} />
+      <LeafEditor data={data} name={name} set={set} setMany={setMany} />
     </div>
   );
 }

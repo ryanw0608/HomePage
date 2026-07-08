@@ -176,7 +176,8 @@ const LEAF_COMPONENTS = new Set([
   "Recall",
   "Figure",
   "FormulaCard",
-  "Derivation"
+  "Derivation",
+  "Bench"
 ]);
 
 export { LEAF_COMPONENTS, strList };

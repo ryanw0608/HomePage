@@ -208,6 +208,58 @@ describe("byte-clean round-trip (P3.2 real-block converter)", () => {
     expect((doc2.blocks[0].props as { tex: string }).tex).toBe("\\int_0^1 x^2 \\, dx");
   });
 
+  it("parses a Bench as an mdxLeaf block and round-trips it byte-identically", () => {
+    const text =
+      "<Bench\n" +
+      '  caption="WMT BLEU"\n' +
+      '  columns={["EN→DE", "EN→FR"]}\n' +
+      '  better={["max", "max"]}\n' +
+      "  rows={[\n" +
+      '    { name: "Transformer", cells: [28.4, 41.8] },\n' +
+      '    { name: "ConvS2S", cells: [25.16, "40.46"], baseline: true }\n' +
+      "  ]}\n" +
+      "/>\n";
+    const doc = loadDocument(text);
+    expect(doc.blocks[0].type).toBe("mdxLeaf");
+    expect((doc.blocks[0].props as { name?: string }).name).toBe("Bench");
+    const data = JSON.parse((doc.blocks[0].props as { dataJson: string }).dataJson);
+    expect(data.columns).toEqual(["EN→DE", "EN→FR"]);
+    expect(data.better).toEqual(["max", "max"]);
+    expect(data.rows[0].cells).toEqual([28.4, 41.8]); // numbers stay numbers
+    expect(typeof data.rows[1].cells[0]).toBe("number"); // 25.16
+    expect(typeof data.rows[1].cells[1]).toBe("string"); // "40.46" stays a string
+    expect(data.rows[1].baseline).toBe(true);
+    expect(roundTrip(text)).toBe(text); // unchanged → byte-identical
+  });
+
+  it("round-trips an edited Bench, preserving number-vs-string cells + baseline/better", () => {
+    const doc = loadDocument('<Bench columns={["A"]} rows={[{ name: "x", cells: [1] }]} />\n');
+    expect(doc.blocks[0].type).toBe("mdxLeaf");
+    doc.blocks[0].props = {
+      name: "Bench",
+      dataJson: JSON.stringify({
+        caption: "cap",
+        columns: ["A", "B"],
+        better: ["max", null],
+        rows: [
+          { name: "x", cells: [2, "N/A"] },
+          { name: "y", cells: [3.5, 40], baseline: true }
+        ]
+      })
+    };
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    const doc2 = loadDocument(out);
+    expect(doc2.blocks[0].type).toBe("mdxLeaf");
+    const data = JSON.parse((doc2.blocks[0].props as { dataJson: string }).dataJson);
+    expect(data.caption).toBe("cap");
+    expect(data.columns).toEqual(["A", "B"]);
+    expect(data.better).toEqual(["max", null]);
+    expect(data.rows[0].cells).toEqual([2, "N/A"]);
+    expect(typeof data.rows[0].cells[0]).toBe("number"); // 2
+    expect(typeof data.rows[0].cells[1]).toBe("string"); // "N/A"
+    expect(data.rows[1]).toEqual({ name: "y", cells: [3.5, 40], baseline: true });
+  });
+
   it("parses a GFM table as a real table block, byte-identical (unchanged)", () => {
     const text = "| a | b |\n| - | - |\n| 1 | 2 |\n";
     const doc = loadDocument(text);
