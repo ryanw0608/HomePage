@@ -25,40 +25,28 @@ Done and pushed:
 shell + raw/blocks toggle + vitest in CI), **P3.1** (converter spine), and **P3.2a** (real
 Notion blocks) are all shipped.
 
-### ARCHIVE 2026-07-08 (session cont.) — resume at BENCH
+### ARCHIVE 2026-07-08/09 — P3 feature-complete; bug-fix pass is next
 
-Shipped + pushed this session (all green, deployed): P1 fixes (heading-handle
-alignment, auto-grow property fields), folder management (right-click
-collections/groups, add/rename/delete folder via taxonomy.ts, drag-to-regroup,
-live-taxonomy sidebar showing all folders), **display math** `$$…$$` block,
-**export** (MD/HTML/PDF), **minimap**, **git-gutter** change markers, **Figure**
-resize/align/caption, **GFM tables** editable block. Golden suite: 56 tests, seed
-now discovered by glob (rename-proof).
+Shipped + pushed (all green, deployed): P1 fixes (heading-handle alignment,
+auto-grow property fields), folder management (right-click collections/groups,
+add/rename/delete folder via taxonomy.ts, drag-to-regroup, live-taxonomy
+sidebar), **display math** `$$…$$`, **export** (MD/HTML/PDF), **minimap**,
+**git-gutter** change markers, **Figure** resize/align/caption, **GFM tables**
+editable block, and **Bench** editable spreadsheet block (`9047e90` — grafted
+around the Figure changes, verified in-browser: winner highlight, cell edit →
+draft save). Golden suite: 58 tests; the course-notes seed is discovered by
+glob (rename-proof). Every component is now a real editable block; the P3
+workflow's five worktrees have been removed.
 
-**ONLY REMAINING FROM THE P3 WORKFLOW: Bench editable block.** It is FULLY
-implemented + self-verified in the worktree
-`.claude/worktrees/wf_c557eff6-d2f-5` (workflow runId `wf_c557eff6-d2f`). It was
-deferred because its MdxLeaf.tsx changes conflict with the just-merged Figure
-changes. To finish (the other files apply cleanly):
-1. `git apply --3way` the worktree diff for `src/studio/convert/parse.ts`
-   (adds "Bench" to LEAF_COMPONENTS), `src/studio/blocks/slashMenu.tsx` (Bench
-   item), `src/studio/blocks/blocknote.css` (studio-bench styles) — all clean.
-2. Graft into `src/studio/blocks/MdxLeaf.tsx` (which now has FigureEditor):
-   insert the worktree's Bench section (its lines 85–261: BetterRule/BenchRow
-   types, cellText/coerceCell/benchNumeric/benchWinners/packBetter helpers +
-   `BenchEditor`) right before `function LeafEditor`; add a `setMany:(patch)=>void`
-   param to LeafEditor + `if (name === "Bench") return <BenchEditor data={data}
-   setMany={setMany} />;`; in MdxLeafCard define `setMany` (merge patch → onData
-   JSON) and pass it to LeafEditor.
-3. Add bench golden test from the worktree's roundtrip.test.ts (parse <Bench…/>
-   → mdxLeaf, byte-identical unchanged, edited cell reparses, number-vs-string
-   preserved). Run check + `npm test` + build.
-4. FOLLOW-UP owed: adversarial converter round-trip review of the **tables +
-   bench** edit paths (golden tests pass; edge cases not yet adversarially probed).
+An adversarial converter review of the tables + bench EDIT paths ran after the
+merge (workflow `wf_047dcfad-a54`, two Opus skeptics probing empirically) —
+check the session log / journal for verdicts; any confirmed corruption findings
+must be fixed with regression tests before further converter work.
 
-The 5 workflow worktrees still exist under `.claude/worktrees/wf_c557eff6-d2f-*`
-(1=tables 2=figure 3=minimap 4=gitgutter 5=bench) — safe to `git worktree remove`
-the first four after confirming their commits landed.
+**Owner's stated plan (2026-07-09):** finish all features (done) → bug-fix
+pass (owner will test and report) → next adjustments/optimisation → likely
+migration to a deployment WITH A BACKEND (replacing the pure-static GitHub
+contents API model; revisit auth, drafts, and the site-api Worker then).
 
 ### CURRENT STATE — pick up here (2026-07-08, four commits landed locally, NOT pushed)
 

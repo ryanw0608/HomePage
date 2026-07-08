@@ -131,20 +131,60 @@ function cellAlign(cell: TableCellLike | Inline[] | undefined): string {
   return typeof cell.props?.textAlignment === "string" ? cell.props.textAlignment : "left";
 }
 
-/* One GFM cell: inline markdown, with pipes escaped (`\|`) and any newline
- * flattened to a space so the row can't break on reparse. */
+/* True if the TeX contains a pipe that is NOT backslash-escaped (a pipe is
+ * escaped iff preceded by an odd number of backslashes; stripping every
+ * backslash+char pair first makes any surviving `|` a raw one). */
+function texHasRawPipe(tex: string): boolean {
+  return /\|/.test(tex.replace(/\\[\s\S]/g, ""));
+}
+
+/* One GFM cell: inline markdown with pipes escaped (`\|`) and every newline
+ * form (\n, \r\n, lone \r — CommonMark treats a bare CR as a line ending too)
+ * flattened to a space so the row can't break on reparse.
+ *
+ * Inline MATH is special: GFM's `\|`-unescaping does not reach inside `$…$`,
+ * so an escaped pipe there keeps its backslash on reparse. That means existing
+ * `\|` sequences in TeX round-trip verbatim ONLY if we leave the span
+ * untouched — and a RAW `|` in TeX has no GFM-safe form at all (escaping it
+ * drifts the TeX to `\|`/‖; emitting it raw splits the row). We therefore
+ * serialize math spans as-is and refuse to house-style a cell whose TeX
+ * carries a raw pipe; the thrown error makes the editor keep the last-good
+ * text instead of saving a corrupted table. */
 function cellToMarkdown(cell: TableCellLike | Inline[] | undefined): string {
-  return inlineToMarkdown(cellInline(cell)).replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
+  const items = cellInline(cell);
+  const parts: string[] = [];
+  let run: Inline[] = [];
+  const flushRun = () => {
+    if (run.length) {
+      parts.push(inlineToMarkdown(run).replace(/\|/g, "\\|"));
+      run = [];
+    }
+  };
+  for (const item of items) {
+    if ((item as { type?: string }).type === "inlineMath") {
+      flushRun();
+      const tex = String((item as { props?: { tex?: string } }).props?.tex ?? "");
+      if (texHasRawPipe(tex)) {
+        throw new Error("table cell math contains an unescapable '|' — cannot serialize as GFM");
+      }
+      parts.push(inlineToMarkdown([item]));
+    } else {
+      run.push(item);
+    }
+  }
+  flushRun();
+  return parts.join("").replace(/\r\n?|\n/g, " ");
 }
 
 /* House-style an EDITED table back to a GFM pipe table: header row, a `---`
  * delimiter row honoring per-column alignment (`:-:` center, `--:` right; plain
  * `---` for left/none, since BlockNote can't distinguish them), then body rows.
- * Column count is fixed by the header so body rows pad/truncate to match. */
+ * Column count is the MAX across all rows (shorter rows pad with empty cells)
+ * so a ragged block state can never silently drop a cell's content. */
 function tableToMarkdown(block: ConvBlock): string {
   const rows = (block.content as TableContentLike)?.rows ?? [];
   if (rows.length === 0) return "";
-  const numCols = rows[0].cells.length;
+  const numCols = rows.reduce((m, r) => Math.max(m, r.cells.length), 0);
   if (numCols === 0) return "";
 
   const renderRow = (cells: (TableCellLike | Inline[])[]): string => {

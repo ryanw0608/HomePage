@@ -10,6 +10,7 @@ import { createReactBlockSpec } from "@blocknote/react";
 import katex from "katex";
 import { useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 
+import { toggleBaselineRow, type BenchRow, type BetterRule } from "@/studio/blocks/benchModel";
 import { AutoArea, AutoInput } from "@/studio/blocks/EditableField";
 import { figureAlign, safeFigureWidth } from "@/studio/preview/components";
 // AutoArea = wrapping/auto-grow field for long lines; AutoInput = short single-line labels.
@@ -223,13 +224,6 @@ function FigureEditor({
 
 /* --------------------------------------------------------------- Bench edit */
 
-type BetterRule = "max" | "min" | null;
-interface BenchRow {
-  name: string;
-  cells: (string | number)[];
-  baseline?: boolean;
-}
-
 const cellText = (v: unknown): string => (v === undefined || v === null ? "" : String(v));
 
 /* Keep a cell a NUMBER only when its canonical string equals the typed text,
@@ -304,14 +298,7 @@ function BenchEditor({ data, setMany }: { data: Record<string, unknown>; setMany
         i === r ? { ...row, cells: (row.cells ?? []).map((v, j) => (j === c ? coerceCell(text) : v)) } : row
       )
     });
-  const toggleBaseline = (r: number) =>
-    setMany({
-      rows: rows.map((row, i) => {
-        if (i !== r) return row;
-        if (row.baseline) return { name: row.name, cells: row.cells };
-        return { ...row, baseline: true };
-      })
-    });
+  const toggleBaseline = (r: number) => setMany({ rows: toggleBaselineRow(rows, r) });
   const addRow = () => setMany({ rows: [...rows, { name: "", cells: columns.map(() => "") }] });
   const removeRow = (r: number) => setMany({ rows: rows.filter((_, i) => i !== r) });
 

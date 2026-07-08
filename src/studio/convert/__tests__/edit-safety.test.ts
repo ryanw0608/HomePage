@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { toggleBaselineRow, type BenchRow } from "@/studio/blocks/benchModel";
 import { loadDocument, serializeDocument } from "@/studio/convert/document";
 import { parseBody } from "@/studio/convert/mdast";
 import type { ConvBlock } from "@/studio/convert/rawmdx";
@@ -117,5 +118,70 @@ describe("edited-block serialization safety", () => {
     const node = parseBody(out).children[0] as { children?: { type: string; url?: string }[] };
     const link = node.children?.find((c) => c.type === "link");
     expect(link?.url).toBe("/a b c");
+  });
+
+  /* ---- adversarial-review findings on the table + bench edit paths ------- */
+
+  interface CellObj {
+    content: unknown[];
+  }
+  interface TableRows {
+    rows: { cells: CellObj[] }[];
+  }
+
+  it("editing a sibling cell leaves `\\|` inside table math byte-verbatim (no drift, no split)", () => {
+    // On-disk escaped-pipe math: reparse keeps the backslash inside $…$, so
+    // the ONLY non-corrupting emission is the span untouched.
+    const text = "| metric | val |\n| - | - |\n| $P(a\\|b)$ | keep |\n";
+    const doc = loadDocument(text);
+    expect(doc.blocks[0].type).toBe("table");
+    const rows = (doc.blocks[0].content as TableRows).rows;
+    rows[1].cells[1].content = [{ type: "text", text: "edited", styles: {} }];
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    const doc2 = loadDocument(out);
+    expect(doc2.blocks[0].type).toBe("table");
+    const rows2 = (doc2.blocks[0].content as TableRows).rows;
+    expect(rows2).toHaveLength(2); // no phantom rows
+    expect(rows2[1].cells).toHaveLength(2); // no phantom cells
+    const math = rows2[1].cells[0].content[0] as { type: string; props?: { tex?: string } };
+    expect(math.type).toBe("inlineMath");
+    expect(math.props?.tex).toBe("P(a\\|b)"); // tex identical — no ‖ drift, not destroyed
+  });
+
+  it("refuses to serialize a table cell whose math carries a raw '|' (no GFM-safe form)", () => {
+    const doc = loadDocument("| a | b |\n| - | - |\n| 1 | 2 |\n");
+    const rows = (doc.blocks[0].content as TableRows).rows;
+    rows[1].cells[0].content = [{ type: "inlineMath", props: { tex: "P(a|b)" } }];
+    expect(() => serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion)).toThrow(/\|/);
+  });
+
+  it("flattens a lone carriage return in an edited table cell (row cannot split)", () => {
+    const doc = loadDocument("| a | b |\n| - | - |\n| 1 | 2 |\n");
+    const rows = (doc.blocks[0].content as TableRows).rows;
+    rows[1].cells[0].content = [{ type: "text", text: "a\rb", styles: {} }];
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    expect(out).not.toContain("\r");
+    const rows2 = (loadDocument(out).blocks[0].content as TableRows).rows;
+    expect(rows2).toHaveLength(2); // still header + ONE body row
+    expect((rows2[1].cells[0].content[0] as { text?: string }).text).toBe("a b");
+  });
+
+  it("keeps a body cell that overflows the header width (rows pad, never truncate)", () => {
+    const doc = loadDocument("| a | b |\n| - | - |\n| 1 | 2 |\n");
+    const rows = (doc.blocks[0].content as TableRows).rows;
+    rows[1].cells.push({ content: [{ type: "text", text: "EXTRA", styles: {} }] });
+    const out = serializeDocument(doc.blocks, doc.prov, doc.tail, doc.fmRegion);
+    expect(out).toContain("EXTRA");
+    const rows2 = (loadDocument(out).blocks[0].content as TableRows).rows;
+    expect(rows2[0].cells).toHaveLength(3); // header padded up
+    expect((rows2[1].cells[2].content[0] as { text?: string }).text).toBe("EXTRA");
+  });
+
+  it("un-baselining a Bench row keeps unknown row fields (only `baseline` is stripped)", () => {
+    const rows: BenchRow[] = [{ name: "x", cells: [1], baseline: true, note: "keep me", ref: 42 }];
+    const off = toggleBaselineRow(rows, 0);
+    expect(off[0]).toEqual({ name: "x", cells: [1], note: "keep me", ref: 42 });
+    const on = toggleBaselineRow(off, 0);
+    expect(on[0]).toEqual({ name: "x", cells: [1], note: "keep me", ref: 42, baseline: true });
   });
 });
