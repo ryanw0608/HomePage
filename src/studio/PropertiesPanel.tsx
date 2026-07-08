@@ -4,7 +4,7 @@
  * onChange (comment/order-preserving YAML document edits). Validation is
  * the shared build schema, so red here = red in CI.
  */
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import type { StudioCollection } from "@/studio/config";
 import {
@@ -91,6 +91,35 @@ function Field(props: {
   );
 }
 
+/* Auto-grow textarea: shows all its content, no inner scrollbar. Uncontrolled
+ * (defaultValue + onBlur) to match the rest of the panel. */
+function GrowArea(props: {
+  defaultValue: string;
+  reKey: string;
+  onBlur: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
+  placeholder?: string;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const grow = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  };
+  useEffect(grow, [props.reKey]);
+  return (
+    <textarea
+      className="studio-input studio-input-area studio-input-grow"
+      defaultValue={props.defaultValue}
+      onBlur={props.onBlur}
+      onInput={grow}
+      placeholder={props.placeholder}
+      ref={ref}
+      rows={1}
+    />
+  );
+}
+
 function FieldInput({
   field,
   value,
@@ -113,12 +142,11 @@ function FieldInput({
       );
     case "textarea":
       return (
-        <textarea
-          className="studio-input studio-input-area"
+        <GrowArea
           defaultValue={typeof value === "string" ? value : ""}
           key={String(value ?? "")}
           onBlur={(e) => onCommit(field.key, e.target.value.trim() || undefined)}
-          rows={2}
+          reKey={String(value ?? "")}
         />
       );
     case "date": {
@@ -204,8 +232,7 @@ function FieldInput({
     case "list": {
       const items = Array.isArray(value) ? value.map(String) : [];
       return (
-        <textarea
-          className="studio-input studio-input-area"
+        <GrowArea
           defaultValue={items.join("\n")}
           key={items.join("\n")}
           onBlur={(e) => {
@@ -216,7 +243,7 @@ function FieldInput({
             onCommit(field.key, next.length ? next : undefined);
           }}
           placeholder="one per line"
-          rows={Math.max(2, Math.min(5, items.length + 1))}
+          reKey={items.join("\n")}
         />
       );
     }

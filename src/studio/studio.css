@@ -805,6 +805,12 @@
   line-height: 1.5;
 }
 
+/* auto-grow fields show all their content — no inner scrollbar */
+.studio-input-grow {
+  resize: none;
+  overflow: hidden;
+}
+
 .studio-switch {
   display: inline-flex;
   align-items: center;

@@ -58,9 +58,11 @@
 
 .studio-blocknote .bn-side-menu {
   /* Align the +/⋮⋮ controls with the block's FIRST line (Notion behaviour),
-     not the vertical centre of a tall/multi-line block. */
+     not the vertical centre of a tall/multi-line block. The offset is set
+     per-hovered-block by SideMenu so it centres on that line's height
+     (a large heading line is taller than a paragraph's). */
   align-items: flex-start;
-  padding-top: 0.12rem;
+  padding-top: var(--bn-handle-offset, 0.12rem);
 }
 
 /* Component cards (Tldr/Callout/leaf/rawMdx) carry their own outer margins for

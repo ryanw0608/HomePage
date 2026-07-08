@@ -115,13 +115,32 @@ export function StudioSideMenu({ notePath }: { notePath?: string }) {
   const editor = useBlockNoteEditor() as unknown as StudioEditor;
   const hoveredId = useRef<string | null>(null);
 
-  // Track the block the cursor is over so menu actions know their target.
+  // Track the block the cursor is over so menu actions know their target, and
+  // set a CSS var so the +/⋮⋮ handles vertically centre on the block's FIRST
+  // line — for a tall/large heading the line box is taller than a paragraph, so
+  // a fixed offset would leave the handle floating above the text.
   useEffect(() => {
     const onOver = (e: Event) => {
       const t = e.target as HTMLElement | null;
-      const outer = t?.closest?.(".studio-blocknote .bn-block-outer[data-id]");
+      const outer = t?.closest?.(".studio-blocknote .bn-block-outer[data-id]") as HTMLElement | null;
       const id = outer?.getAttribute("data-id");
-      if (id) hoveredId.current = id;
+      if (!id || !outer) return;
+      hoveredId.current = id;
+      const content = outer.querySelector(".bn-block-content") as HTMLElement | null;
+      const textEl = (content?.querySelector("h1,h2,h3,h4,p,li") as HTMLElement | null) ?? content;
+      const root = outer.closest(".studio-blocknote") as HTMLElement | null;
+      if (content && textEl && root) {
+        // Centre the handle on the block's FIRST line: use the text element's
+        // top (so a heading's margin is included) plus half of one line's
+        // height (so multi-line paragraphs still centre on line 1).
+        const cs = getComputedStyle(textEl);
+        const lineH = parseFloat(cs.lineHeight) || 1.3 * (parseFloat(cs.fontSize) || 16);
+        const rect = textEl.getBoundingClientRect();
+        const firstLineH = Math.min(rect.height, lineH);
+        const handleH = (outer.parentElement?.querySelector(".bn-side-menu button") as HTMLElement | null)?.getBoundingClientRect().height || 22;
+        const offset = rect.top + firstLineH / 2 - content.getBoundingClientRect().top - handleH / 2;
+        root.style.setProperty("--bn-handle-offset", `${Math.max(0, offset)}px`);
+      }
     };
     document.addEventListener("mouseover", onOver, true);
     return () => document.removeEventListener("mouseover", onOver, true);
