@@ -146,6 +146,51 @@
   transform: rotate(-90deg);
 }
 
+.studio-chevron.is-sub {
+  font-size: 0.5rem;
+  opacity: 0.7;
+}
+
+/* second level: area/course groups inside a collection */
+.studio-group {
+  margin-left: 0.35rem;
+}
+
+.studio-group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 0.2rem 0.3rem;
+  margin-top: 0.15rem;
+  cursor: pointer;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.72rem;
+  border-radius: 4px;
+}
+
+.studio-group-head:hover {
+  color: var(--fg);
+  background: color-mix(in oklab, var(--surface) 55%, transparent);
+}
+
+.studio-group-name {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-group .studio-tree {
+  margin-left: 0.5rem;
+  border-left: 1px solid color-mix(in oklab, var(--line) 70%, transparent);
+  padding-left: 0.35rem;
+}
+
 .studio-folder-name {
   flex: 1;
   text-align: left;

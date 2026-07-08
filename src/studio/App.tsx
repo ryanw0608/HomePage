@@ -32,6 +32,9 @@ import {
   type Viewer
 } from "@/studio/lib/github";
 import { noteUrl } from "@/studio/blocks/noteUrl";
+import { fmSet, fmValues, frontmatterToText, parseFrontmatter } from "@/studio/lib/frontmatter";
+import { joinFrontmatter, splitFrontmatter } from "@/studio/lib/mdx";
+import { areas, courses } from "@/data/taxonomy";
 
 import "@/studio/studio.css";
 
@@ -248,6 +251,25 @@ interface NoteRow {
   sha: string;
 }
 
+/* Per-note metadata read from frontmatter for the sidebar's virtual grouping
+ * (group = area for papers / course for course-notes) and nicer titles. Keyed
+ * by path; `sha` lets us skip re-reading unchanged notes. */
+interface NoteMeta {
+  sha: string;
+  group: string | null;
+  title: string;
+}
+
+function groupKeyFor(collection: StudioCollection): "area" | "course" {
+  return collection === "paper-reading" ? "area" : "course";
+}
+
+export function groupLabel(collection: StudioCollection, id: string | null): string {
+  if (!id) return "· ungrouped";
+  const table = collection === "paper-reading" ? areas : courses;
+  return (table as Record<string, { label: string }>)[id]?.label ?? id;
+}
+
 function Workbench({ token, viewer, onLogout }: { token: string; viewer: Viewer; onLogout: () => void }) {
   const [notes, setNotes] = useState<NoteRow[] | null>(null);
   const [treeError, setTreeError] = useState<string | null>(null);
@@ -275,6 +297,40 @@ function Workbench({ token, viewer, onLogout }: { token: string; viewer: Viewer;
   useEffect(() => {
     refreshTree();
   }, [refreshTree]);
+
+  // Enrich the flat file list with per-note frontmatter (group + title) for the
+  // sidebar's virtual grouping. Runs after the tree loads, reads only notes
+  // whose sha changed, and updates progressively so the tree paints instantly.
+  const [noteMeta, setNoteMeta] = useState<Record<string, NoteMeta>>({});
+  const metaRef = useRef<Record<string, NoteMeta>>({});
+  useEffect(() => {
+    if (!notes || notes.length === 0) return undefined;
+    const missing = notes.filter((n) => metaRef.current[n.path]?.sha !== n.sha);
+    if (missing.length === 0) return undefined;
+    let cancelled = false;
+    void (async () => {
+      const entries = await Promise.all(
+        missing.map(async (n): Promise<[string, NoteMeta]> => {
+          try {
+            const file = await readFile(token, n.path);
+            const split = splitFrontmatter(file.text);
+            const values = fmValues(parseFrontmatter(split.frontmatter));
+            const raw = values[groupKeyFor(n.collection)];
+            const title = typeof values.title === "string" && values.title ? values.title : n.name;
+            return [n.path, { sha: n.sha, group: typeof raw === "string" ? raw : null, title }];
+          } catch {
+            return [n.path, { sha: n.sha, group: null, title: n.name }];
+          }
+        })
+      );
+      if (cancelled) return;
+      metaRef.current = { ...metaRef.current, ...Object.fromEntries(entries) };
+      setNoteMeta(metaRef.current);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [notes, token]);
 
   useEffect(() => {
     const onHash = () => setActivePath(currentHashPath());
@@ -318,7 +374,7 @@ function Workbench({ token, viewer, onLogout }: { token: string; viewer: Viewer;
         </div>
       </header>
       <div className="studio-main">
-        <Sidebar activePath={activePath} error={treeError} notes={notes} onNew={refreshTree} token={token} />
+        <Sidebar activePath={activePath} error={treeError} meta={noteMeta} notes={notes} onNew={refreshTree} token={token} />
         {activePath ? (
           <Editor key={activePath} onCommitted={onCommitted} path={activePath} token={token} />
         ) : (
@@ -388,7 +444,7 @@ function loadCollapsed(): Record<string, boolean> {
   }
 }
 
-type NoteAction = "open" | "copy-link" | "duplicate" | "rename" | "delete";
+type NoteAction = "open" | "copy-link" | "duplicate" | "move" | "rename" | "delete";
 
 function ContextMenu(props: {
   x: number;
@@ -414,6 +470,7 @@ function ContextMenu(props: {
   const items: { action: NoteAction; label: string; glyph: string; danger?: boolean }[] = [
     { action: "open", label: "Open", glyph: "↵" },
     { action: "copy-link", label: "Copy link", glyph: "⌘" },
+    { action: "move", label: "Move to…", glyph: "⇄" },
     { action: "duplicate", label: "Duplicate", glyph: "⧉" },
     { action: "rename", label: "Rename…", glyph: "✎" },
     { action: "delete", label: "Delete…", glyph: "✕", danger: true }
@@ -438,9 +495,16 @@ function ContextMenu(props: {
   );
 }
 
+interface NoteGroup {
+  id: string | null;
+  label: string;
+  notes: NoteRow[];
+}
+
 function Sidebar(props: {
   token: string;
   notes: NoteRow[] | null;
+  meta: Record<string, NoteMeta>;
   error: string | null;
   activePath: string | null;
   onNew: () => void;
@@ -448,16 +512,32 @@ function Sidebar(props: {
   const [creating, setCreating] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(loadCollapsed);
   const [menu, setMenu] = useState<{ note: NoteRow; x: number; y: number } | null>(null);
-  const [dialog, setDialog] = useState<{ mode: "rename" | "delete"; note: NoteRow } | null>(null);
+  const [dialog, setDialog] = useState<{ mode: "rename" | "delete" | "move"; note: NoteRow } | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  const { meta } = props;
+  const titleOf = (note: NoteRow) => meta[note.path]?.title ?? note.name;
+
+  // collection -> ordered groups (known groups A→Z by label, ungrouped last).
   const grouped = useMemo(() => {
-    const map = new Map<StudioCollection, NoteRow[]>();
-    for (const collection of STUDIO.collections) map.set(collection, []);
-    for (const note of props.notes ?? []) map.get(note.collection)?.push(note);
+    const map = new Map<StudioCollection, NoteGroup[]>();
+    for (const collection of STUDIO.collections) {
+      const byGroup = new Map<string | null, NoteRow[]>();
+      const rows = (props.notes ?? []).filter((n) => n.collection === collection);
+      for (const note of rows) {
+        const id = meta[note.path]?.group ?? null;
+        (byGroup.get(id) ?? byGroup.set(id, []).get(id)!).push(note);
+      }
+      const groups: NoteGroup[] = [...byGroup.entries()]
+        .map(([id, notes]) => ({ id, label: groupLabel(collection, id), notes }))
+        .sort((a, b) => (a.id === null ? 1 : b.id === null ? -1 : a.label.localeCompare(b.label)));
+      for (const g of groups) g.notes.sort((a, b) => titleOf(a).localeCompare(titleOf(b)));
+      map.set(collection, groups);
+    }
     return map;
-  }, [props.notes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.notes, meta]);
 
   const toggle = (c: string) =>
     setCollapsed((prev) => {
@@ -535,11 +615,34 @@ function Sidebar(props: {
     }
   };
 
+  // Reassign the note's group (area/course) — a frontmatter edit, not a file
+  // move; the file stays put and the sidebar regroups it.
+  const move = async (note: NoteRow, groupId: string) => {
+    setPending(note.path);
+    setActionError(null);
+    try {
+      const src = await readFile(props.token, note.path);
+      const split = splitFrontmatter(src.text);
+      if (!split.hasFrontmatter) throw new Error("note has no frontmatter to group by");
+      const fm = parseFrontmatter(split.frontmatter);
+      fmSet(fm, groupKeyFor(note.collection), groupId);
+      const next = joinFrontmatter(frontmatterToText(fm), split.body);
+      await saveFile(props.token, note.path, next, `studio: move ${note.name} -> ${groupId}`, note.sha);
+      setDialog(null);
+      props.onNew();
+    } catch (err) {
+      setActionError(String((err as Error)?.message ?? err));
+    } finally {
+      setPending(null);
+    }
+  };
+
   const onPick = (action: NoteAction, note: NoteRow) => {
     setMenu(null);
     if (action === "open") navigateTo(note.path);
     else if (action === "copy-link") copyLink(note);
     else if (action === "duplicate") void duplicate(note);
+    else if (action === "move") setDialog({ mode: "move", note });
     else if (action === "rename") setDialog({ mode: "rename", note });
     else if (action === "delete") setDialog({ mode: "delete", note });
   };
@@ -555,54 +658,79 @@ function Sidebar(props: {
       {props.error && <p className="studio-error">tree: {props.error}</p>}
       {!props.notes && !props.error && <p className="studio-muted">loading…</p>}
       {actionError && <p className="studio-error">{actionError}</p>}
-      {[...grouped.entries()].map(([collection, rows]) => {
-        const isCollapsed = !!collapsed[collection];
+      {[...grouped.entries()].map(([collection, groups]) => {
+        const colKey = `col:${collection}`;
+        const isCollapsed = !!collapsed[colKey];
+        const total = groups.reduce((n, g) => n + g.notes.length, 0);
         return (
           <section className="studio-folder" key={collection}>
             <button
               aria-expanded={!isCollapsed}
               className="studio-folder-head"
-              onClick={() => toggle(collection)}
+              onClick={() => toggle(colKey)}
               type="button"
             >
               <span className={`studio-chevron${isCollapsed ? " is-collapsed" : ""}`} aria-hidden="true">
                 ▾
               </span>
               <span className="studio-folder-name">{collection}/</span>
-              <span className="studio-folder-count">{rows.length || ""}</span>
+              <span className="studio-folder-count">{total || ""}</span>
             </button>
             <div className={`studio-tree-wrap${isCollapsed ? " is-collapsed" : ""}`}>
-              <ul className="studio-tree">
-                {rows.map((note) => (
-                  <li key={note.path}>
+              {total === 0 && <p className="studio-muted studio-tree-empty">(empty)</p>}
+              {groups.map((group) => {
+                const gKey = `grp:${collection}:${group.id ?? ""}`;
+                const gCollapsed = !!collapsed[gKey];
+                return (
+                  <div className="studio-group" key={gKey}>
                     <button
-                      className={`studio-tree-row${note.path === props.activePath ? " is-active" : ""}${pending === note.path ? " is-pending" : ""}`}
-                      onClick={() => navigateTo(note.path)}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        setMenu({ note, x: e.clientX, y: e.clientY });
-                      }}
+                      aria-expanded={!gCollapsed}
+                      className="studio-group-head"
+                      onClick={() => toggle(gKey)}
                       type="button"
                     >
-                      <span className="studio-tree-name">{note.name}</span>
-                      <span
-                        aria-label={`actions for ${note.name}`}
-                        className="studio-tree-more"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                          setMenu({ note, x: r.right, y: r.bottom });
-                        }}
-                        role="button"
-                        tabIndex={-1}
-                      >
-                        ⋯
+                      <span className={`studio-chevron is-sub${gCollapsed ? " is-collapsed" : ""}`} aria-hidden="true">
+                        ▾
                       </span>
+                      <span className="studio-group-name">{group.label}</span>
+                      <span className="studio-folder-count">{group.notes.length}</span>
                     </button>
-                  </li>
-                ))}
-                {rows.length === 0 && <li className="studio-muted studio-tree-empty">(empty)</li>}
-              </ul>
+                    <div className={`studio-tree-wrap${gCollapsed ? " is-collapsed" : ""}`}>
+                      <ul className="studio-tree">
+                        {group.notes.map((note) => (
+                          <li key={note.path}>
+                            <button
+                              className={`studio-tree-row${note.path === props.activePath ? " is-active" : ""}${pending === note.path ? " is-pending" : ""}`}
+                              onClick={() => navigateTo(note.path)}
+                              onContextMenu={(e) => {
+                                e.preventDefault();
+                                setMenu({ note, x: e.clientX, y: e.clientY });
+                              }}
+                              title={note.name}
+                              type="button"
+                            >
+                              <span className="studio-tree-name">{titleOf(note)}</span>
+                              <span
+                                aria-label={`actions for ${note.name}`}
+                                className="studio-tree-more"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                  setMenu({ note, x: r.right, y: r.bottom });
+                                }}
+                                role="button"
+                                tabIndex={-1}
+                              >
+                                ⋯
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
         );
@@ -614,6 +742,15 @@ function Sidebar(props: {
           note={dialog.note}
           onClose={() => setDialog(null)}
           onSubmit={(slug) => void rename(dialog.note, slug)}
+        />
+      )}
+      {dialog?.mode === "move" && (
+        <MoveDialog
+          busy={pending === dialog.note.path}
+          current={meta[dialog.note.path]?.group ?? null}
+          note={dialog.note}
+          onClose={() => setDialog(null)}
+          onSubmit={(groupId) => void move(dialog.note, groupId)}
         />
       )}
       {dialog?.mode === "delete" && (
@@ -670,6 +807,46 @@ function RenameDialog(props: { note: NoteRow; busy: boolean; onClose: () => void
           </button>
           <button className="studio-btn" disabled={props.busy} onClick={submit} type="button">
             {props.busy ? "renaming…" : "rename"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MoveDialog(props: {
+  note: NoteRow;
+  current: string | null;
+  busy: boolean;
+  onClose: () => void;
+  onSubmit: (groupId: string) => void;
+}) {
+  const table = props.note.collection === "paper-reading" ? areas : courses;
+  const options = Object.entries(table as Record<string, { label: string }>);
+  const [groupId, setGroupId] = useState(props.current ?? options[0]?.[0] ?? "");
+  const dimension = props.note.collection === "paper-reading" ? "area" : "course";
+  return (
+    <div aria-modal className="studio-modal-backdrop" role="dialog">
+      <div className="studio-modal">
+        <p className="studio-prompt">
+          <span className="accent">$</span> studio move
+        </p>
+        <label className="studio-field">
+          {dimension}
+          <select className="studio-input" onChange={(e) => setGroupId(e.target.value)} value={groupId}>
+            {options.map(([id, v]) => (
+              <option key={id} value={id}>
+                {v.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="studio-modal-actions">
+          <button className="studio-btn studio-btn-ghost" disabled={props.busy} onClick={props.onClose} type="button">
+            cancel
+          </button>
+          <button className="studio-btn" disabled={props.busy || !groupId} onClick={() => props.onSubmit(groupId)} type="button">
+            {props.busy ? "moving…" : "move"}
           </button>
         </div>
       </div>
