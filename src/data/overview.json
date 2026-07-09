@@ -1,19 +1,19 @@
 {
-  "updatedAt": "2026-07-06",
+  "updatedAt": "2026-07-08",
   "model": "glm-5.2",
-  "summary": "The notebook currently holds one course note on gradient descent and one paper-reading note on the Transformer, spanning machine-learning foundations and deep-learning architecture.",
+  "summary": "The notebook currently holds two notes: a foundations course note on gradient descent and a paper-reading note on the Transformer.",
   "areas": [
     {
       "id": "machine-learning",
       "label": "Machine Learning",
-      "coverage": "A single foundational note covers gradient descent, the update rule, a quadratic worked example, and learning-rate failure modes.",
-      "gap": "The ml-foundations course has only one note; core topics like loss functions, backpropagation, regularization, and generalization are not yet covered."
+      "coverage": "One course note covers gradient descent fundamentals: the update rule, a worked quadratic example, and learning-rate failure modes.",
+      "gap": "No notes yet on momentum, Adam, second-order methods, or other optimization refinements."
     },
     {
       "id": "deep-learning",
       "label": "Deep Learning",
-      "coverage": "A structured reading note on 'Attention Is All You Need' covers self-attention, multi-head attention, positional encodings, and WMT 2014 results.",
-      "gap": "No notes yet on subsequent architectures, sub-quadratic attention variants, or the training and scaling recipes referenced as improvements."
+      "coverage": "A reading note on Attention Is All You Need covers self-attention, multi-head attention, positional encodings, and WMT translation results.",
+      "gap": "No notes on follow-up architectures, sub-quadratic attention, rotary encodings, or training-scaling recipes."
     }
   ]
 }
