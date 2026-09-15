@@ -1,0 +1,10 @@
+file:///home/runner/work/HomePage/HomePage/scripts/agent/glm.mjs:33
+    throw new Error(`GLM API ${res.status}: ${(await res.text()).slice(0, 500)}`);
+          ^
+
+Error: GLM API 429: {"error":{"code":"1113","message":"余额不足或无可用资源包,请充值。"}}
+    at chat (file:///home/runner/work/HomePage/HomePage/scripts/agent/glm.mjs:33:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///home/runner/work/HomePage/HomePage/scripts/agent/run.mjs:56:30
+
+Node.js v24.20.0
